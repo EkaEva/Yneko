@@ -21,12 +21,18 @@ Before editing:
 - Keep source packages declarative and user-imported.
 - Keep Rust backend calls behind the `yneko-api` bridge facade.
 - Keep `media_kit` behind a Flutter player adapter.
+- Keep `com.yneko.anime` as the Android application ID and iOS bundle
+  identifier.
+- Keep generated platform runners limited to Windows, Android, and iOS until
+  another platform is approved.
 - Do not lower test, format, analysis, clippy, policy, or CI gates.
 
 ## Forbidden Changes
 
 - No direct FRB calls from widgets.
 - No business logic in widgets.
+- No top-level Flutter `application/`, `presentation/`, or `domain/` folders
+  under `app/lib/src`; use feature modules, `shared`, and `infrastructure`.
 - No Rust lower crate may depend on Flutter, Dart, `yneko-api`, or app shell
   code.
 - No source-specific hardcoded scraping branches in UI, player, storage, or API
@@ -43,13 +49,15 @@ Before editing:
 ## Flutter Rules
 
 - Presentation code renders UI and forwards user intent only.
-- Application code owns Riverpod providers, use cases, async state, and
+- Feature application code owns Riverpod providers, use cases, async state, and
   navigation coordination.
 - Infrastructure code owns generated FRB bindings, `media_kit`, and platform
   integration.
 - Domain code is pure Dart model and rule code; it does not import Flutter
   widgets, generated bindings, player runtimes, storage, or network clients.
 - Public cross-layer interfaces must be documented in the owning README.
+- Cross-feature imports must use the target feature public `index.dart`.
+- Every feature must keep a README and public `index.dart`.
 
 ## Rust Rules
 
@@ -91,4 +99,3 @@ pwsh -File scripts/local-quality-gate.ps1
 High-risk source/player/bridge/storage changes require focused tests plus the
 local gate. When a check fails, fix the cause. Do not delete tests, weaken
 assertions, or mark failures acceptable without a documented decision.
-

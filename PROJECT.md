@@ -6,6 +6,9 @@ project, not a file-by-file migration from the earlier Tauri/React codebase.
 ## Locked Product Decisions
 
 - Windows desktop is the first target.
+- The application ID and Apple bundle identifier are `com.yneko.anime`.
+- Generated Flutter runner directories are locked to Windows, Android, and iOS
+  until another platform is explicitly approved.
 - V1 scope is Bangumi-first search, detail, episode selection, source package
   import, playback resolution, playback, favorites, history, progress, and
   settings.
@@ -35,20 +38,25 @@ Flutter code is split into:
 
 ```text
 app/lib/src/
-  presentation/     pages, widgets, routes, and view composition
-  application/      Riverpod providers, use cases, async UI state
-  domain/           Dart-side UI/domain value objects
+  features/         feature modules with presentation/application/domain slices
+  shared/           reusable UI, utilities, and app-wide domain contracts
   infrastructure/   FRB bindings, media_kit adapter, platform helpers
+  plugins/          source-rule and future extension contracts
 ```
 
 Rules:
 
 - Widgets must not call FRB directly.
 - Widgets must not own business logic.
+- Each feature owns its own presentation and application state.
+- Top-level `application/`, `presentation/`, and `domain/` folders are
+  forbidden because they become garbage-collection bins.
 - Presentation code consumes Riverpod providers and view models.
-- Application code owns user flows and calls infrastructure interfaces.
+- Feature application code owns user flows and calls infrastructure interfaces.
 - Infrastructure code owns generated bindings and player/platform adapters.
 - Shared helpers must stay small and domain-neutral.
+- Cross-feature imports use the target feature `index.dart`.
+- Every feature keeps a README and public `index.dart`.
 
 ## Rust Architecture
 
@@ -99,6 +107,13 @@ intent through application providers.
 The player remains separate from source parsing, danmaku, downloads, settings,
 and history persistence.
 
+## Episode Playback Detail
+
+Clicking an episode opens the independent `episode_playback` feature. This page
+owns the playback session layout: left player surface, right episode/source/
+progress panel. `subject_detail` emits episode selection intent; `player` owns
+only the media surface and controls.
+
 ## Change Control
 
 Changing locked stack, target platform, V1 scope, module layout, source policy,
@@ -107,4 +122,3 @@ approval and a documentation update in the same change.
 
 Approved architecture changes must update `PROJECT.md`, `AI_RULES.md`, relevant
 `CONTEXT/*.md`, affected module READMEs, policy scripts, and focused tests.
-

@@ -40,10 +40,10 @@ Read the matching context before touching these areas:
 
 - Do not call generated FRB bindings directly from widgets.
 - Do not put business logic in presentation widgets.
+- Do not add top-level Flutter garbage-bin folders under `app/lib/src`.
 - Do not add source-specific playback branches outside declarative rules.
 - Do not add scripts, credentials, DRM/login/paywall bypass, or anti-scraping
   bypass behavior to source packages.
 - Do not add GPL/AGPL/SSPL/unknown-license code.
 - Do not lower verification gates without an approved architecture decision.
 - Do not commit secrets, private source credentials, or local playback URLs.
-

@@ -1,4 +1,4 @@
-import '../../domain/models.dart';
+import '../../shared/domain/index.dart';
 
 abstract interface class YnekoBackend {
   Future<List<AnimeSubject>> searchSubjects(String query, int page);
@@ -25,4 +25,3 @@ class FrbYnekoBackend implements YnekoBackend {
     throw UnimplementedError('Generated flutter_rust_bridge binding is not wired yet.');
   }
 }
-

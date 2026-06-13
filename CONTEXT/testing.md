@@ -11,9 +11,10 @@ pwsh -File scripts/local-quality-gate.ps1
 - Rust: `cargo fmt --check`, `cargo test --workspace`, `cargo clippy`.
 - Flutter: `flutter analyze`, `flutter test`.
 - Policy: dependency register and required governance files.
+- Policy: feature README/index presence, plugin boundaries, generated platform
+  runner set, and `com.yneko.anime` identifiers.
 - Bridge: generated bindings must be refreshed once Flutter and FRB tooling are
   installed.
 
 Windows smoke for V1 must cover source import, search, detail, playback
 resolution, playback, progress save, and restart progress restore.
-

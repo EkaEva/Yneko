@@ -45,6 +45,18 @@ third_party/          Dependency, runtime, asset, and license register
 
 The repository is public at https://github.com/EkaEva/Yneko.
 
+The locked app identifier is:
+
+```text
+com.yneko.anime
+```
+
+Generated Flutter runners are intentionally limited to:
+
+```text
+windows, android, ios
+```
+
 Flutter is installed locally at:
 
 ```text
@@ -68,11 +80,38 @@ pwsh -File scripts/local-quality-gate.ps1
 
 Rust is pinned through `rust-toolchain.toml`.
 
-Current `flutter doctor` notes:
+## Environment Doctor
 
-- Android licenses are not accepted yet; run `flutter doctor --android-licenses`
-  before Android work.
-- Visual Studio is missing some C++ desktop build components; install the
-  Flutter-reported C++/CMake/Windows SDK components before Windows packaging.
-- The local environment uses a proxy; `scripts/local-quality-gate.ps1` sets
-  `NO_PROXY` for localhost test traffic.
+Android SDK licenses have been accepted on the current machine. To recheck the
+local setup and set proxy bypass variables for the current shell, run:
+
+```powershell
+pwsh -File scripts/doctor-fix.ps1
+```
+
+If Android licenses ever reappear after an SDK reinstall, run:
+
+```powershell
+pwsh -File scripts/doctor-fix.ps1 -AcceptAndroidLicenses
+```
+
+Flutter still reports missing Visual Studio C++ desktop components until they
+are installed. The required component IDs are:
+
+```text
+Microsoft.VisualStudio.Workload.NativeDesktop
+Microsoft.VisualStudio.Component.VC.v142.x86.x64
+Microsoft.VisualStudio.Component.VC.CMake.Project
+Microsoft.VisualStudio.Component.Windows10SDK.26100
+```
+
+`scripts/doctor-fix.ps1` prints the exact Visual Studio Installer command for
+the detected installation. To let the script start the installer, run an
+elevated PowerShell:
+
+```powershell
+pwsh -File scripts/doctor-fix.ps1 -InstallVisualStudioComponents
+```
+
+The local environment uses a proxy; the quality gate and doctor script set
+`NO_PROXY=localhost,127.0.0.1,::1` for local Flutter test traffic.

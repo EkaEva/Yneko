@@ -1,6 +1,6 @@
 import 'package:media_kit/media_kit.dart';
 
-import '../../domain/models.dart';
+import '../../shared/domain/index.dart';
 
 abstract interface class PlayerAdapter {
   Future<void> open(PlaybackContract contract);
@@ -28,4 +28,3 @@ class MediaKitPlayerAdapter implements PlayerAdapter {
   @override
   Future<void> dispose() => _player.dispose();
 }
-
