@@ -24,6 +24,16 @@ reference, generated source, and new dependency decision here.
 | media_kit_video | `^1.3.1` | https://pub.dev/packages/media_kit_video | MIT | Flutter video widget for media_kit | Used only behind `infrastructure/player`. |
 | media_kit_libs_windows_video | `^1.0.11` | https://pub.dev/packages/media_kit_libs_windows_video | MIT | Windows media_kit runtime libraries | Runtime dependency for Windows desktop playback. |
 | flutter_rust_bridge | `^2.11.1` | https://pub.dev/packages/flutter_rust_bridge | MIT | Flutter/Rust bridge runtime and codegen integration | Generated bindings stay under infrastructure. |
+| flutter_svg | `^2.3.0` | https://pub.dev/packages/flutter_svg | MIT | Render project SVG logo and player icons in Flutter | Presentation uses paths from `YnekoAssets`; assets remain declarative image files. |
+| window_manager | `^0.5.1` | https://pub.dev/packages/window_manager | MIT | Hide native desktop title bar and expose desktop window controls | Wrapped by `infrastructure/platform/window_chrome`; widgets call the adapter only. |
+
+## Project-Owned Runtime Assets
+
+| Name | Source | License / Provenance | Use | Integration |
+|---|---|---|---|---|
+| Yneko logo and platform icons | `app/assets/icons/Yneko`, generated runner icon locations | Project-owned Yneko assets | App branding, Windows icon, Android launcher icon, iOS icon, Flutter UI logo | Exposed through `YnekoAssets` and platform runner resources. |
+| Yneko player SVG icons | `app/assets/player-icons` | Project-owned Yneko assets | Player control visuals | Exposed via `YnekoAssets`. |
+| Yneko empty/back-to-top illustrations | `app/assets/illustrations` | Project-owned Yneko assets | Empty states and back-to-top affordance | Exposed via `YnekoAssets`. |
 
 ## Direct Rust Dependencies
 
@@ -40,4 +50,3 @@ reference, generated source, and new dependency decision here.
 | scraper | `0.24` | https://github.com/causal-agent/scraper | ISC | Declarative HTML extraction support | Source-rule crate only. |
 | yaml_serde | `0.10` | https://github.com/yaml/yaml-serde | MIT OR Apache-2.0 | YAML source packages | Source-rule crate only. |
 | flutter_rust_bridge | `2.11.1` | https://github.com/fzyzcjy/flutter_rust_bridge | MIT | Rust bridge macros/runtime | Restricted to `yneko-api`. |
-

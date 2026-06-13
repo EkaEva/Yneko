@@ -14,9 +14,9 @@ $vsInstaller = Join-Path $vsInstallerRoot 'vs_installer.exe'
 
 $requiredVsComponents = @(
   'Microsoft.VisualStudio.Workload.NativeDesktop',
-  'Microsoft.VisualStudio.Component.VC.v142.x86.x64',
+  'Microsoft.VisualStudio.Component.VC.Tools.x86.x64',
   'Microsoft.VisualStudio.Component.VC.CMake.Project',
-  'Microsoft.VisualStudio.Component.Windows10SDK.26100'
+  'Microsoft.VisualStudio.Component.Windows11SDK.26100'
 )
 
 function Add-FlutterToPath {
@@ -31,6 +31,16 @@ function Set-LocalProxyBypass {
   $env:NO_PROXY = $localBypass
   $env:no_proxy = $localBypass
   Write-Host "NO_PROXY set for this shell: $localBypass"
+}
+
+function Test-WindowsDeveloperMode {
+  if (-not $IsWindows) {
+    return $true
+  }
+
+  $key = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock'
+  $value = Get-ItemProperty -Path $key -Name AllowDevelopmentWithoutDevLicense -ErrorAction SilentlyContinue
+  return ($null -ne $value -and $value.AllowDevelopmentWithoutDevLicense -eq 1)
 }
 
 function Get-VisualStudioInstallationPath {
@@ -73,6 +83,15 @@ function Get-VisualStudioInstallCommand {
 
 Add-FlutterToPath
 Set-LocalProxyBypass
+
+Write-Host '== Windows Developer Mode =='
+if (Test-WindowsDeveloperMode) {
+  Write-Host 'Developer Mode is enabled. Flutter desktop plugin symlinks are supported.'
+} else {
+  Write-Warning 'Developer Mode is disabled. Flutter desktop plugin builds may fail with "requires symlink support".'
+  Write-Host 'Open Settings > System > For developers and enable Developer Mode, or run:'
+  Write-Host 'start ms-settings:developers'
+}
 
 if (-not (Get-Command flutter -ErrorAction SilentlyContinue)) {
   throw "Flutter was not found. Expected SDK at $flutterBin or on PATH."

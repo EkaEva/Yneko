@@ -29,3 +29,16 @@ id_ed25519
 
 .DS_Store
 Thumbs.db
+
+# Local collaboration and agent-governance notes.
+# These files are useful on the maintainer machine but are not part of the
+# public project contract.
+AGENTS.md
+AI_RULES.md
+PROJECT.md
+CONTEXT/
+
+# Local copies of generated branding bundles. Runtime assets and platform
+# runner icons are tracked separately.
+app/assets/icons/Yneko/Web/
+app/assets/icons/Yneko/AppIcons/
