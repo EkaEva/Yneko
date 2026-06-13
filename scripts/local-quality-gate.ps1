@@ -18,6 +18,9 @@ function Invoke-Step {
   Write-Host "== $Name =="
   try {
     & $Script
+    if ($LASTEXITCODE -ne $null -and $LASTEXITCODE -ne 0) {
+      throw "Command exited with code $LASTEXITCODE"
+    }
   } catch {
     Write-Error "$Name failed: $_"
     $script:failed = $true
@@ -44,6 +47,8 @@ if (-not $PolicyOnly) {
   if (-not $SkipFlutter) {
     if (Get-Command flutter -ErrorAction SilentlyContinue) {
       Invoke-Step 'Flutter analyze' {
+        $env:NO_PROXY = 'localhost,127.0.0.1,::1'
+        $env:no_proxy = $env:NO_PROXY
         Push-Location (Join-Path $root 'app')
         try {
           flutter pub get
@@ -54,6 +59,8 @@ if (-not $PolicyOnly) {
       }
 
       Invoke-Step 'Flutter test' {
+        $env:NO_PROXY = 'localhost,127.0.0.1,::1'
+        $env:no_proxy = $env:NO_PROXY
         Push-Location (Join-Path $root 'app')
         try {
           flutter test

@@ -7,7 +7,16 @@ final ynekoBackendProvider = Provider<YnekoBackend>((ref) {
   return const FrbYnekoBackend();
 });
 
-final searchQueryProvider = StateProvider<String>((ref) => '');
+class SearchQuery extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void set(String value) {
+    state = value;
+  }
+}
+
+final searchQueryProvider = NotifierProvider<SearchQuery, String>(SearchQuery.new);
 
 final searchResultsProvider = FutureProvider<List<AnimeSubject>>((ref) async {
   final query = ref.watch(searchQueryProvider).trim();
@@ -15,4 +24,3 @@ final searchResultsProvider = FutureProvider<List<AnimeSubject>>((ref) async {
   final backend = ref.watch(ynekoBackendProvider);
   return backend.searchSubjects(query, 1);
 });
-

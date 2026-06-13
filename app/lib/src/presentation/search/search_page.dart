@@ -23,7 +23,7 @@ class SearchPage extends ConsumerWidget {
               prefixIcon: Icon(Icons.search),
               border: OutlineInputBorder(),
             ),
-            onChanged: (value) => ref.read(searchQueryProvider.notifier).state = value,
+            onChanged: (value) => ref.read(searchQueryProvider.notifier).set(value),
           ),
           const SizedBox(height: 24),
           Expanded(
@@ -52,4 +52,3 @@ class SearchPage extends ConsumerWidget {
     );
   }
 }
-

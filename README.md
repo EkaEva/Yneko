@@ -43,8 +43,22 @@ third_party/          Dependency, runtime, asset, and license register
 
 ## Development Status
 
-Flutter is an explicit prerequisite. If `flutter` is not on PATH, install the
-Flutter SDK first and run:
+The repository is public at https://github.com/EkaEva/Yneko.
+
+Flutter is installed locally at:
+
+```text
+C:\Users\86135\dev\flutter
+```
+
+New shells should pick it up from the user `PATH`. In the current shell, add it
+manually if needed:
+
+```powershell
+$env:Path = "$env:USERPROFILE\dev\flutter\bin;$env:Path"
+```
+
+Then run:
 
 ```powershell
 flutter doctor
@@ -54,3 +68,11 @@ pwsh -File scripts/local-quality-gate.ps1
 
 Rust is pinned through `rust-toolchain.toml`.
 
+Current `flutter doctor` notes:
+
+- Android licenses are not accepted yet; run `flutter doctor --android-licenses`
+  before Android work.
+- Visual Studio is missing some C++ desktop build components; install the
+  Flutter-reported C++/CMake/Windows SDK components before Windows packaging.
+- The local environment uses a proxy; `scripts/local-quality-gate.ps1` sets
+  `NO_PROXY` for localhost test traffic.
