@@ -6,6 +6,9 @@ import 'package:yneko/src/features/subject_detail/index.dart';
 
 void main() {
   testWidgets('episode tap opens playback detail route intent', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
