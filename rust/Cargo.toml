@@ -11,7 +11,7 @@ resolver = "3"
 [workspace.package]
 edition = "2024"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/EkaEva/Yneko_Flutter_Rust"
+repository = "https://github.com/EkaEva/Yneko"
 rust-version = "1.94"
 version = "0.1.0"
 
