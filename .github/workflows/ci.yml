@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "17 20 * * *"
+
+jobs:
+  policy:
+    name: Policy
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Policy gate
+        run: pwsh -File scripts/local-quality-gate.ps1 -PolicyOnly
+
+  rust:
+    name: Rust
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Rust versions
+        run: |
+          rustc --version
+          cargo --version
+      - name: Rust format
+        run: cargo fmt --manifest-path rust/Cargo.toml --all --check
+      - name: Rust test
+        run: cargo test --manifest-path rust/Cargo.toml --workspace
+      - name: Rust clippy
+        run: cargo clippy --manifest-path rust/Cargo.toml --workspace --all-targets -- -D warnings
+
+  flutter:
+    name: Flutter
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Flutter version
+        run: flutter --version
+      - name: Install dependencies
+        working-directory: app
+        run: flutter pub get
+      - name: Analyze
+        working-directory: app
+        run: flutter analyze
+      - name: Test
+        working-directory: app
+        run: flutter test

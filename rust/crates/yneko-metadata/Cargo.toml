@@ -1,0 +1,17 @@
+[package]
+name = "yneko-metadata"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+reqwest.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+yneko-core = { path = "../yneko-core" }
+
+[lints]
+workspace = true
+

@@ -1,0 +1,19 @@
+[package]
+name = "yneko-api"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+flutter_rust_bridge.workspace = true
+serde.workspace = true
+tokio.workspace = true
+yneko-core = { path = "../yneko-core" }
+yneko-metadata = { path = "../yneko-metadata" }
+yneko-source-rules = { path = "../yneko-source-rules" }
+yneko-storage = { path = "../yneko-storage" }
+
+[lints]
+workspace = true

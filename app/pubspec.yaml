@@ -1,0 +1,25 @@
+name: yneko
+description: Windows-first Flutter + Rust anime desktop application.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.9.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.0.3
+  flutter_rust_bridge: ^2.11.1
+  media_kit: ^1.2.6
+  media_kit_video: ^1.3.1
+  media_kit_libs_windows_video: ^1.0.11
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
