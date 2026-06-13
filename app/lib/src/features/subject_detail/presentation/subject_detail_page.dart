@@ -23,6 +23,7 @@ class _SubjectDetailPageState extends ConsumerState<SubjectDetailPage> {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     final subject = mockAnimeCards.firstWhere(
       (item) => item.id == widget.subjectId,
       orElse: () => mockAnimeCards.first,
@@ -58,13 +59,19 @@ class _SubjectDetailPageState extends ConsumerState<SubjectDetailPage> {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    gradient: LinearGradient(colors: [subject.coverColor, subject.accent]),
+                    gradient: LinearGradient(
+                      colors: [subject.coverColor, subject.accent],
+                    ),
                     boxShadow: tokens.shadow,
                   ),
                   child: Center(
                     child: Text(
                       subject.title.substring(0, 1),
-                      style: const TextStyle(color: Colors.white, fontSize: 74, fontWeight: FontWeight.w900),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 74,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                 ),
@@ -77,19 +84,25 @@ class _SubjectDetailPageState extends ConsumerState<SubjectDetailPage> {
                 children: [
                   Text(
                     subject.title,
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: tokens.ink,
-                    ),
+                    style: type.pageTitle.copyWith(fontSize: 32),
                   ),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      _MetaPill(icon: Icons.star_rounded, label: '评分 ${subject.score}'),
-                      const _MetaPill(icon: Icons.calendar_month_rounded, label: '2026-04'),
-                      const _MetaPill(icon: Icons.live_tv_rounded, label: '12 话'),
+                      _MetaPill(
+                        icon: Icons.star_rounded,
+                        label: '评分 ${subject.score}',
+                      ),
+                      const _MetaPill(
+                        icon: Icons.calendar_month_rounded,
+                        label: '2026-04',
+                      ),
+                      const _MetaPill(
+                        icon: Icons.live_tv_rounded,
+                        label: '12 话',
+                      ),
                       const _MetaPill(icon: Icons.sell_rounded, label: '原创'),
                     ],
                   ),
@@ -97,12 +110,22 @@ class _SubjectDetailPageState extends ConsumerState<SubjectDetailPage> {
                   Text(
                     subject.summary,
                     maxLines: _summaryExpanded ? null : 2,
-                    overflow: _summaryExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                    style: TextStyle(color: tokens.muted, height: 1.58, fontWeight: FontWeight.w600),
+                    overflow: _summaryExpanded
+                        ? TextOverflow.visible
+                        : TextOverflow.ellipsis,
+                    style: type.body.copyWith(
+                      color: tokens.muted,
+                      height: 1.58,
+                    ),
                   ),
                   TextButton.icon(
-                    onPressed: () => setState(() => _summaryExpanded = !_summaryExpanded),
-                    icon: Icon(_summaryExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded),
+                    onPressed: () =>
+                        setState(() => _summaryExpanded = !_summaryExpanded),
+                    icon: Icon(
+                      _summaryExpanded
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                    ),
                     label: Text(_summaryExpanded ? '收起' : '展开'),
                   ),
                 ],
@@ -125,12 +148,25 @@ class _SubjectDetailPageState extends ConsumerState<SubjectDetailPage> {
                       subtitle: '${episodes.length} 集 · 点击进入播放详情页',
                       trailing: IconButton(
                         tooltip: _gridEpisodes ? '列表' : '网格',
-                        onPressed: () => setState(() => _gridEpisodes = !_gridEpisodes),
-                        icon: Icon(_gridEpisodes ? Icons.view_list_rounded : Icons.grid_view_rounded),
+                        onPressed: () =>
+                            setState(() => _gridEpisodes = !_gridEpisodes),
+                        icon: Icon(
+                          _gridEpisodes
+                              ? Icons.view_list_rounded
+                              : Icons.grid_view_rounded,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 14),
-                    _gridEpisodes ? _EpisodeGrid(subjectId: widget.subjectId, episodes: episodes) : _EpisodeList(subjectId: widget.subjectId, episodes: episodes),
+                    _gridEpisodes
+                        ? _EpisodeGrid(
+                            subjectId: widget.subjectId,
+                            episodes: episodes,
+                          )
+                        : _EpisodeList(
+                            subjectId: widget.subjectId,
+                            episodes: episodes,
+                          ),
                   ],
                 ),
               ),
@@ -144,7 +180,10 @@ class _SubjectDetailPageState extends ConsumerState<SubjectDetailPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const _PanelHeader(title: '规则源候选', subtitle: 'source_rules 静态预览'),
+                        const _PanelHeader(
+                          title: '规则源候选',
+                          subtitle: 'source_rules 静态预览',
+                        ),
                         const SizedBox(height: 12),
                         for (final candidate in mockSourceCandidates)
                           Padding(
@@ -185,7 +224,11 @@ class _EpisodeList extends ConsumerWidget {
         for (final episode in episodes)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
-            child: _EpisodeButton(subjectId: subjectId, episode: episode, grid: false),
+            child: _EpisodeButton(
+              subjectId: subjectId,
+              episode: episode,
+              grid: false,
+            ),
           ),
       ],
     );
@@ -233,29 +276,38 @@ class _EpisodeButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     return Material(
       color: grid ? tokens.surface : Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        onTap: () => ref.read(shellRouteProvider.notifier).openEpisodePlayback(
-          subjectId: subjectId,
-          episodeId: episode.id,
-        ),
+        onTap: () => ref
+            .read(shellRouteProvider.notifier)
+            .openEpisodePlayback(subjectId: subjectId, episodeId: episode.id),
         child: Container(
           constraints: BoxConstraints(minHeight: grid ? 58 : 44),
           padding: EdgeInsets.symmetric(horizontal: grid ? 8 : 12),
           decoration: BoxDecoration(
-            border: grid ? Border.all(color: tokens.outline.withValues(alpha: 0.62)) : null,
+            border: grid
+                ? Border.all(color: tokens.outline.withValues(alpha: 0.62))
+                : null,
             borderRadius: BorderRadius.circular(8),
           ),
           child: grid
-              ? Center(child: Text('${episode.order}', style: const TextStyle(fontWeight: FontWeight.w900)))
+              ? Center(
+                  child: Text('${episode.order}', style: type.controlTitle),
+                )
               : Row(
                   children: [
-                    Text(episode.label, style: const TextStyle(fontWeight: FontWeight.w900)),
+                    Text(episode.label, style: type.controlTitle),
                     const SizedBox(width: 12),
-                    Expanded(child: Text(episode.title, overflow: TextOverflow.ellipsis)),
+                    Expanded(
+                      child: Text(
+                        episode.title,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     if (episode.progress > 0)
                       SizedBox(
                         width: 86,
@@ -283,6 +335,7 @@ class _MetaPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: tokens.surfaceHigh,
@@ -295,7 +348,7 @@ class _MetaPill extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: tokens.primary),
             const SizedBox(width: 5),
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+            Text(label, style: type.label.copyWith(color: tokens.ink)),
           ],
         ),
       ),
@@ -304,7 +357,11 @@ class _MetaPill extends StatelessWidget {
 }
 
 class _PanelHeader extends StatelessWidget {
-  const _PanelHeader({required this.title, required this.subtitle, this.trailing});
+  const _PanelHeader({
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+  });
 
   final String title;
   final String subtitle;
@@ -313,15 +370,16 @@ class _PanelHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     return Row(
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+              Text(title, style: type.controlTitle.copyWith(fontSize: 16)),
               const SizedBox(height: 3),
-              Text(subtitle, style: TextStyle(color: tokens.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+              Text(subtitle, style: type.label.copyWith(color: tokens.muted)),
             ],
           ),
         ),

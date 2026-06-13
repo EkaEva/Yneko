@@ -68,7 +68,7 @@ class YnekoThemeTokens extends ThemeExtension<YnekoThemeTokens> {
   static const fastMotion = Duration(milliseconds: 180);
   static const mediumMotion = Duration(milliseconds: 260);
   static const springCurve = Cubic(0.22, 1, 0.36, 1);
-  static const fontFamily = 'Aptos';
+  static const fontFamily = 'MiSansYneko';
   static const fontFallback = ['Microsoft YaHei UI', 'Segoe UI', 'sans-serif'];
 
   static const light = YnekoThemeTokens(
@@ -268,6 +268,93 @@ class YnekoThemeTokens extends ThemeExtension<YnekoThemeTokens> {
   }
 }
 
+@immutable
+class YnekoTypography {
+  const YnekoTypography._(this.tokens);
+
+  final YnekoThemeTokens tokens;
+
+  static YnekoTypography of(BuildContext context) {
+    return YnekoTypography._(YnekoThemeTokens.of(context));
+  }
+
+  static const brand = TextStyle(
+    fontFamily: YnekoThemeTokens.fontFamily,
+    fontFamilyFallback: YnekoThemeTokens.fontFallback,
+    fontSize: 25,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 0,
+    height: 1.08,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  TextStyle get topTab => _style(
+    color: tokens.ink,
+    size: 16,
+    weight: FontWeight.w600,
+    height: 1.22,
+  );
+
+  TextStyle get pageTitle => _style(
+    color: tokens.ink,
+    size: 28,
+    weight: FontWeight.w700,
+    height: 1.18,
+  );
+
+  TextStyle get sectionTitle =>
+      _style(color: tokens.ink, size: 22, weight: FontWeight.w700, height: 1.2);
+
+  TextStyle get cardTitle => _style(
+    color: tokens.ink,
+    size: 17,
+    weight: FontWeight.w700,
+    height: 1.32,
+  );
+
+  TextStyle get controlTitle =>
+      _style(color: tokens.ink, size: 15, weight: FontWeight.w600, height: 1.3);
+
+  TextStyle get body => _style(
+    color: tokens.ink,
+    size: 14,
+    weight: FontWeight.w400,
+    height: 1.45,
+  );
+
+  TextStyle get meta => _style(
+    color: tokens.muted,
+    size: 13,
+    weight: FontWeight.w400,
+    height: 1.35,
+  );
+
+  TextStyle get label => _style(
+    color: tokens.muted,
+    size: 12,
+    weight: FontWeight.w600,
+    height: 1.2,
+  );
+
+  TextStyle _style({
+    required Color color,
+    required double size,
+    required FontWeight weight,
+    required double height,
+  }) {
+    return TextStyle(
+      fontFamily: YnekoThemeTokens.fontFamily,
+      fontFamilyFallback: YnekoThemeTokens.fontFallback,
+      color: color,
+      fontSize: size,
+      fontWeight: weight,
+      letterSpacing: 0,
+      height: height,
+      leadingDistribution: TextLeadingDistribution.even,
+    );
+  }
+}
+
 ThemeData ynekoTheme(Brightness brightness) {
   final tokens = brightness == Brightness.dark
       ? YnekoThemeTokens.dark
@@ -288,13 +375,7 @@ ThemeData ynekoTheme(Brightness brightness) {
     fontFamily: YnekoThemeTokens.fontFamily,
     fontFamilyFallback: YnekoThemeTokens.fontFallback,
     extensions: [tokens],
-    textTheme: Typography.material2021(platform: TargetPlatform.windows).black
-        .apply(
-          bodyColor: tokens.ink,
-          displayColor: tokens.ink,
-          fontFamily: YnekoThemeTokens.fontFamily,
-          fontFamilyFallback: YnekoThemeTokens.fontFallback,
-        ),
+    textTheme: _ynekoTextTheme(tokens),
     dividerTheme: DividerThemeData(
       color: tokens.outline.withValues(alpha: 0.58),
     ),
@@ -310,5 +391,51 @@ ThemeData ynekoTheme(Brightness brightness) {
         borderSide: BorderSide(color: tokens.primary, width: 1.2),
       ),
     ),
+  );
+}
+
+TextTheme _ynekoTextTheme(YnekoThemeTokens tokens) {
+  const family = YnekoThemeTokens.fontFamily;
+  const fallback = YnekoThemeTokens.fontFallback;
+
+  TextStyle style({
+    required double size,
+    required FontWeight weight,
+    required double height,
+    Color? color,
+  }) {
+    return TextStyle(
+      fontFamily: family,
+      fontFamilyFallback: fallback,
+      color: color ?? tokens.ink,
+      fontSize: size,
+      fontWeight: weight,
+      letterSpacing: 0,
+      height: height,
+      leadingDistribution: TextLeadingDistribution.even,
+    );
+  }
+
+  return TextTheme(
+    displayLarge: style(size: 42, weight: FontWeight.w700, height: 1.12),
+    displayMedium: style(size: 36, weight: FontWeight.w700, height: 1.14),
+    displaySmall: style(size: 32, weight: FontWeight.w700, height: 1.16),
+    headlineLarge: style(size: 30, weight: FontWeight.w700, height: 1.16),
+    headlineMedium: style(size: 28, weight: FontWeight.w700, height: 1.18),
+    headlineSmall: style(size: 28, weight: FontWeight.w700, height: 1.18),
+    titleLarge: style(size: 22, weight: FontWeight.w700, height: 1.2),
+    titleMedium: style(size: 17, weight: FontWeight.w700, height: 1.28),
+    titleSmall: style(size: 15, weight: FontWeight.w600, height: 1.3),
+    bodyLarge: style(size: 15, weight: FontWeight.w400, height: 1.45),
+    bodyMedium: style(size: 14, weight: FontWeight.w400, height: 1.45),
+    bodySmall: style(
+      size: 13,
+      weight: FontWeight.w400,
+      height: 1.35,
+      color: tokens.muted,
+    ),
+    labelLarge: style(size: 14, weight: FontWeight.w600, height: 1.2),
+    labelMedium: style(size: 12, weight: FontWeight.w600, height: 1.2),
+    labelSmall: style(size: 11, weight: FontWeight.w600, height: 1.2),
   );
 }

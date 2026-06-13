@@ -47,6 +47,7 @@ class YnekoSectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -54,21 +55,11 @@ class YnekoSectionTitle extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: tokens.ink,
-                  height: 1.12,
-                ),
-              ),
+              Text(title, style: type.pageTitle),
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: tokens.muted,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: type.controlTitle.copyWith(color: tokens.muted),
               ),
             ],
           ),
@@ -132,6 +123,7 @@ class _YnekoTabButtonState extends State<_YnekoTabButton> {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     final motion = _motionDuration(context, YnekoThemeTokens.fastMotion);
     final highlighted = widget.active || _hovered;
     return Semantics(
@@ -158,15 +150,11 @@ class _YnekoTabButtonState extends State<_YnekoTabButton> {
                     child: AnimatedDefaultTextStyle(
                       duration: motion,
                       curve: Curves.easeOut,
-                      style: TextStyle(
+                      style: type.topTab.copyWith(
                         color: highlighted ? tokens.primary : tokens.ink,
-                        fontSize: 16,
                         fontWeight: widget.active
-                            ? FontWeight.w800
-                            : FontWeight.w700,
-                        letterSpacing: 0,
-                        height: 1,
-                        leadingDistribution: TextLeadingDistribution.even,
+                            ? FontWeight.w700
+                            : FontWeight.w600,
                       ),
                       child: Text(widget.label),
                     ),
@@ -221,6 +209,7 @@ class YnekoFilterChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -231,11 +220,7 @@ class YnekoFilterChips extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               label,
-              style: TextStyle(
-                color: tokens.muted,
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-              ),
+              style: type.label.copyWith(color: tokens.muted, fontSize: 14),
             ),
           ),
         ),
@@ -274,6 +259,7 @@ class _YnekoFilterChipState extends State<_YnekoFilterChip> {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     final motion = _motionDuration(context, YnekoThemeTokens.fastMotion);
     final active = widget.active || _hovered;
     return MouseRegion(
@@ -294,10 +280,7 @@ class _YnekoFilterChipState extends State<_YnekoFilterChip> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            textStyle: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-            ),
+            textStyle: type.controlTitle,
           ),
           child: Text(widget.label),
         ),
@@ -322,6 +305,7 @@ class _AnimePosterCardState extends State<AnimePosterCard> {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     final motion = _motionDuration(context, YnekoThemeTokens.mediumMotion);
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -365,7 +349,7 @@ class _AnimePosterCardState extends State<AnimePosterCard> {
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.78),
                             fontSize: 54,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
@@ -395,7 +379,7 @@ class _AnimePosterCardState extends State<AnimePosterCard> {
                                   widget.item.score,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w700,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -412,21 +396,17 @@ class _AnimePosterCardState extends State<AnimePosterCard> {
               Text(
                 widget.item.title,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: type.cardTitle.copyWith(
                   color: _hovered ? tokens.primary : tokens.ink,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  height: 1.32,
                 ),
               ),
               const SizedBox(height: 5),
               Text(
                 widget.item.subtitle,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: type.meta.copyWith(
                   color: _hovered ? tokens.primary : tokens.muted,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -452,23 +432,16 @@ class YnekoEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: tokens.primary, size: 38),
           const SizedBox(height: 12),
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-          ),
+          Text(title, style: type.cardTitle),
           const SizedBox(height: 4),
-          Text(
-            description,
-            style: TextStyle(color: tokens.muted, fontWeight: FontWeight.w600),
-          ),
+          Text(description, style: type.meta.copyWith(color: tokens.muted)),
         ],
       ),
     );
@@ -488,6 +461,7 @@ class SourceCandidateRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     final motion = _motionDuration(context, const Duration(milliseconds: 160));
     return AnimatedContainer(
       duration: motion,
@@ -509,19 +483,12 @@ class SourceCandidateRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  candidate.name,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
+                Text(candidate.name, style: type.controlTitle),
                 const SizedBox(height: 3),
                 Text(
                   candidate.detail,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: tokens.muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: type.label.copyWith(color: tokens.muted),
                 ),
               ],
             ),

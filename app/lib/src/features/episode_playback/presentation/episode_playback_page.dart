@@ -21,6 +21,7 @@ class EpisodePlaybackPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     final episodes = mockEpisodesForSubject(subjectId);
     final subject = mockAnimeCards.firstWhere(
       (item) => item.id == subjectId,
@@ -40,7 +41,9 @@ class EpisodePlaybackPage extends ConsumerWidget {
             Row(
               children: [
                 TextButton.icon(
-                  onPressed: () => ref.read(shellRouteProvider.notifier).openSubjectDetail(subjectId),
+                  onPressed: () => ref
+                      .read(shellRouteProvider.notifier)
+                      .openSubjectDetail(subjectId),
                   icon: const Icon(Icons.chevron_left_rounded),
                   label: const Text('返回详情'),
                 ),
@@ -49,7 +52,7 @@ class EpisodePlaybackPage extends ConsumerWidget {
                   child: Text(
                     '${subject.title} · ${activeEpisode.label}',
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+                    style: type.sectionTitle,
                   ),
                 ),
               ],
@@ -61,7 +64,10 @@ class EpisodePlaybackPage extends ConsumerWidget {
                 children: [
                   Expanded(
                     flex: 7,
-                    child: PlayerSurface(subjectId: subjectId, episodeId: episodeId),
+                    child: PlayerSurface(
+                      subjectId: subjectId,
+                      episodeId: episodeId,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   SizedBox(
@@ -99,13 +105,17 @@ class _EpisodeSidePanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     return YnekoPanel(
       padding: const EdgeInsets.all(16),
       child: ListView(
         children: [
-          Text('剧集', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+          Text('剧集', style: type.cardTitle),
           const SizedBox(height: 3),
-          Text('${episodes.length} 集 · 当前 ${activeEpisode.label}', style: TextStyle(color: tokens.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(
+            '${episodes.length} 集 · 当前 ${activeEpisode.label}',
+            style: type.label.copyWith(color: tokens.muted),
+          ),
           const SizedBox(height: 12),
           SizedBox(
             height: 198,
@@ -118,37 +128,47 @@ class _EpisodeSidePanel extends ConsumerWidget {
                   child: _EpisodeRow(
                     episode: episode,
                     active: episode.id == activeEpisodeId,
-                    onTap: () => ref.read(shellRouteProvider.notifier).openEpisodePlayback(
-                      subjectId: subjectId,
-                      episodeId: episode.id,
-                    ),
+                    onTap: () => ref
+                        .read(shellRouteProvider.notifier)
+                        .openEpisodePlayback(
+                          subjectId: subjectId,
+                          episodeId: episode.id,
+                        ),
                   ),
                 );
               },
             ),
           ),
           const SizedBox(height: 18),
-          Text('播放源', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+          Text('播放源', style: type.cardTitle),
           const SizedBox(height: 10),
           for (final candidate in mockSourceCandidates)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: SourceCandidateRow(candidate: candidate, active: candidate.matched),
+              child: SourceCandidateRow(
+                candidate: candidate,
+                active: candidate.matched,
+              ),
             ),
           const SizedBox(height: 18),
-          Text('进度', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+          Text('进度', style: type.cardTitle),
           const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(999),
             child: LinearProgressIndicator(
               minHeight: 7,
-              value: activeEpisode.progress == 0 ? 0.14 : activeEpisode.progress,
+              value: activeEpisode.progress == 0
+                  ? 0.14
+                  : activeEpisode.progress,
               backgroundColor: tokens.surfaceHigh,
               color: tokens.primary,
             ),
           ),
           const SizedBox(height: 8),
-          Text('后续由 episode_playback 应用层保存并恢复。', style: TextStyle(color: tokens.muted, fontWeight: FontWeight.w700)),
+          Text(
+            '后续由 episode_playback 应用层保存并恢复。',
+            style: type.meta.copyWith(color: tokens.muted),
+          ),
         ],
       ),
     );
@@ -169,8 +189,11 @@ class _EpisodeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     return Material(
-      color: active ? Color.lerp(tokens.primaryContainer, tokens.surface, 0.32) : Colors.transparent,
+      color: active
+          ? Color.lerp(tokens.primaryContainer, tokens.surface, 0.32)
+          : Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
@@ -179,14 +202,22 @@ class _EpisodeRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           child: Row(
             children: [
-              Icon(Icons.smart_display_rounded, color: active ? tokens.primary : tokens.muted, size: 18),
+              Icon(
+                Icons.smart_display_rounded,
+                color: active ? tokens.primary : tokens.muted,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(episode.label, style: const TextStyle(fontWeight: FontWeight.w900)),
-                    Text(episode.title, overflow: TextOverflow.ellipsis, style: TextStyle(color: tokens.muted, fontSize: 12)),
+                    Text(episode.label, style: type.controlTitle),
+                    Text(
+                      episode.title,
+                      overflow: TextOverflow.ellipsis,
+                      style: type.label.copyWith(color: tokens.muted),
+                    ),
                   ],
                 ),
               ),

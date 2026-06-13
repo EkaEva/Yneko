@@ -42,3 +42,7 @@ CONTEXT/
 # runner icons are tracked separately.
 app/assets/icons/Yneko/Web/
 app/assets/icons/Yneko/AppIcons/
+
+# Full upstream font files are local build inputs only. Commit generated
+# subsets under app/assets/fonts instead.
+tools/fonts/source/

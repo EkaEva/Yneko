@@ -29,3 +29,14 @@ flutter:
     - assets/icons/rail/
     - assets/illustrations/
     - assets/player-icons/
+  fonts:
+    - family: MiSansYneko
+      fonts:
+        - asset: assets/fonts/misans/MiSansYneko-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/misans/MiSansYneko-Semibold.ttf
+          weight: 600
+        - asset: assets/fonts/misans/MiSansYneko-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/misans/MiSansYneko-Bold.ttf
+          weight: 800

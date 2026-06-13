@@ -21,6 +21,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     return Row(
       children: [
         SizedBox(
@@ -28,18 +29,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(28, 24, 16, 48),
             children: [
-              Text('设置', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
+              Text('设置', style: type.pageTitle),
               const SizedBox(height: 18),
               for (final entry in ['外观', '播放', '规则源', '弹幕实验室'].indexed)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    selected: _panel == entry.$1,
-                    selectedColor: tokens.primary,
-                    selectedTileColor: tokens.primaryContainer,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    title: Text(entry.$2, style: const TextStyle(fontWeight: FontWeight.w900)),
-                    onTap: () => setState(() => _panel = entry.$1),
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    child: ListTile(
+                      selected: _panel == entry.$1,
+                      selectedColor: tokens.primary,
+                      selectedTileColor: tokens.primaryContainer,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      title: Text(
+                        entry.$2,
+                        style: type.controlTitle.copyWith(
+                          color: _panel == entry.$1
+                              ? tokens.primary
+                              : tokens.ink,
+                          fontWeight: _panel == entry.$1
+                              ? FontWeight.w700
+                              : FontWeight.w600,
+                        ),
+                      ),
+                      onTap: () => setState(() => _panel = entry.$1),
+                    ),
                   ),
                 ),
             ],
@@ -58,11 +75,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 YnekoPanel(
                   child: Column(
                     children: [
-                      SwitchListTile(
-                        title: const Text('深色主题'),
-                        subtitle: const Text('使用 ThemeExtension token 切换浅色/深色'),
-                        value: ref.watch(shellThemeModeProvider) == ThemeMode.dark,
-                        onChanged: (_) => ref.read(shellThemeModeProvider.notifier).toggle(),
+                      Material(
+                        color: Colors.transparent,
+                        child: SwitchListTile(
+                          title: Text('深色主题', style: type.controlTitle),
+                          subtitle: Text(
+                            '使用 ThemeExtension token 切换浅色/深色',
+                            style: type.meta,
+                          ),
+                          value:
+                              ref.watch(shellThemeModeProvider) ==
+                              ThemeMode.dark,
+                          onChanged: (_) => ref
+                              .read(shellThemeModeProvider.notifier)
+                              .toggle(),
+                        ),
                       ),
                       const Divider(),
                       const _ColorSchemePreview(),
@@ -73,11 +100,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 YnekoPanel(
                   child: Column(
                     children: [
-                      SwitchListTile(
-                        title: const Text('镜像画面'),
-                        subtitle: const Text('播放器控件壳预留设置项'),
-                        value: _mirror,
-                        onChanged: (value) => setState(() => _mirror = value),
+                      Material(
+                        color: Colors.transparent,
+                        child: SwitchListTile(
+                          title: Text('镜像画面', style: type.controlTitle),
+                          subtitle: Text('播放器控件壳预留设置项', style: type.meta),
+                          value: _mirror,
+                          onChanged: (value) => setState(() => _mirror = value),
+                        ),
                       ),
                       SliderListTile(
                         title: '默认音量',
@@ -92,7 +122,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('规则源仓库', style: TextStyle(fontWeight: FontWeight.w900)),
+                      Text('规则源仓库', style: type.controlTitle),
                       const SizedBox(height: 10),
                       const TextField(
                         decoration: InputDecoration(
@@ -102,7 +132,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         enabled: false,
                       ),
                       const SizedBox(height: 12),
-                      FilledButton.icon(onPressed: null, icon: const Icon(Icons.download_rounded), label: const Text('导入仓库')),
+                      FilledButton.icon(
+                        onPressed: null,
+                        icon: const Icon(Icons.download_rounded),
+                        label: const Text('导入仓库'),
+                      ),
                     ],
                   ),
                 ),
@@ -110,11 +144,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 YnekoPanel(
                   child: Column(
                     children: [
-                      SwitchListTile(
-                        title: const Text('显示弹幕'),
-                        subtitle: const Text('V1 只保留接口和播放器槽位'),
-                        value: _danmakuVisible,
-                        onChanged: (value) => setState(() => _danmakuVisible = value),
+                      Material(
+                        color: Colors.transparent,
+                        child: SwitchListTile(
+                          title: Text('显示弹幕', style: type.controlTitle),
+                          subtitle: Text('V1 只保留接口和播放器槽位', style: type.meta),
+                          value: _danmakuVisible,
+                          onChanged: (value) =>
+                              setState(() => _danmakuVisible = value),
+                        ),
                       ),
                       SliderListTile(
                         title: '不透明度',
@@ -147,15 +185,14 @@ class SliderListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(title),
-      subtitle: Slider(
-        min: 0,
-        max: 100,
-        value: value,
-        onChanged: onChanged,
+    final type = YnekoTypography.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        title: Text(title, style: type.controlTitle),
+        subtitle: Slider(min: 0, max: 100, value: value, onChanged: onChanged),
+        trailing: Text('${value.round()}%', style: type.controlTitle),
       ),
-      trailing: Text('${value.round()}%', style: const TextStyle(fontWeight: FontWeight.w900)),
     );
   }
 }
@@ -166,14 +203,22 @@ class _ColorSchemePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
-    final colors = [tokens.primary, tokens.secondary, tokens.surfaceHigh, tokens.ink];
+    final colors = [
+      tokens.primary,
+      tokens.secondary,
+      tokens.surfaceHigh,
+      tokens.ink,
+    ];
     return Row(
       children: [
         for (final color in colors)
           Padding(
             padding: const EdgeInsets.only(right: 10),
             child: DecoratedBox(
-              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: const SizedBox(width: 54, height: 34),
             ),
           ),

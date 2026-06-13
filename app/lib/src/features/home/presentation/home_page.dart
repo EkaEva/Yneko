@@ -398,6 +398,7 @@ class _FilterRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -408,12 +409,7 @@ class _FilterRow extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               data.label,
-              style: TextStyle(
-                color: tokens.muted,
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                height: 1,
-              ),
+              style: type.label.copyWith(color: tokens.muted, fontSize: 14),
             ),
           ),
         ),
@@ -452,6 +448,7 @@ class _FilterOptionState extends State<_FilterOption> {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     final motion = _homeMotion(context, YnekoThemeTokens.fastMotion);
     final active = widget.active || _hovered;
     return MouseRegion(
@@ -475,12 +472,9 @@ class _FilterOptionState extends State<_FilterOption> {
             heightFactor: 1,
             child: Text(
               widget.label,
-              style: TextStyle(
+              style: type.controlTitle.copyWith(
                 color: active ? tokens.primary : tokens.ink,
-                fontSize: 15,
-                fontWeight: widget.active ? FontWeight.w800 : FontWeight.w700,
-                letterSpacing: 0,
-                height: 1,
+                fontWeight: widget.active ? FontWeight.w700 : FontWeight.w600,
               ),
             ),
           ),
@@ -569,6 +563,7 @@ class _OutlineActionButtonState extends State<_OutlineActionButton> {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     final motion = _homeMotion(context, YnekoThemeTokens.fastMotion);
     final active = widget.active || _hovered;
     return MouseRegion(
@@ -596,11 +591,10 @@ class _OutlineActionButtonState extends State<_OutlineActionButton> {
             children: [
               Text(
                 widget.label,
-                style: TextStyle(
+                style: type.label.copyWith(
                   color: active ? tokens.primary : tokens.muted,
                   fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  height: 1,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(width: 6),
@@ -629,17 +623,17 @@ class _SummaryLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     return SizedBox(
       height: 22,
       child: Align(
         alignment: Alignment.centerLeft,
         child: Text(
           text,
-          style: TextStyle(
+          style: type.meta.copyWith(
             color: tokens.muted,
             fontSize: 14,
-            fontWeight: FontWeight.w800,
-            height: 1,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),

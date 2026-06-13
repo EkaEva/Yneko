@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/domain/index.dart';
 import '../../../shared/mock/index.dart';
+import '../../../shared/theme/index.dart';
 
 class PlayerSurface extends StatefulWidget {
   const PlayerSurface({
@@ -28,6 +29,7 @@ class _PlayerSurfaceState extends State<PlayerSurface> {
 
   @override
   Widget build(BuildContext context) {
+    final type = YnekoTypography.of(context);
     return MouseRegion(
       onEnter: (_) => setState(() => _controlsVisible = true),
       onHover: (_) => setState(() => _controlsVisible = true),
@@ -49,19 +51,26 @@ class _PlayerSurfaceState extends State<PlayerSurface> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        _playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
+                        _playing
+                            ? Icons.pause_circle_filled_rounded
+                            : Icons.play_circle_fill_rounded,
                         color: Colors.white.withValues(alpha: 0.74),
                         size: 76,
                       ),
                       const SizedBox(height: 12),
                       Text(
                         _playing ? '正在播放 UI 预览' : '等待播放源',
-                        style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                        style: type.sectionTitle.copyWith(
+                          color: Colors.white,
+                          fontSize: 20,
+                        ),
                       ),
                       const SizedBox(height: 5),
                       Text(
                         'subject=${widget.subjectId} episode=${widget.episodeId}',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.62), fontWeight: FontWeight.w600),
+                        style: type.label.copyWith(
+                          color: Colors.white.withValues(alpha: 0.62),
+                        ),
                       ),
                     ],
                   ),
@@ -77,7 +86,10 @@ class _PlayerSurfaceState extends State<PlayerSurface> {
                   child: Text(
                     widget.state.title,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, shadows: [Shadow(blurRadius: 12)]),
+                    style: type.controlTitle.copyWith(
+                      color: Colors.white,
+                      shadows: const [Shadow(blurRadius: 12)],
+                    ),
                   ),
                 ),
               ),
@@ -86,12 +98,16 @@ class _PlayerSurfaceState extends State<PlayerSurface> {
                   right: _activePanel == 'volume' ? 82 : 132,
                   bottom: 78,
                   child: _PlayerPopupPanel(
-                    title: _activePanel == 'speed' ? '倍速' : _activePanel == 'episodes' ? '选集' : '音量',
+                    title: _activePanel == 'speed'
+                        ? '倍速'
+                        : _activePanel == 'episodes'
+                        ? '选集'
+                        : '音量',
                     child: _activePanel == 'speed'
                         ? const _SpeedOptions()
                         : _activePanel == 'episodes'
-                            ? const _EpisodeOptions()
-                            : const _VolumeOptions(),
+                        ? const _EpisodeOptions()
+                        : const _VolumeOptions(),
                   ),
                 ),
               Positioned(
@@ -108,7 +124,9 @@ class _PlayerSurfaceState extends State<PlayerSurface> {
                     durationLabel: widget.state.durationLabel,
                     activePanel: _activePanel,
                     onTogglePlay: () => setState(() => _playing = !_playing),
-                    onTogglePanel: (panel) => setState(() => _activePanel = _activePanel == panel ? '' : panel),
+                    onTogglePanel: (panel) => setState(
+                      () => _activePanel = _activePanel == panel ? '' : panel,
+                    ),
                   ),
                 ),
               ),
@@ -141,6 +159,7 @@ class _ControlBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final type = YnekoTypography.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 560;
@@ -169,7 +188,9 @@ class _ControlBar extends StatelessWidget {
                 Row(
                   children: [
                     _PlayerIconButton(
-                      icon: playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                      icon: playing
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
                       tooltip: playing ? '暂停' : '播放',
                       onPressed: onTogglePlay,
                     ),
@@ -178,7 +199,7 @@ class _ControlBar extends StatelessWidget {
                       child: Text(
                         '$positionLabel / $durationLabel',
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                        style: type.label.copyWith(color: Colors.white),
                       ),
                     ),
                     const Spacer(),
@@ -269,8 +290,10 @@ class _PlayerTextButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextButton(
       onPressed: onPressed,
-      style: TextButton.styleFrom(foregroundColor: active ? const Color(0xFFFF6699) : Colors.white),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.w900)),
+      style: TextButton.styleFrom(
+        foregroundColor: active ? const Color(0xFFFF6699) : Colors.white,
+      ),
+      child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
     );
   }
 }
@@ -283,12 +306,19 @@ class _PlayerPopupPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final type = YnekoTypography.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: const Color(0xF21F2024),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, 12))],
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x66000000),
+            blurRadius: 24,
+            offset: Offset(0, 12),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -296,7 +326,7 @@ class _PlayerPopupPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
+            Text(title, style: type.controlTitle.copyWith(color: Colors.white)),
             const SizedBox(height: 10),
             child,
           ],

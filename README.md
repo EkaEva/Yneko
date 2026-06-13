@@ -53,6 +53,19 @@ Still in progress:
 - **media_kit** behind a player adapter for playback.
 - **GitHub Actions** for push, pull request, and scheduled health checks.
 
+## Typography
+
+Yneko uses `MiSansYneko`, a project subset of MiSans Regular, Semibold, and
+Bold, as the default UI font. The subset is generated from app UI text plus a
+small common character set to keep package size low. System fallback fonts are
+used for characters outside the subset.
+
+Regenerate the subset after adding significant UI copy:
+
+```powershell
+pwsh -File scripts/font-subset.ps1
+```
+
 ## Repository Layout
 
 ```text
@@ -141,8 +154,7 @@ pwsh -File scripts/doctor-fix.ps1 -AcceptAndroidLicenses
 Windows desktop:
 
 ```powershell
-cd app
-flutter run -d windows
+pwsh -File scripts/run-windows.ps1
 ```
 
 If Flutter reports that desktop plugins require symlink support, enable Windows
@@ -151,6 +163,9 @@ Developer Mode:
 ```powershell
 start ms-settings:developers
 ```
+
+The run script also bypasses local proxy handling for `localhost`, `127.0.0.1`,
+and `::1`. This keeps Flutter's debug service connection stable on Windows.
 
 ## Quality Gates
 

@@ -35,6 +35,12 @@ reference, generated source, and new dependency decision here.
 | Yneko player SVG icons | `app/assets/player-icons` | Project-owned Yneko assets | Player control visuals | Exposed via `YnekoAssets`. |
 | Yneko empty/back-to-top illustrations | `app/assets/illustrations` | Project-owned Yneko assets | Empty states and back-to-top affordance | Exposed via `YnekoAssets`. |
 
+## Fonts
+
+| Name | Source | License / Provenance | Use | Integration |
+|---|---|---|---|---|
+| MiSansYneko subset fonts | Generated from MiSans Regular, Semibold, and Bold source fonts using `scripts/font-subset.ps1` | MiSans free commercial-use font; source package mirror `boyan01/mi_sans_font` is MIT | Default Flutter UI font | Generated files live in `app/assets/fonts/misans`; full source fonts stay local under ignored `tools/fonts/source/misans`. |
+
 ## Direct Rust Dependencies
 
 | Name | Version / Range | Source | License | Use | Integration |

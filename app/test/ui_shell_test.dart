@@ -163,7 +163,7 @@ void main() {
     );
   });
 
-  testWidgets('home top tabs inherit original font stack and weights', (
+  testWidgets('home top tabs inherit theme font and mapped MiSans weights', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
@@ -181,11 +181,46 @@ void main() {
           .firstWhere((style) => style.style.fontSize == 16);
     }
 
-    expect(tabStyleFor('推荐').style.fontFamily, isNull);
-    expect(tabStyleFor('推荐').style.fontFamilyFallback, isNull);
-    expect(tabStyleFor('推荐').style.fontWeight, FontWeight.w800);
-    expect(tabStyleFor('时间表').style.fontWeight, FontWeight.w700);
+    expect(tabStyleFor('推荐').style.fontFamily, YnekoThemeTokens.fontFamily);
+    expect(
+      tabStyleFor('推荐').style.fontFamilyFallback,
+      YnekoThemeTokens.fontFallback,
+    );
+    expect(tabStyleFor('推荐').style.fontWeight, FontWeight.w700);
+    expect(tabStyleFor('时间表').style.fontWeight, FontWeight.w600);
+
+    await tester.tap(find.text('榜单').first);
+    await tester.pumpAndSettle();
+
+    final filterText = tester.widget<Text>(find.text('推理').first);
+    expect(filterText.style?.fontFamily, YnekoThemeTokens.fontFamily);
+    expect(filterText.style?.fontFamilyFallback, YnekoThemeTokens.fontFallback);
   });
+
+  testWidgets(
+    'settings typography keeps menu and entries below heavy display weight',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(const ProviderScope(child: YnekoApp()));
+      await tester.tap(find.text('设置').last);
+      await tester.pumpAndSettle();
+
+      TextStyle textStyleFor(String label) {
+        return tester.widget<Text>(find.text(label).first).style!;
+      }
+
+      expect(textStyleFor('外观').fontWeight, FontWeight.w700);
+      expect(textStyleFor('播放').fontWeight, FontWeight.w600);
+      expect(textStyleFor('深色主题').fontWeight, FontWeight.w600);
+      expect(textStyleFor('深色主题').fontWeight, isNot(FontWeight.w900));
+      expect(
+        textStyleFor('使用 ThemeExtension token 切换浅色/深色').fontWeight,
+        FontWeight.w400,
+      );
+    },
+  );
 
   testWidgets('theme toggle keeps sun halo attached to the clipped sun orb', (
     tester,
@@ -366,7 +401,7 @@ void main() {
     );
 
     expect(find.textContaining('primary-'), findsOneWidget);
-    expect(find.textContaining('font-Aptos'), findsOneWidget);
+    expect(find.textContaining('font-MiSansYneko'), findsOneWidget);
     expect(find.textContaining('Microsoft YaHei UI'), findsOneWidget);
   });
 

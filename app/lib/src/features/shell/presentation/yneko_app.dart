@@ -325,7 +325,8 @@ class _RailIconButtonState extends State<_RailIconButton> {
                   style: TextStyle(
                     color: active ? tokens.primary : tokens.railLabel,
                     fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
+                    height: 1.12,
                   ),
                 ),
               ],
@@ -432,6 +433,7 @@ class _TopBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     final fastMotion = _motionDuration(context, YnekoThemeTokens.fastMotion);
     final mediumMotion = _motionDuration(
       context,
@@ -505,10 +507,10 @@ class _TopBar extends ConsumerWidget {
                               )
                             : Text(
                                 _pageTitle(route),
-                                style: TextStyle(
+                                style: type.topTab.copyWith(
                                   color: tokens.primary,
                                   fontSize: 18,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                       ),
@@ -571,6 +573,7 @@ class _TopSearchState extends State<_TopSearch> {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
     final motion = _motionDuration(context, YnekoThemeTokens.fastMotion);
     return Focus(
       onFocusChange: (focused) {
@@ -599,22 +602,10 @@ class _TopSearchState extends State<_TopSearch> {
         child: TextField(
           onSubmitted: (_) => widget.onSubmitted(),
           textAlignVertical: TextAlignVertical.center,
-          style: TextStyle(
-            color: tokens.ink,
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            height: 1.2,
-            leadingDistribution: TextLeadingDistribution.even,
-          ),
+          style: type.body.copyWith(color: tokens.ink, fontSize: 16),
           decoration: InputDecoration(
             hintText: '搜索番剧',
-            hintStyle: TextStyle(
-              color: tokens.muted,
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              height: 1.2,
-              leadingDistribution: TextLeadingDistribution.even,
-            ),
+            hintStyle: type.body.copyWith(color: tokens.muted, fontSize: 16),
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
@@ -681,13 +672,7 @@ class _BrandWord extends StatelessWidget {
                     ),
                   ],
                 ),
-                style: const TextStyle(
-                  fontSize: 25,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0,
-                  height: 1,
-                  leadingDistribution: TextLeadingDistribution.even,
-                ),
+                style: YnekoTypography.brand,
               ),
             ),
           ),
