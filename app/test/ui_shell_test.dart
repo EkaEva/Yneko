@@ -4,8 +4,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yneko/src/features/episode_playback/index.dart';
 import 'package:yneko/src/features/shell/index.dart';
+import 'package:yneko/src/infrastructure/bridge/yneko_backend.dart';
 import 'package:yneko/src/shared/assets/index.dart';
 import 'package:yneko/src/shared/theme/index.dart';
+
+import 'support/fake_yneko_backend.dart';
 
 void main() {
   testWidgets('shell renders rail, top tabs, search box, and page content', (
@@ -14,7 +17,8 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: YnekoApp()));
+    await tester.pumpWidget(_appWithBackend());
+    await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('Yneko'), findsOneWidget);
     expect(find.text('首页'), findsWidgets);
@@ -36,7 +40,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: YnekoApp()));
+    await tester.pumpWidget(_appWithBackend());
 
     await tester.tap(find.byType(TextField).first);
     await tester.pumpAndSettle();
@@ -55,7 +59,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: YnekoApp()));
+    await tester.pumpWidget(_appWithBackend());
 
     final svgPictures = tester.widgetList<SvgPicture>(find.byType(SvgPicture));
     expect(
@@ -96,6 +100,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ynekoBackendProvider.overrideWithValue(const FakeYnekoBackend()),
           shellThemeModeProvider.overrideWith(
             () => _FixedThemeModeController(ThemeMode.dark),
           ),
@@ -119,7 +124,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(1280, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await tester.pumpWidget(const ProviderScope(child: YnekoApp()));
+      await tester.pumpWidget(_appWithBackend());
 
       final logoPictures = tester
           .widgetList<SvgPicture>(find.byType(SvgPicture))
@@ -143,7 +148,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: YnekoApp()));
+    await tester.pumpWidget(_appWithBackend());
 
     for (final tooltip in ['最小化', '最大化', '关闭']) {
       expect(
@@ -169,7 +174,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: YnekoApp()));
+    await tester.pumpWidget(_appWithBackend());
 
     AnimatedDefaultTextStyle tabStyleFor(String label) {
       final styles = find.ancestor(
@@ -203,7 +208,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(1280, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await tester.pumpWidget(const ProviderScope(child: YnekoApp()));
+      await tester.pumpWidget(_appWithBackend());
       await tester.tap(find.text('设置').last);
       await tester.pumpAndSettle();
 
@@ -228,7 +233,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: YnekoApp()));
+    await tester.pumpWidget(_appWithBackend());
 
     expect(find.byKey(const ValueKey('toggle-sky')), findsOneWidget);
     expect(find.byKey(const ValueKey('toggle-capsule-clip')), findsOneWidget);
@@ -281,7 +286,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: YnekoApp()));
+    await tester.pumpWidget(_appWithBackend());
     await tester.tap(find.byKey(const ValueKey('day-night-toggle')));
     await tester.pump(const Duration(milliseconds: 120));
 
@@ -306,7 +311,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: YnekoApp()));
+    await tester.pumpWidget(_appWithBackend());
 
     await tester.tap(find.text('时间表').first);
     await tester.pumpAndSettle();
@@ -349,9 +354,10 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const ProviderScope(child: YnekoApp()));
+    await tester.pumpWidget(_appWithBackend());
 
-    await tester.tap(find.text('星轨回响').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('mono女孩').first);
     await tester.pumpAndSettle();
 
     expect(find.text('番剧详情'), findsOneWidget);
@@ -439,4 +445,13 @@ class _FixedThemeModeController extends ShellThemeModeController {
 
   @override
   ThemeMode build() => _mode;
+}
+
+Widget _appWithBackend() {
+  return ProviderScope(
+    overrides: [
+      ynekoBackendProvider.overrideWithValue(const FakeYnekoBackend()),
+    ],
+    child: const YnekoApp(),
+  );
 }

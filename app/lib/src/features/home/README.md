@@ -3,10 +3,14 @@
 ## Responsibilities
 
 - Home layout and main navigation entry composition.
+- Home-only Bangumi recommendation, calendar, ranking provider state.
+- Mapping Bangumi subject summaries into home poster view models.
 
 ## Public Contracts
 
 - Public Dart exports are limited to presentation/home_page.dart through index.dart.
+- Application providers call the documented `YnekoBackend` port; widgets consume
+  providers only.
 
 ## Public Index Export List
 
@@ -16,6 +20,7 @@
 
 - Owning search, detail, or player state.
 - Generated bridge calls from widgets.
+- Direct Bangumi HTTP calls from Dart.
 - Cross-feature deep imports; consume another feature through its index.dart.
 
 ## Allowed Dependencies

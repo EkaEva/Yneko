@@ -27,18 +27,20 @@ Implemented foundations:
 
 - Flutter app scaffold for Windows, Android, and iOS.
 - Windows-first desktop shell with custom title bar, side rail, theme toggle,
-  home tabs, and mock UI pages.
+  home tabs, and route-level UI pages.
 - Feature-based Flutter module layout.
 - Rust workspace with initial crates for API, core types, metadata, source
   rules, and storage.
+- Bangumi metadata client for search, subject detail, calendar, browse, and
+  ranking data, with Flutter providers for home and detail surfaces.
+- Flutter/Rust bridge bindings for the Bangumi-facing `yneko-api` facade, with
+  Windows run script support for building the Rust DLL.
 - Local quality gate scripts and GitHub Actions for policy, Rust, and Flutter
   checks.
 - Application identifier locked to `com.yneko.anime`.
 
 Still in progress:
 
-- Real Bangumi integration in the Flutter UI.
-- Flutter/Rust bridge code generation for the final public API surface.
 - Source repository import and package installation UI.
 - Real playback session orchestration through the player adapter.
 - Persistent favorites, history, progress, and settings screens.
@@ -156,6 +158,9 @@ Windows desktop:
 ```powershell
 pwsh -File scripts/run-windows.ps1
 ```
+
+The script builds `yneko-api` first and points `flutter_rust_bridge` at
+`rust/target/debug/yneko_api.dll` for local Windows runs.
 
 If Flutter reports that desktop plugins require symlink support, enable Windows
 Developer Mode:

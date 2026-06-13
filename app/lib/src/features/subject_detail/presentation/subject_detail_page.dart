@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../shell/index.dart';
+import '../application/subject_detail_providers.dart';
 import '../../../shared/domain/index.dart';
 import '../../../shared/mock/index.dart';
 import '../../../shared/theme/index.dart';
@@ -22,13 +23,87 @@ class _SubjectDetailPageState extends ConsumerState<SubjectDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final detail = ref.watch(subjectDetailProvider(widget.subjectId));
+
+    return detail.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) =>
+          _SubjectDetailError(subjectId: widget.subjectId, error: error),
+      data: (detail) => _SubjectDetailContent(
+        detail: detail,
+        summaryExpanded: _summaryExpanded,
+        gridEpisodes: _gridEpisodes,
+        onToggleSummary: () =>
+            setState(() => _summaryExpanded = !_summaryExpanded),
+        onToggleEpisodeLayout: () =>
+            setState(() => _gridEpisodes = !_gridEpisodes),
+      ),
+    );
+  }
+}
+
+class _SubjectDetailError extends ConsumerWidget {
+  const _SubjectDetailError({required this.subjectId, required this.error});
+
+  final int subjectId;
+  final Object error;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(28, 24, 28, 48),
+      children: [
+        TextButton.icon(
+          onPressed: () => ref.read(shellRouteProvider.notifier).openHome(),
+          icon: const Icon(Icons.chevron_left_rounded),
+          label: const Text('返回'),
+        ),
+        const SizedBox(height: 24),
+        YnekoPanel(
+          child: Column(
+            children: [
+              YnekoEmptyState(
+                icon: Icons.cloud_off_rounded,
+                title: 'Bangumi 详情加载失败',
+                description: error.toString(),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.tonalIcon(
+                onPressed: () =>
+                    ref.invalidate(subjectDetailProvider(subjectId)),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('重试'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SubjectDetailContent extends ConsumerWidget {
+  const _SubjectDetailContent({
+    required this.detail,
+    required this.summaryExpanded,
+    required this.gridEpisodes,
+    required this.onToggleSummary,
+    required this.onToggleEpisodeLayout,
+  });
+
+  final SubjectDetail detail;
+  final bool summaryExpanded;
+  final bool gridEpisodes;
+  final VoidCallback onToggleSummary;
+  final VoidCallback onToggleEpisodeLayout;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = YnekoThemeTokens.of(context);
     final type = YnekoTypography.of(context);
-    final subject = mockAnimeCards.firstWhere(
-      (item) => item.id == widget.subjectId,
-      orElse: () => mockAnimeCards.first,
-    );
-    final episodes = mockEpisodesForSubject(widget.subjectId);
+    final subject = detail.subject;
+    final episodes = detail.episodes;
+    final title = subjectTitle(subject);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(28, 24, 28, 48),
@@ -52,40 +127,13 @@ class _SubjectDetailPageState extends ConsumerState<SubjectDetailPage> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              width: 220,
-              child: AspectRatio(
-                aspectRatio: 3 / 4,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    gradient: LinearGradient(
-                      colors: [subject.coverColor, subject.accent],
-                    ),
-                    boxShadow: tokens.shadow,
-                  ),
-                  child: Center(
-                    child: Text(
-                      subject.title.substring(0, 1),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 74,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            _SubjectCover(subject: subject, title: title),
             const SizedBox(width: 28),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    subject.title,
-                    style: type.pageTitle.copyWith(fontSize: 32),
-                  ),
+                  Text(title, style: type.pageTitle.copyWith(fontSize: 32)),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
@@ -93,24 +141,27 @@ class _SubjectDetailPageState extends ConsumerState<SubjectDetailPage> {
                     children: [
                       _MetaPill(
                         icon: Icons.star_rounded,
-                        label: '评分 ${subject.score}',
+                        label: subjectScoreLabel(subject),
                       ),
-                      const _MetaPill(
+                      _MetaPill(
                         icon: Icons.calendar_month_rounded,
-                        label: '2026-04',
+                        label: subjectAirDateLabel(subject),
                       ),
-                      const _MetaPill(
+                      _MetaPill(
                         icon: Icons.live_tv_rounded,
-                        label: '12 话',
+                        label: subjectEpisodeCountLabel(subject, episodes),
                       ),
-                      const _MetaPill(icon: Icons.sell_rounded, label: '原创'),
+                      _MetaPill(
+                        icon: Icons.sell_rounded,
+                        label: subjectTagLabel(subject),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    subject.summary,
-                    maxLines: _summaryExpanded ? null : 2,
-                    overflow: _summaryExpanded
+                    subject.summary ?? 'Bangumi 暂无简介。',
+                    maxLines: summaryExpanded ? null : 2,
+                    overflow: summaryExpanded
                         ? TextOverflow.visible
                         : TextOverflow.ellipsis,
                     style: type.body.copyWith(
@@ -119,14 +170,13 @@ class _SubjectDetailPageState extends ConsumerState<SubjectDetailPage> {
                     ),
                   ),
                   TextButton.icon(
-                    onPressed: () =>
-                        setState(() => _summaryExpanded = !_summaryExpanded),
+                    onPressed: onToggleSummary,
                     icon: Icon(
-                      _summaryExpanded
+                      summaryExpanded
                           ? Icons.expand_less_rounded
                           : Icons.expand_more_rounded,
                     ),
-                    label: Text(_summaryExpanded ? '收起' : '展开'),
+                    label: Text(summaryExpanded ? '收起' : '展开'),
                   ),
                 ],
               ),
@@ -147,24 +197,23 @@ class _SubjectDetailPageState extends ConsumerState<SubjectDetailPage> {
                       title: '剧集',
                       subtitle: '${episodes.length} 集 · 点击进入播放详情页',
                       trailing: IconButton(
-                        tooltip: _gridEpisodes ? '列表' : '网格',
-                        onPressed: () =>
-                            setState(() => _gridEpisodes = !_gridEpisodes),
+                        tooltip: gridEpisodes ? '列表' : '网格',
+                        onPressed: onToggleEpisodeLayout,
                         icon: Icon(
-                          _gridEpisodes
+                          gridEpisodes
                               ? Icons.view_list_rounded
                               : Icons.grid_view_rounded,
                         ),
                       ),
                     ),
                     const SizedBox(height: 14),
-                    _gridEpisodes
+                    gridEpisodes
                         ? _EpisodeGrid(
-                            subjectId: widget.subjectId,
+                            subjectId: subject.id,
                             episodes: episodes,
                           )
                         : _EpisodeList(
-                            subjectId: widget.subjectId,
+                            subjectId: subject.id,
                             episodes: episodes,
                           ),
                   ],
@@ -211,11 +260,72 @@ class _SubjectDetailPageState extends ConsumerState<SubjectDetailPage> {
   }
 }
 
+class _SubjectCover extends StatelessWidget {
+  const _SubjectCover({required this.subject, required this.title});
+
+  final AnimeSubject subject;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return SizedBox(
+      width: 220,
+      child: AspectRatio(
+        aspectRatio: 3 / 4,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            gradient: LinearGradient(
+              colors: [
+                subjectCoverColor(subject.id),
+                subjectAccentColor(subject.id),
+              ],
+            ),
+            boxShadow: tokens.shadow,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: subject.coverUrl == null
+                ? _SubjectCoverFallback(title: title)
+                : Image.network(
+                    subject.coverUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        _SubjectCoverFallback(title: title),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SubjectCoverFallback extends StatelessWidget {
+  const _SubjectCoverFallback({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        title.characters.first,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 74,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
 class _EpisodeList extends ConsumerWidget {
   const _EpisodeList({required this.subjectId, required this.episodes});
 
   final int subjectId;
-  final List<UiEpisodeItem> episodes;
+  final List<AnimeEpisode> episodes;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -239,7 +349,7 @@ class _EpisodeGrid extends StatelessWidget {
   const _EpisodeGrid({required this.subjectId, required this.episodes});
 
   final int subjectId;
-  final List<UiEpisodeItem> episodes;
+  final List<AnimeEpisode> episodes;
 
   @override
   Widget build(BuildContext context) {
@@ -270,7 +380,7 @@ class _EpisodeButton extends ConsumerWidget {
   });
 
   final int subjectId;
-  final UiEpisodeItem episode;
+  final AnimeEpisode episode;
   final bool grid;
 
   @override
@@ -284,7 +394,10 @@ class _EpisodeButton extends ConsumerWidget {
         borderRadius: BorderRadius.circular(8),
         onTap: () => ref
             .read(shellRouteProvider.notifier)
-            .openEpisodePlayback(subjectId: subjectId, episodeId: episode.id),
+            .openEpisodePlayback(
+              subjectId: subjectId,
+              episodeId: _episodeRouteId,
+            ),
         child: Container(
           constraints: BoxConstraints(minHeight: grid ? 58 : 44),
           padding: EdgeInsets.symmetric(horizontal: grid ? 8 : 12),
@@ -295,34 +408,27 @@ class _EpisodeButton extends ConsumerWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: grid
-              ? Center(
-                  child: Text('${episode.order}', style: type.controlTitle),
-                )
+              ? Center(child: Text('${episode.sort}', style: type.controlTitle))
               : Row(
                   children: [
-                    Text(episode.label, style: type.controlTitle),
+                    Text('第 ${episode.sort} 话', style: type.controlTitle),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        episode.title,
+                        episode.displayTitle,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (episode.progress > 0)
-                      SizedBox(
-                        width: 86,
-                        child: LinearProgressIndicator(
-                          minHeight: 5,
-                          value: episode.progress,
-                          backgroundColor: tokens.surfaceHigh,
-                          color: tokens.primary,
-                        ),
-                      ),
                   ],
                 ),
         ),
       ),
     );
+  }
+
+  int get _episodeRouteId {
+    if (episode.id > 0) return episode.id;
+    return subjectId * 100 + episode.sort;
   }
 }
 

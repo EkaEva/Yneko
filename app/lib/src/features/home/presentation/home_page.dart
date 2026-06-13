@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../shell/index.dart';
+import '../application/home_providers.dart';
 import '../../../shared/domain/index.dart';
-import '../../../shared/mock/index.dart';
 import '../../../shared/theme/index.dart';
 import '../../../shared/ui/index.dart';
 
@@ -41,10 +41,23 @@ class _RecommendWorkbench extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _AnimeGrid(
-      key: const ValueKey('home-anime-grid'),
-      items: mockAnimeCards,
-      onOpen: onOpen,
+    return Consumer(
+      builder: (context, ref, child) {
+        final recommendations = ref.watch(homeRecommendationsProvider);
+        return recommendations.when(
+          data: (subjects) => _AnimeGrid(
+            key: const ValueKey('home-anime-grid'),
+            items: subjectsToUiCards(subjects),
+            onOpen: onOpen,
+          ),
+          loading: () => const _LoadingPanel(label: '正在同步 Bangumi 推荐'),
+          error: (error, stackTrace) => _ErrorPanel(
+            title: 'Bangumi 推荐加载失败',
+            description: error.toString(),
+            onRetry: () => ref.invalidate(homeRecommendationsProvider),
+          ),
+        );
+      },
     );
   }
 }
@@ -58,55 +71,82 @@ class _ScheduleWorkbench extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final year = now.year;
-    final visibleItems = [
-      ...mockAnimeCards.skip(1),
-      mockAnimeCards.first,
-    ].take(12).toList();
 
-    return Column(
-      key: const ValueKey('home-schedule-panel'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _FilterWall(
-          label: '时间表筛选',
-          rows: [
-            _FilterRowData(
-              label: '日期',
-              items: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-              activeIndex: 5,
-            ),
-            _FilterRowData(
-              label: '年份',
-              items: [
-                '2026',
-                '2025',
-                '2024',
-                '2023',
-                '2022',
-                '2021',
-                '2020',
-                '2019',
-                '2018',
-                '2017',
-                '2016',
-                '2015',
+    return Consumer(
+      builder: (context, ref, child) {
+        final calendar = ref.watch(homeCalendarProvider);
+        final selectedDay = ref.watch(scheduleDayProvider);
+        return Column(
+          key: const ValueKey('home-schedule-panel'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _FilterWall(
+              label: '时间表筛选',
+              rows: [
+                _FilterRowData(
+                  label: '日期',
+                  items: const ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                  activeIndex: selectedDay - 1,
+                  onPick: (index) =>
+                      ref.read(scheduleDayProvider.notifier).setDay(index + 1),
+                ),
+                const _FilterRowData(
+                  label: '年份',
+                  items: [
+                    '2026',
+                    '2025',
+                    '2024',
+                    '2023',
+                    '2022',
+                    '2021',
+                    '2020',
+                    '2019',
+                    '2018',
+                    '2017',
+                    '2016',
+                    '2015',
+                  ],
+                ),
+                const _FilterRowData(
+                  label: '季度',
+                  items: ['全年', '1月', '4月', '7月', '10月'],
+                  activeIndex: 2,
+                ),
               ],
+              trailing: const _ScheduleMachineActions(),
+              expanded: true,
+              rowKeyPrefix: 'schedule-filter-row',
             ),
-            _FilterRowData(
-              label: '季度',
-              items: ['全年', '1月', '4月', '7月', '10月'],
-              activeIndex: 2,
+            const SizedBox(height: 22),
+            _SummaryLine(text: '$year年新番'),
+            const SizedBox(height: 22),
+            calendar.when(
+              data: (days) {
+                final subjects = subjectsForScheduleDay(
+                  days: days,
+                  weekday: selectedDay,
+                );
+                if (subjects.isEmpty) {
+                  return const _EmptyPanel(
+                    title: '这一天暂时没有放送条目',
+                    description: 'Bangumi 时间表当前没有返回该日期的动画条目。',
+                  );
+                }
+                return _AnimeGrid(
+                  items: subjectsToUiCards(subjects),
+                  onOpen: onOpen,
+                );
+              },
+              loading: () => const _LoadingPanel(label: '正在同步 Bangumi 时间表'),
+              error: (error, stackTrace) => _ErrorPanel(
+                title: 'Bangumi 时间表加载失败',
+                description: error.toString(),
+                onRetry: () => ref.invalidate(homeCalendarProvider),
+              ),
             ),
           ],
-          trailing: _ScheduleMachineActions(),
-          expanded: true,
-          rowKeyPrefix: 'schedule-filter-row',
-        ),
-        const SizedBox(height: 22),
-        _SummaryLine(text: '$year年新番'),
-        const SizedBox(height: 22),
-        _AnimeGrid(items: visibleItems, onOpen: onOpen),
-      ],
+        );
+      },
     );
   }
 }
@@ -138,98 +178,160 @@ class _RankingWorkbench extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rankedItems = [...mockAnimeCards]
-      ..sort((a, b) => b.score.compareTo(a.score));
-
-    return Column(
-      key: const ValueKey('home-ranking-panel'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _FilterWall(
-          label: '榜单筛选',
-          rows: [
-            _FilterRowData(
-              label: '排序',
-              items: ['排名', '热度', '收藏', '日期', '名称'],
-              activeIndex: 1,
-            ),
-            _FilterRowData(label: '地区', items: ['全部', '日本', '国产', '欧美']),
-            _FilterRowData(
-              label: '类型',
-              items: [
-                '全部',
-                '科幻',
-                '喜剧',
-                '同人',
-                '百合',
-                '校园',
-                '惊悚',
-                '后宫',
-                '机战',
-                '悬疑',
-                '恋爱',
-                '奇幻',
-                '推理',
-                '运动',
-                '耽美',
-                '音乐',
-                '战斗',
-                '冒险',
-                '亲子',
-                '穿越',
-                '玄幻',
-                '乙女',
-                '恐怖',
-                '历史',
-                '日常',
-                '剧情',
-                '武侠',
-                '美食',
-                '职场',
+    return Consumer(
+      builder: (context, ref, child) {
+        final ranking = ref.watch(homeRankingProvider);
+        final sort = ref.watch(rankingSortProvider);
+        return Column(
+          key: const ValueKey('home-ranking-panel'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _FilterWall(
+              label: '榜单筛选',
+              rows: [
+                _FilterRowData(
+                  label: '排序',
+                  items: const ['排名', '热度', '收藏', '日期', '名称'],
+                  activeIndex: _sortIndex(sort),
+                  onPick: (index) => ref
+                      .read(rankingSortProvider.notifier)
+                      .setSort(_sortForIndex(index)),
+                ),
+                const _FilterRowData(
+                  label: '地区',
+                  items: ['全部', '日本', '国产', '欧美'],
+                ),
+                const _FilterRowData(
+                  label: '类型',
+                  items: [
+                    '全部',
+                    '科幻',
+                    '喜剧',
+                    '同人',
+                    '百合',
+                    '校园',
+                    '惊悚',
+                    '后宫',
+                    '机战',
+                    '悬疑',
+                    '恋爱',
+                    '奇幻',
+                    '推理',
+                    '运动',
+                    '耽美',
+                    '音乐',
+                    '战斗',
+                    '冒险',
+                    '亲子',
+                    '穿越',
+                    '玄幻',
+                    '乙女',
+                    '恐怖',
+                    '历史',
+                    '日常',
+                    '剧情',
+                    '武侠',
+                    '美食',
+                    '职场',
+                  ],
+                ),
+                const _FilterRowData(
+                  label: '来源',
+                  items: [
+                    '全部',
+                    '原创',
+                    '漫画改',
+                    '游戏改',
+                    '小说改',
+                    '动画改',
+                    '影视改',
+                    '轻小说改',
+                  ],
+                ),
+                const _FilterRowData(
+                  label: '分类',
+                  items: ['全部', 'TV', 'WEB', 'OVA', '剧场版', '动态漫画', '其他'],
+                ),
+                const _FilterRowData(
+                  label: '年份',
+                  items: [
+                    '年份',
+                    '2026',
+                    '2025',
+                    '2024',
+                    '2023',
+                    '2022',
+                    '2021',
+                    '2020',
+                    '2019',
+                    '2018',
+                    '2017',
+                    '2016',
+                    '2015',
+                  ],
+                ),
+                const _FilterRowData(
+                  label: '季度',
+                  items: ['季度', '1月', '4月', '7月', '10月'],
+                ),
               ],
+              trailing: const _OutlineActionButton(
+                icon: Icons.keyboard_arrow_up_rounded,
+                label: '更多筛选',
+                active: true,
+              ),
+              expanded: true,
+              rowKeyPrefix: 'ranking-filter-row',
             ),
-            _FilterRowData(
-              label: '来源',
-              items: ['全部', '原创', '漫画改', '游戏改', '小说改', '动画改', '影视改', '轻小说改'],
+            const SizedBox(height: 22),
+            _SummaryLine(text: '${_sortLabel(sort)} · 全部动画'),
+            const SizedBox(height: 22),
+            ranking.when(
+              data: (response) => _AnimeGrid(
+                items: subjectsToUiCards(response.items),
+                onOpen: onOpen,
+              ),
+              loading: () => const _LoadingPanel(label: '正在同步 Bangumi 榜单'),
+              error: (error, stackTrace) => _ErrorPanel(
+                title: 'Bangumi 榜单加载失败',
+                description: error.toString(),
+                onRetry: () => ref.invalidate(homeRankingProvider),
+              ),
             ),
-            _FilterRowData(
-              label: '分类',
-              items: ['全部', 'TV', 'WEB', 'OVA', '剧场版', '动态漫画', '其他'],
-            ),
-            _FilterRowData(
-              label: '年份',
-              items: [
-                '年份',
-                '2026',
-                '2025',
-                '2024',
-                '2023',
-                '2022',
-                '2021',
-                '2020',
-                '2019',
-                '2018',
-                '2017',
-                '2016',
-                '2015',
-              ],
-            ),
-            _FilterRowData(label: '季度', items: ['季度', '1月', '4月', '7月', '10月']),
           ],
-          trailing: _OutlineActionButton(
-            icon: Icons.keyboard_arrow_up_rounded,
-            label: '更多筛选',
-            active: true,
-          ),
-          expanded: true,
-          rowKeyPrefix: 'ranking-filter-row',
-        ),
-        const SizedBox(height: 22),
-        const _SummaryLine(text: '热度 · 全部动画'),
-        const SizedBox(height: 22),
-        _AnimeGrid(items: rankedItems, onOpen: onOpen),
-      ],
+        );
+      },
     );
+  }
+
+  int _sortIndex(AnimeRankingSort sort) {
+    return switch (sort) {
+      AnimeRankingSort.rank => 0,
+      AnimeRankingSort.heat => 1,
+      AnimeRankingSort.collect => 2,
+      AnimeRankingSort.date => 3,
+      AnimeRankingSort.name => 4,
+    };
+  }
+
+  AnimeRankingSort _sortForIndex(int index) {
+    return switch (index) {
+      0 => AnimeRankingSort.rank,
+      2 => AnimeRankingSort.collect,
+      3 => AnimeRankingSort.date,
+      4 => AnimeRankingSort.name,
+      _ => AnimeRankingSort.heat,
+    };
+  }
+
+  String _sortLabel(AnimeRankingSort sort) {
+    return switch (sort) {
+      AnimeRankingSort.rank => '排名',
+      AnimeRankingSort.heat => '热度',
+      AnimeRankingSort.collect => '收藏',
+      AnimeRankingSort.date => '日期',
+      AnimeRankingSort.name => '名称',
+    };
   }
 }
 
@@ -423,6 +525,7 @@ class _FilterRow extends StatelessWidget {
                 _FilterOption(
                   label: data.items[index],
                   active: index == data.activeIndex,
+                  onTap: () => data.onPick?.call(index),
                 ),
             ],
           ),
@@ -433,10 +536,11 @@ class _FilterRow extends StatelessWidget {
 }
 
 class _FilterOption extends StatefulWidget {
-  const _FilterOption({required this.label, required this.active});
+  const _FilterOption({required this.label, required this.active, this.onTap});
 
   final String label;
   final bool active;
+  final VoidCallback? onTap;
 
   @override
   State<_FilterOption> createState() => _FilterOptionState();
@@ -458,23 +562,26 @@ class _FilterOptionState extends State<_FilterOption> {
       child: AnimatedSlide(
         duration: motion,
         offset: _hovered ? const Offset(0, -0.025) : Offset.zero,
-        child: AnimatedContainer(
-          key: ValueKey('filter-option-${widget.label}'),
-          duration: motion,
-          constraints: const BoxConstraints(minHeight: 40),
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            color: active ? tokens.primaryContainer : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Align(
-            widthFactor: 1,
-            heightFactor: 1,
-            child: Text(
-              widget.label,
-              style: type.controlTitle.copyWith(
-                color: active ? tokens.primary : tokens.ink,
-                fontWeight: widget.active ? FontWeight.w700 : FontWeight.w600,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            key: ValueKey('filter-option-${widget.label}'),
+            duration: motion,
+            constraints: const BoxConstraints(minHeight: 40),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: active ? tokens.primaryContainer : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Align(
+              widthFactor: 1,
+              heightFactor: 1,
+              child: Text(
+                widget.label,
+                style: type.controlTitle.copyWith(
+                  color: active ? tokens.primary : tokens.ink,
+                  fontWeight: widget.active ? FontWeight.w700 : FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -646,9 +753,85 @@ class _FilterRowData {
     required this.label,
     required this.items,
     this.activeIndex = 0,
+    this.onPick,
   });
 
   final String label;
   final List<String> items;
   final int activeIndex;
+  final ValueChanged<int>? onPick;
+}
+
+class _LoadingPanel extends StatelessWidget {
+  const _LoadingPanel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 260,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 14),
+            Text(label),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorPanel extends StatelessWidget {
+  const _ErrorPanel({
+    required this.title,
+    required this.description,
+    required this.onRetry,
+  });
+
+  final String title;
+  final String description;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return YnekoPanel(
+      child: Column(
+        children: [
+          YnekoEmptyState(
+            icon: Icons.cloud_off_rounded,
+            title: title,
+            description: description,
+          ),
+          const SizedBox(height: 12),
+          FilledButton.tonalIcon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('重试'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyPanel extends StatelessWidget {
+  const _EmptyPanel({required this.title, required this.description});
+
+  final String title;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) {
+    return YnekoPanel(
+      child: YnekoEmptyState(
+        icon: Icons.event_busy_rounded,
+        title: title,
+        description: description,
+      ),
+    );
+  }
 }

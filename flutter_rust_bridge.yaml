@@ -1,0 +1,8 @@
+rust_input: crate::api
+rust_root: rust/crates/yneko-api
+dart_output: app/lib/src/infrastructure/bridge/generated
+dart_entrypoint_class_name: YnekoRustLib
+default_external_library_loader_web_prefix: pkg/
+local: true
+web: false
+type_64bit_int: true

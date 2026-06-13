@@ -6,8 +6,11 @@ repository.workspace = true
 rust-version.workspace = true
 version.workspace = true
 
+[lib]
+crate-type = ["rlib", "cdylib"]
+
 [dependencies]
-flutter_rust_bridge.workspace = true
+flutter_rust_bridge = "=2.11.1"
 serde.workspace = true
 tokio.workspace = true
 yneko-core = { path = "../yneko-core" }
@@ -15,5 +18,10 @@ yneko-metadata = { path = "../yneko-metadata" }
 yneko-source-rules = { path = "../yneko-source-rules" }
 yneko-storage = { path = "../yneko-storage" }
 
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code = "allow"
+
+[lints.clippy]
+dbg_macro = "deny"
+todo = "deny"
+unwrap_used = "allow"

@@ -339,17 +339,45 @@ class _AnimePosterCardState extends State<AnimePosterCard> {
                     ),
                   ),
                   child: Stack(
+                    fit: StackFit.expand,
                     children: [
+                      if (widget.item.coverUrl != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            widget.item.coverUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const SizedBox.shrink(),
+                          ),
+                        ),
+                      if (widget.item.coverUrl != null)
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: 0.5),
+                              ],
+                            ),
+                          ),
+                        ),
                       Positioned(
                         left: 14,
                         right: 14,
                         bottom: 16,
-                        child: Text(
-                          widget.item.title.substring(0, 1),
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.78),
-                            fontSize: 54,
-                            fontWeight: FontWeight.w800,
+                        child: Visibility(
+                          visible: widget.item.coverUrl == null,
+                          child: Text(
+                            widget.item.title.characters.first,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.78),
+                              fontSize: 54,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ),

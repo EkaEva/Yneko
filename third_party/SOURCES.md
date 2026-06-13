@@ -53,6 +53,12 @@ reference, generated source, and new dependency decision here.
 | sqlx | `0.8` | https://github.com/launchbadge/sqlx | MIT OR Apache-2.0 | SQLite persistence | Restricted to `yneko-storage`. |
 | url | `2` | https://github.com/servo/rust-url | MIT OR Apache-2.0 | URL validation | Source repository and playback contracts. |
 | regex | `1` | https://github.com/rust-lang/regex | MIT OR Apache-2.0 | Declarative matching support | Source-rule crate only unless approved. |
-| scraper | `0.24` | https://github.com/causal-agent/scraper | ISC | Declarative HTML extraction support | Source-rule crate only. |
+| scraper | `0.24` | https://github.com/causal-agent/scraper | ISC | Declarative HTML extraction support and Bangumi browser ranking parsing | Restricted to backend crates. |
 | yaml_serde | `0.10` | https://github.com/yaml/yaml-serde | MIT OR Apache-2.0 | YAML source packages | Source-rule crate only. |
 | flutter_rust_bridge | `2.11.1` | https://github.com/fzyzcjy/flutter_rust_bridge | MIT | Rust bridge macros/runtime | Restricted to `yneko-api`. |
+
+## Generated Source And Tooling
+
+| Name | Version / Range | Source | License | Use | Integration |
+|---|---|---|---|---|---|
+| flutter_rust_bridge generated bindings | `2.11.1` | `flutter_rust_bridge_codegen` from crates.io | MIT | Dart/Rust FFI glue for `yneko-api` | Generated Dart stays under `app/lib/src/infrastructure/bridge/generated`; generated Rust stays in `rust/crates/yneko-api/src/frb_generated.rs`; Windows loads project-built `yneko_api.dll`. |

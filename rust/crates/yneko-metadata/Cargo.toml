@@ -8,10 +8,13 @@ version.workspace = true
 
 [dependencies]
 reqwest.workspace = true
+scraper.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
+tokio.workspace = true
+url.workspace = true
 yneko-core = { path = "../yneko-core" }
 
 [lints]
 workspace = true
-

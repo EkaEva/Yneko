@@ -8,6 +8,7 @@ class UiAnimeCard {
     required this.score,
     required this.coverColor,
     required this.accent,
+    this.coverUrl,
     this.summary = '',
   });
 
@@ -17,6 +18,7 @@ class UiAnimeCard {
   final String score;
   final Color coverColor;
   final Color accent;
+  final String? coverUrl;
   final String summary;
 }
 

@@ -12,35 +12,175 @@ pub enum YnekoError {
     InvalidInput(String),
     #[error("network request failed: {0}")]
     Network(String),
+    #[error("metadata is unavailable: {0}")]
+    MetadataUnavailable(String),
     #[error("source package rejected: {0}")]
     SourceRejected(String),
     #[error("storage operation failed: {0}")]
     Storage(String),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SubjectSummary {
     pub id: i64,
     pub name: String,
     pub name_cn: Option<String>,
+    #[serde(default)]
+    pub aliases: Vec<String>,
     pub cover_url: Option<String>,
     pub summary: Option<String>,
+    #[serde(default)]
+    pub air_date: Option<String>,
+    #[serde(default)]
+    pub rating_score: Option<f32>,
+    #[serde(default)]
+    pub rating_rank: Option<u32>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub total_episodes: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Episode {
     pub id: i64,
+    pub subject_id: i64,
     pub sort: i32,
     pub title: String,
     pub title_cn: Option<String>,
+    #[serde(default)]
+    pub air_date: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SubjectDetail {
     pub subject: SubjectSummary,
     pub episodes: Vec<Episode>,
     pub is_favorite: bool,
     pub progress: Option<PlaybackProgress>,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BangumiBrowseSort {
+    #[default]
+    Rank,
+    Date,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BangumiBrowseRequest {
+    #[serde(default)]
+    pub sort: BangumiBrowseSort,
+    #[serde(default)]
+    pub year: Option<u16>,
+    #[serde(default)]
+    pub month: Option<u8>,
+    #[serde(default)]
+    pub limit: Option<u16>,
+    #[serde(default)]
+    pub offset: Option<u32>,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AnimeRankingSort {
+    Rank,
+    #[default]
+    Heat,
+    Collect,
+    Date,
+    Name,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AnimeSeason {
+    Winter,
+    Spring,
+    Summer,
+    Autumn,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AnimeRankingRequest {
+    #[serde(default)]
+    pub sort: AnimeRankingSort,
+    #[serde(default)]
+    pub filters: std::collections::HashMap<String, String>,
+    #[serde(default)]
+    pub filter_group: Option<String>,
+    #[serde(default)]
+    pub filter: Option<String>,
+    #[serde(default)]
+    pub year: Option<u16>,
+    #[serde(default)]
+    pub season: Option<AnimeSeason>,
+    #[serde(default)]
+    pub keyword: String,
+    #[serde(default = "default_anime_ranking_page")]
+    pub page: u32,
+    #[serde(default = "default_anime_ranking_limit")]
+    pub limit: u8,
+}
+
+impl Default for AnimeRankingRequest {
+    fn default() -> Self {
+        Self {
+            sort: AnimeRankingSort::Heat,
+            filters: std::collections::HashMap::new(),
+            filter_group: None,
+            filter: None,
+            year: None,
+            season: None,
+            keyword: String::new(),
+            page: default_anime_ranking_page(),
+            limit: default_anime_ranking_limit(),
+        }
+    }
+}
+
+fn default_anime_ranking_limit() -> u8 {
+    24
+}
+
+fn default_anime_ranking_page() -> u32 {
+    1
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AnimeRankingApplied {
+    pub sort: String,
+    #[serde(default)]
+    pub filters: std::collections::HashMap<String, String>,
+    #[serde(default)]
+    pub filter_group: Option<String>,
+    #[serde(default)]
+    pub filter: Option<String>,
+    #[serde(default)]
+    pub year: Option<u16>,
+    #[serde(default)]
+    pub season: Option<String>,
+    #[serde(default)]
+    pub keyword: Option<String>,
+    pub page: u32,
+    pub limit: u8,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AnimeRankingResponse {
+    pub items: Vec<SubjectSummary>,
+    pub page: u32,
+    pub has_next: bool,
+    pub applied: AnimeRankingApplied,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BangumiCalendarDay {
+    pub weekday_id: u8,
+    pub weekday_cn: String,
+    pub weekday_en: String,
+    pub items: Vec<SubjectSummary>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -86,7 +226,7 @@ pub struct PlaybackProgress {
     pub updated_at_ms: i64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct WatchHistoryItem {
     pub subject: SubjectSummary,
     pub episode: Episode,

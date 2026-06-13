@@ -8,7 +8,10 @@
 
 ## Public Contracts
 
-- `bridge/yneko_backend.dart` exposes the backend port.
+- `bridge/yneko_backend.dart` exposes the backend port for Bangumi search,
+  detail, calendar, browse, ranking, and playback resolution calls.
+- `bridge/frb_mappers.dart` maps generated FRB DTOs into `shared/domain`
+  models; feature code must continue to depend on `YnekoBackend`.
 - `player/player_adapter.dart` exposes the media player adapter port.
 
 ## Public Index Export List
@@ -23,8 +26,15 @@
 
 - `shared/domain`, generated bridge code, `media_kit`, Flutter platform packages.
 
+## Bridge Generation
+
+- FRB config lives at the repository root in `flutter_rust_bridge.yaml`.
+- Generated Dart files live under `bridge/generated/` and are owned by
+  infrastructure only.
+- Windows local runs use `scripts/build-rust-bridge.ps1` through
+  `scripts/run-windows.ps1` to build and load `yneko_api.dll`.
+
 ## Required Checks
 
 - `flutter analyze`
 - `flutter test`
-
