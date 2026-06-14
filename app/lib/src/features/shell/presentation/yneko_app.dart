@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../episode_playback/index.dart';
 import '../../home/index.dart';
+import '../../mine/index.dart';
 import '../../search/index.dart';
 import '../../settings/index.dart';
 import '../../subject_detail/index.dart';
@@ -30,6 +31,7 @@ class YnekoApp extends ConsumerWidget {
         route: route,
         child: switch (route) {
           HomeRoute() => const HomePage(),
+          MineRoute() => const MinePage(),
           SearchRoute() => const SearchPage(),
           SubjectDetailRoute(:final subjectId) => SubjectDetailPage(
             subjectId: subjectId,
@@ -123,6 +125,7 @@ class _YnekoShellState extends ConsumerState<YnekoShell> {
   String _routeIdentity(ShellRoute route) {
     return switch (route) {
       HomeRoute() => 'home',
+      MineRoute() => 'mine',
       SearchRoute() => 'search',
       SubjectDetailRoute(:final subjectId) => 'detail-$subjectId',
       EpisodePlaybackRoute(:final subjectId, :final episodeId) =>
@@ -141,6 +144,7 @@ class _SideRail extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = YnekoThemeTokens.of(context);
     final controller = ref.read(shellRouteProvider.notifier);
+    final settingsPanel = ref.watch(settingsPanelProvider);
 
     return Container(
       width: YnekoThemeTokens.railWidth,
@@ -152,6 +156,9 @@ class _SideRail extends ConsumerWidget {
             onTap: () {
               if (route case EpisodePlaybackRoute(:final subjectId)) {
                 controller.openSubjectDetail(subjectId);
+              } else if (route is SettingsRoute &&
+                  settingsPanel != SettingsPanel.root) {
+                ref.read(settingsPanelProvider.notifier).openRoot();
               } else {
                 controller.openHome();
               }
@@ -168,8 +175,8 @@ class _SideRail extends ConsumerWidget {
           _RailIconButton(
             icon: _RailGlyph.mine,
             label: '我的',
-            active: false,
-            onTap: () {},
+            active: route is MineRoute,
+            onTap: controller.openMine,
           ),
           const SizedBox(height: 14),
           _RailIconButton(
@@ -524,8 +531,10 @@ class _TopBar extends ConsumerWidget {
                   width: searchWidth,
                   child: _TopSearch(
                     onFocusChanged: onSearchFocusChanged,
-                    onSubmitted: () =>
-                        ref.read(shellRouteProvider.notifier).openSearch(),
+                    onSubmitted: (query) {
+                      ref.read(searchQueryProvider.notifier).set(query);
+                      ref.read(shellRouteProvider.notifier).openSearch();
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -549,6 +558,7 @@ class _TopBar extends ConsumerWidget {
   String _pageTitle(ShellRoute route) {
     return switch (route) {
       HomeRoute() => '首页',
+      MineRoute() => '我的',
       SearchRoute() => '搜索',
       SubjectDetailRoute() => '番剧详情',
       EpisodePlaybackRoute() => '播放详情',
@@ -561,7 +571,7 @@ class _TopSearch extends StatefulWidget {
   const _TopSearch({required this.onFocusChanged, required this.onSubmitted});
 
   final ValueChanged<bool> onFocusChanged;
-  final VoidCallback onSubmitted;
+  final ValueChanged<String> onSubmitted;
 
   @override
   State<_TopSearch> createState() => _TopSearchState();
@@ -569,6 +579,13 @@ class _TopSearch extends StatefulWidget {
 
 class _TopSearchState extends State<_TopSearch> {
   bool _focused = false;
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -600,7 +617,8 @@ class _TopSearchState extends State<_TopSearch> {
               : null,
         ),
         child: TextField(
-          onSubmitted: (_) => widget.onSubmitted(),
+          controller: _controller,
+          onSubmitted: widget.onSubmitted,
           textAlignVertical: TextAlignVertical.center,
           style: type.body.copyWith(color: tokens.ink, fontSize: 16),
           decoration: InputDecoration(
@@ -622,7 +640,7 @@ class _TopSearchState extends State<_TopSearch> {
               height: 46,
               child: IconButton(
                 tooltip: '搜索',
-                onPressed: widget.onSubmitted,
+                onPressed: () => widget.onSubmitted(_controller.text),
                 style: IconButton.styleFrom(
                   minimumSize: const Size(48, 46),
                   fixedSize: const Size(48, 46),
@@ -1455,6 +1473,10 @@ class SearchRoute extends ShellRoute {
   const SearchRoute();
 }
 
+class MineRoute extends ShellRoute {
+  const MineRoute();
+}
+
 class SettingsRoute extends ShellRoute {
   const SettingsRoute();
 }
@@ -1487,11 +1509,16 @@ class ShellRouteController extends Notifier<ShellRoute> {
     state = const SearchRoute();
   }
 
+  void openMine() {
+    state = const MineRoute();
+  }
+
   void openSubjectDetail(int subjectId) {
     state = SubjectDetailRoute(subjectId: subjectId);
   }
 
   void openSettings() {
+    ref.read(settingsPanelProvider.notifier).openRoot();
     state = const SettingsRoute();
   }
 

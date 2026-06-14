@@ -10,12 +10,26 @@ class PlayerSurface extends StatefulWidget {
     required this.subjectId,
     required this.episodeId,
     this.state = mockPlaybackState,
+    this.title,
+    this.episodes = const [],
+    this.onPreviousEpisode,
+    this.onNextEpisode,
+    this.onSelectEpisode,
+    this.hasPreviousEpisode = true,
+    this.hasNextEpisode = true,
     this.onProgress,
   });
 
   final int subjectId;
   final int episodeId;
   final UiPlaybackState state;
+  final String? title;
+  final List<UiEpisodeItem> episodes;
+  final VoidCallback? onPreviousEpisode;
+  final VoidCallback? onNextEpisode;
+  final ValueChanged<UiEpisodeItem>? onSelectEpisode;
+  final bool hasPreviousEpisode;
+  final bool hasNextEpisode;
   final ValueChanged<double>? onProgress;
 
   @override
@@ -30,109 +44,235 @@ class _PlayerSurfaceState extends State<PlayerSurface> {
   @override
   Widget build(BuildContext context) {
     final type = YnekoTypography.of(context);
+    final title = widget.title ?? widget.state.title;
     return MouseRegion(
       onEnter: (_) => setState(() => _controlsVisible = true),
       onHover: (_) => setState(() => _controlsVisible = true),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF111214), Color(0xFF24262B)],
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
+      onExit: (_) => setState(() => _controlsVisible = false),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(color: Colors.black),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () => setState(() => _playing = !_playing),
+                      child: Icon(
                         _playing
                             ? Icons.pause_circle_filled_rounded
                             : Icons.play_circle_fill_rounded,
                         color: Colors.white.withValues(alpha: 0.74),
-                        size: 76,
+                        size: 88,
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        _playing ? '正在播放 UI 预览' : '等待播放源',
-                        style: type.sectionTitle.copyWith(
-                          color: Colors.white,
-                          fontSize: 20,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        'subject=${widget.subjectId} episode=${widget.episodeId}',
-                        style: type.label.copyWith(
-                          color: Colors.white.withValues(alpha: 0.62),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 20,
-                top: 18,
-                right: 20,
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 180),
-                  opacity: _controlsVisible ? 1 : 0,
-                  child: Text(
-                    widget.state.title,
-                    overflow: TextOverflow.ellipsis,
-                    style: type.controlTitle.copyWith(
-                      color: Colors.white,
-                      shadows: const [Shadow(blurRadius: 12)],
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _playing ? '正在播放 UI 预览' : '等待播放源',
+                      style: type.sectionTitle.copyWith(
+                        color: Colors.white,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      'subject=${widget.subjectId} episode=${widget.episodeId}',
+                      style: type.label.copyWith(
+                        color: Colors.white.withValues(alpha: 0.62),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              if (_activePanel.isNotEmpty)
-                Positioned(
-                  right: _activePanel == 'volume' ? 82 : 132,
-                  bottom: 78,
-                  child: _PlayerPopupPanel(
-                    title: _activePanel == 'speed'
-                        ? '倍速'
-                        : _activePanel == 'episodes'
-                        ? '选集'
-                        : '音量',
-                    child: _activePanel == 'speed'
-                        ? const _SpeedOptions()
-                        : _activePanel == 'episodes'
-                        ? const _EpisodeOptions()
-                        : const _VolumeOptions(),
-                  ),
+            ),
+            Positioned(
+              left: 14,
+              top: 14,
+              right: 14,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 180),
+                opacity: _controlsVisible ? 1 : 0,
+                child: Row(
+                  children: [
+                    IconButton(
+                      tooltip: '返回',
+                      onPressed: () {},
+                      color: Colors.white.withValues(alpha: 0.78),
+                      icon: const Icon(Icons.chevron_left_rounded, size: 28),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        title,
+                        overflow: TextOverflow.ellipsis,
+                        style: type.controlTitle.copyWith(
+                          color: Colors.white.withValues(alpha: 0.74),
+                          fontSize: 17,
+                          shadows: const [Shadow(blurRadius: 12)],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+            ),
+            if (_activePanel.isNotEmpty)
               Positioned(
-                right: 0,
-                bottom: 0,
-                left: 0,
+                right: _panelRight(),
+                bottom: 78,
+                child: _PlayerPopupPanel(
+                  title: switch (_activePanel) {
+                    'speed' => '倍速',
+                    'episodes' => '选集',
+                    'volume' => '音量',
+                    'settings' => '设置',
+                    _ => '弹幕',
+                  },
+                  child: switch (_activePanel) {
+                    'speed' => const _SpeedOptions(),
+                    'episodes' => _EpisodeOptions(
+                      episodes: widget.episodes,
+                      activeEpisodeId: widget.episodeId,
+                      onSelect: widget.onSelectEpisode,
+                    ),
+                    'volume' => const _VolumeOptions(),
+                    'settings' => const _SettingsOptions(),
+                    _ => const _DanmakuOptions(),
+                  },
+                ),
+              ),
+            Positioned(
+              left: 0,
+              top: 0,
+              right: 0,
+              bottom: 0,
+              child: IgnorePointer(
+                ignoring: !_controlsVisible,
                 child: AnimatedOpacity(
                   duration: const Duration(milliseconds: 180),
                   opacity: _controlsVisible ? 1 : 0,
-                  child: _ControlBar(
+                  child: _CenterControls(
                     playing: _playing,
-                    progress: widget.state.progress,
-                    positionLabel: widget.state.positionLabel,
-                    durationLabel: widget.state.durationLabel,
-                    activePanel: _activePanel,
+                    hasPrevious: widget.hasPreviousEpisode,
+                    hasNext: widget.hasNextEpisode,
+                    onPrevious: widget.onPreviousEpisode,
                     onTogglePlay: () => setState(() => _playing = !_playing),
-                    onTogglePanel: (panel) => setState(
-                      () => _activePanel = _activePanel == panel ? '' : panel,
-                    ),
+                    onNext: widget.onNextEpisode,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              left: 0,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 180),
+                opacity: _controlsVisible ? 1 : 0,
+                child: _ControlBar(
+                  playing: _playing,
+                  progress: widget.state.progress,
+                  positionLabel: widget.state.positionLabel,
+                  durationLabel: widget.state.durationLabel,
+                  activePanel: _activePanel,
+                  onTogglePlay: () => setState(() => _playing = !_playing),
+                  onTogglePanel: (panel) => setState(
+                    () => _activePanel = _activePanel == panel ? '' : panel,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  double _panelRight() {
+    return switch (_activePanel) {
+      'volume' => 82,
+      'settings' => 44,
+      'episodes' => 142,
+      _ => 132,
+    };
+  }
+}
+
+class _CenterControls extends StatelessWidget {
+  const _CenterControls({
+    required this.playing,
+    required this.hasPrevious,
+    required this.hasNext,
+    required this.onPrevious,
+    required this.onTogglePlay,
+    required this.onNext,
+  });
+
+  final bool playing;
+  final bool hasPrevious;
+  final bool hasNext;
+  final VoidCallback? onPrevious;
+  final VoidCallback onTogglePlay;
+  final VoidCallback? onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _FloatingPlayerButton(
+            icon: Icons.skip_previous_rounded,
+            tooltip: '上一集',
+            onPressed: hasPrevious ? onPrevious : null,
+          ),
+          const SizedBox(width: 18),
+          _FloatingPlayerButton(
+            large: true,
+            icon: playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            tooltip: playing ? '暂停' : '播放',
+            onPressed: onTogglePlay,
+          ),
+          const SizedBox(width: 18),
+          _FloatingPlayerButton(
+            icon: Icons.skip_next_rounded,
+            tooltip: '下一集',
+            onPressed: hasNext ? onNext : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FloatingPlayerButton extends StatelessWidget {
+  const _FloatingPlayerButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+    this.large = false,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+  final bool large;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: IconButton.filled(
+        onPressed: onPressed,
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.black.withValues(alpha: 0.42),
+          disabledBackgroundColor: Colors.black.withValues(alpha: 0.18),
+          foregroundColor: Colors.white,
+          minimumSize: Size.square(large ? 58 : 48),
+        ),
+        icon: Icon(icon, size: large ? 36 : 30),
       ),
     );
   }
@@ -162,7 +302,7 @@ class _ControlBar extends StatelessWidget {
     final type = YnekoTypography.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 560;
+        final compact = constraints.maxWidth < 620;
         return DecoratedBox(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -172,7 +312,7 @@ class _ControlBar extends StatelessWidget {
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
+            padding: const EdgeInsets.fromLTRB(18, 58, 18, 13),
             child: Column(
               children: [
                 ClipRRect(
@@ -204,10 +344,10 @@ class _ControlBar extends StatelessWidget {
                     ),
                     const Spacer(),
                     _PlayerIconButton(
-                      icon: Icons.subtitles_rounded,
+                      icon: Icons.chat_bubble_outline_rounded,
                       tooltip: '弹幕',
-                      active: true,
-                      onPressed: () {},
+                      active: activePanel == 'danmaku',
+                      onPressed: () => onTogglePanel('danmaku'),
                     ),
                     if (!compact)
                       _PlayerTextButton(
@@ -231,7 +371,8 @@ class _ControlBar extends StatelessWidget {
                       _PlayerIconButton(
                         icon: Icons.settings_rounded,
                         tooltip: '设置',
-                        onPressed: () {},
+                        active: activePanel == 'settings',
+                        onPressed: () => onTogglePanel('settings'),
                       ),
                     _PlayerIconButton(
                       icon: Icons.fullscreen_rounded,
@@ -310,8 +451,8 @@ class _PlayerPopupPanel extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: const Color(0xF21F2024),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x66000000),
@@ -321,13 +462,18 @@ class _PlayerPopupPanel extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(title, style: type.controlTitle.copyWith(color: Colors.white)),
-            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(6, 4, 6, 8),
+              child: Text(
+                title,
+                style: type.label.copyWith(color: Colors.white70),
+              ),
+            ),
             child,
           ],
         ),
@@ -344,25 +490,52 @@ class _SpeedOptions extends StatelessWidget {
     return Column(
       children: [
         for (final speed in ['2.0x', '1.5x', '1.25x', '1.0x', '0.75x'])
-          TextButton(onPressed: () {}, child: Text(speed)),
+          _PanelChoice(label: speed, active: speed == '1.0x'),
       ],
     );
   }
 }
 
 class _EpisodeOptions extends StatelessWidget {
-  const _EpisodeOptions();
+  const _EpisodeOptions({
+    required this.episodes,
+    required this.activeEpisodeId,
+    required this.onSelect,
+  });
+
+  final List<UiEpisodeItem> episodes;
+  final int activeEpisodeId;
+  final ValueChanged<UiEpisodeItem>? onSelect;
 
   @override
   Widget build(BuildContext context) {
+    final items = episodes.isEmpty
+        ? List.generate(
+            12,
+            (index) => UiEpisodeItem(
+              id: index + 1,
+              order: index + 1,
+              title: '占位',
+              progress: 0,
+            ),
+          )
+        : episodes;
     return SizedBox(
       width: 260,
       child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+        spacing: 5,
+        runSpacing: 5,
         children: [
-          for (var index = 1; index <= 12; index++)
-            OutlinedButton(onPressed: () {}, child: Text('$index')),
+          for (final episode in items)
+            SizedBox(
+              width: 44,
+              height: 30,
+              child: _PanelChoice(
+                label: '${episode.order}',
+                active: episode.id == activeEpisodeId,
+                onTap: () => onSelect?.call(episode),
+              ),
+            ),
         ],
       ),
     );
@@ -380,6 +553,74 @@ class _VolumeOptions extends StatelessWidget {
       child: RotatedBox(
         quarterTurns: -1,
         child: Slider(value: 0.72, onChanged: (_) {}),
+      ),
+    );
+  }
+}
+
+class _SettingsOptions extends StatelessWidget {
+  const _SettingsOptions();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 220,
+      child: Column(
+        children: [
+          _PanelChoice(label: '画面比例 · 自适应', active: true),
+          _PanelChoice(label: '超分辨率 · 关闭'),
+          _PanelChoice(label: '镜像画面 · 关闭'),
+        ],
+      ),
+    );
+  }
+}
+
+class _DanmakuOptions extends StatelessWidget {
+  const _DanmakuOptions();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 220,
+      child: Column(
+        children: [
+          _PanelChoice(label: '显示弹幕', active: true),
+          _PanelChoice(label: '弹幕设置'),
+          _PanelChoice(label: '透明度 78%'),
+        ],
+      ),
+    );
+  }
+}
+
+class _PanelChoice extends StatelessWidget {
+  const _PanelChoice({required this.label, this.active = false, this.onTap});
+
+  final String label;
+  final bool active;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onTap ?? () {},
+      style: TextButton.styleFrom(
+        foregroundColor: active ? const Color(0xFFFF6699) : Colors.white70,
+        backgroundColor: active
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        minimumSize: const Size(0, 32),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          label,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+        ),
       ),
     );
   }

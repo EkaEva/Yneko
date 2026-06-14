@@ -71,3 +71,23 @@ class UiPlaybackState {
   final double progress;
   final bool isPlaying;
 }
+
+class UiMineItem {
+  const UiMineItem({
+    required this.title,
+    required this.description,
+    required this.meta,
+    required this.color,
+    this.subjectId,
+    this.progress,
+    this.status = 'watching',
+  });
+
+  final String title;
+  final String description;
+  final String meta;
+  final Color color;
+  final int? subjectId;
+  final double? progress;
+  final String status;
+}

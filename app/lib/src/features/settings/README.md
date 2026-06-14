@@ -6,10 +6,14 @@
 
 ## Public Contracts
 
-- Public Dart exports are limited to presentation/settings_page.dart through index.dart.
+- Settings panel navigation state is exposed through the feature application
+  controller so the shell back button can return from a settings detail panel
+  to the settings root page.
+- Settings UI is exported through presentation/settings_page.dart.
 
 ## Public Index Export List
 
+- application/settings_navigation_controller.dart
 - presentation/settings_page.dart
 
 ## Forbidden

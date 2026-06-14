@@ -8,34 +8,89 @@ import '../../../shared/mock/index.dart';
 import '../../../shared/theme/index.dart';
 import '../../../shared/ui/index.dart';
 
-class SearchPage extends ConsumerWidget {
+class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SearchPage> createState() => _SearchPageState();
+}
+
+class _SearchPageState extends ConsumerState<SearchPage> {
+  bool _tagMode = false;
+
+  @override
+  Widget build(BuildContext context) {
     final query = ref.watch(searchQueryProvider);
     final results = ref.watch(searchResultsProvider);
-    final tokens = YnekoThemeTokens.of(context);
-    final displayItems = query.trim().isEmpty ? mockAnimeCards : mockAnimeCards.reversed.toList();
+    final cleanQuery = query.trim();
+    final isIncomplete = cleanQuery.isNotEmpty;
+    final displayItems = cleanQuery.isEmpty
+        ? <UiAnimeCard>[]
+        : mockAnimeCards
+              .where(
+                (item) =>
+                    item.title.contains(cleanQuery) ||
+                    item.subtitle.contains(cleanQuery) ||
+                    item.summary.contains(cleanQuery),
+              )
+              .toList();
+    final fallbackItems = cleanQuery.isEmpty ? <UiAnimeCard>[] : mockAnimeCards;
+    final visibleItems = displayItems.isEmpty && cleanQuery.isNotEmpty
+        ? fallbackItems
+        : displayItems;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(28, 24, 28, 48),
+      key: const ValueKey('search-result-page'),
+      padding: const EdgeInsets.fromLTRB(28, 28, 28, 48),
       children: [
-        YnekoSectionTitle(
-          title: '搜索',
-          subtitle: 'Bangumi-first 搜索入口，当前以静态结果预览最终体验',
-          trailing: SizedBox(
-            width: 360,
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: '输入关键词开始搜索',
-                prefixIcon: Icon(Icons.search_rounded),
+        _SearchHead(
+          keyword: cleanQuery,
+          tagMode: _tagMode,
+          onBack: () => ref.read(shellRouteProvider.notifier).openHome(),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Text(
+              cleanQuery.isEmpty
+                  ? '等待搜索'
+                  : '${isIncomplete ? '已加载' : '共'} ${visibleItems.length} 个结果',
+              style: YnekoTypography.of(context).label.copyWith(
+                color: YnekoThemeTokens.of(context).muted,
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
               ),
-              onChanged: (value) => ref.read(searchQueryProvider.notifier).set(value),
             ),
-          ),
+            const Spacer(),
+            _SearchModeToggle(
+              tagMode: _tagMode,
+              onChanged: (value) => setState(() => _tagMode = value),
+            ),
+          ],
         ),
         const SizedBox(height: 18),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                key: const ValueKey('search-page-input'),
+                decoration: InputDecoration(
+                  hintText: _tagMode ? '输入标签开始搜索' : '输入关键词开始搜索',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                ),
+                onChanged: (value) =>
+                    ref.read(searchQueryProvider.notifier).set(value),
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.search_rounded),
+              label: const Text('搜索'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
         Wrap(
           spacing: 10,
           runSpacing: 10,
@@ -43,21 +98,120 @@ class SearchPage extends ConsumerWidget {
             for (final label in ['星轨', '治愈', '原创动画', '2026', '高分'])
               ActionChip(
                 label: Text(label),
-                onPressed: () => ref.read(searchQueryProvider.notifier).set(label),
-                backgroundColor: tokens.surfaceHigh,
-                side: BorderSide(color: tokens.outline.withValues(alpha: 0.48)),
+                onPressed: () =>
+                    ref.read(searchQueryProvider.notifier).set(label),
+                backgroundColor: YnekoThemeTokens.of(context).surfaceHigh,
+                side: BorderSide(
+                  color: YnekoThemeTokens.of(
+                    context,
+                  ).outline.withValues(alpha: 0.48),
+                ),
               ),
           ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 26),
         results.when(
-          data: (_) => _SearchResults(items: displayItems),
-          loading: () => const SizedBox(height: 260, child: Center(child: CircularProgressIndicator())),
-          error: (error, stackTrace) => const YnekoPanel(
+          loading: () => const SizedBox(
+            height: 260,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (error, stackTrace) => YnekoPanel(
             child: YnekoEmptyState(
-              icon: Icons.cloud_off_rounded,
-              title: '真实后端尚未接入',
-              description: '当前先展示 mock 搜索结果，FRB 接入后会替换这里的数据源。',
+              icon: Icons.bolt_rounded,
+              title: _tagMode ? 'Bangumi 标签页加载失败' : 'Bangumi 搜索失败',
+              description: error.toString(),
+            ),
+          ),
+          data: (_) {
+            if (cleanQuery.isEmpty) {
+              return const YnekoPanel(
+                child: YnekoEmptyState(
+                  icon: Icons.search_rounded,
+                  title: '输入关键词开始搜索',
+                  description: '可以使用顶部搜索，也可以在这里输入关键词或标签。',
+                ),
+              );
+            }
+            if (visibleItems.isEmpty) {
+              return const YnekoPanel(
+                child: YnekoEmptyState(
+                  icon: Icons.search_off_rounded,
+                  title: '没有匹配条目',
+                  description: '换一个关键词试试，或等待接入更多元数据源。',
+                ),
+              );
+            }
+            return Column(
+              children: [
+                _SearchGrid(items: visibleItems, highlight: cleanQuery),
+                const SizedBox(height: 18),
+                Text(
+                  '已经到底了',
+                  style: YnekoTypography.of(context).label.copyWith(
+                    color: YnekoThemeTokens.of(context).muted,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _SearchHead extends StatelessWidget {
+  const _SearchHead({
+    required this.keyword,
+    required this.tagMode,
+    required this.onBack,
+  });
+
+  final String keyword;
+  final bool tagMode;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1, right: 18),
+          child: OutlinedButton.icon(
+            key: const ValueKey('search-back-button'),
+            onPressed: onBack,
+            icon: const Icon(Icons.arrow_back_rounded, size: 16),
+            label: const Text('返回'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: tokens.primaryStrong,
+              side: BorderSide(color: tokens.outline.withValues(alpha: 0.5)),
+              shape: const StadiumBorder(),
+              minimumSize: const Size(78, 36),
+            ),
+          ),
+        ),
+        Expanded(
+          child: RichText(
+            key: const ValueKey('search-heading'),
+            text: TextSpan(
+              style: type.pageTitle,
+              children: [
+                TextSpan(
+                  text: keyword.isEmpty
+                      ? (tagMode ? '输入标签开始搜索' : '输入关键词开始搜索')
+                      : (tagMode ? '标签 ' : '搜索 '),
+                ),
+                if (keyword.isNotEmpty)
+                  TextSpan(
+                    text: keyword,
+                    style: type.pageTitle.copyWith(color: tokens.primary),
+                  ),
+              ],
             ),
           ),
         ),
@@ -66,35 +220,202 @@ class SearchPage extends ConsumerWidget {
   }
 }
 
-class _SearchResults extends ConsumerWidget {
-  const _SearchResults({required this.items});
+class _SearchModeToggle extends StatelessWidget {
+  const _SearchModeToggle({required this.tagMode, required this.onChanged});
+
+  final bool tagMode;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<bool>(
+      key: const ValueKey('search-mode-toggle'),
+      segments: const [
+        ButtonSegment(value: false, label: Text('关键词')),
+        ButtonSegment(value: true, label: Text('标签')),
+      ],
+      selected: {tagMode},
+      onSelectionChanged: (values) => onChanged(values.first),
+    );
+  }
+}
+
+class _SearchGrid extends ConsumerWidget {
+  const _SearchGrid({required this.items, required this.highlight});
 
   final List<UiAnimeCard> items;
+  final String highlight;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth > 1120 ? 5 : constraints.maxWidth > 820 ? 4 : 3;
+        final columns = ((constraints.maxWidth + 24) / (206 + 24))
+            .floor()
+            .clamp(1, 6);
         return GridView.builder(
+          key: const ValueKey('search-grid'),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
+            mainAxisSpacing: 34,
             crossAxisSpacing: 24,
-            mainAxisSpacing: 28,
-            childAspectRatio: 0.62,
+            childAspectRatio: 1.52,
           ),
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];
-            return AnimePosterCard(
+            return _SearchResultCard(
               item: item,
-              onTap: () => ref.read(shellRouteProvider.notifier).openSubjectDetail(item.id),
+              highlight: highlight,
+              onTap: () => ref
+                  .read(shellRouteProvider.notifier)
+                  .openSubjectDetail(item.id),
             );
           },
         );
       },
+    );
+  }
+}
+
+class _SearchResultCard extends StatefulWidget {
+  const _SearchResultCard({
+    required this.item,
+    required this.highlight,
+    required this.onTap,
+  });
+
+  final UiAnimeCard item;
+  final String highlight;
+  final VoidCallback onTap;
+
+  @override
+  State<_SearchResultCard> createState() => _SearchResultCardState();
+}
+
+class _SearchResultCardState extends State<_SearchResultCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedSlide(
+          duration: YnekoThemeTokens.fastMotion,
+          offset: _hovered ? const Offset(0, -0.025) : Offset.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [widget.item.coverColor, widget.item.accent],
+                      ),
+                    ),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Positioned(
+                          left: 18,
+                          bottom: 14,
+                          child: Text(
+                            widget.item.title.characters.first,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 46,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 8,
+                          bottom: 8,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: const Color(0xB8141216),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 5,
+                              ),
+                              child: Text(
+                                widget.item.score,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              RichText(
+                overflow: TextOverflow.ellipsis,
+                text: _highlightedText(
+                  widget.item.title,
+                  widget.highlight,
+                  type.cardTitle.copyWith(
+                    color: _hovered ? tokens.primary : tokens.ink,
+                  ),
+                  tokens.primary,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                widget.item.subtitle,
+                overflow: TextOverflow.ellipsis,
+                style: type.meta.copyWith(
+                  color: _hovered ? tokens.primary : tokens.muted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  TextSpan _highlightedText(
+    String text,
+    String highlight,
+    TextStyle style,
+    Color highlightColor,
+  ) {
+    if (highlight.isEmpty || !text.contains(highlight)) {
+      return TextSpan(text: text, style: style);
+    }
+    final index = text.indexOf(highlight);
+    return TextSpan(
+      style: style,
+      children: [
+        TextSpan(text: text.substring(0, index)),
+        TextSpan(
+          text: highlight,
+          style: style.copyWith(color: highlightColor),
+        ),
+        TextSpan(text: text.substring(index + highlight.length)),
+      ],
     );
   }
 }

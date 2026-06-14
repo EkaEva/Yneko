@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import '../assets/index.dart';
 import '../domain/index.dart';
 import '../theme/index.dart';
 
@@ -28,6 +30,37 @@ class YnekoPanel extends StatelessWidget {
         boxShadow: tokens.shadow,
       ),
       child: child,
+    );
+  }
+}
+
+class YnekoProfileAvatar extends StatelessWidget {
+  const YnekoProfileAvatar({super.key, this.size = 72});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return Container(
+      key: const ValueKey('yneko-profile-avatar'),
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: tokens.surface.withValues(alpha: 0.84),
+          width: 4,
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(size * 0.19),
+        child: SvgPicture.asset(
+          YnekoAssets.logoSvg,
+          key: const ValueKey('profile-avatar-logo'),
+        ),
+      ),
     );
   }
 }

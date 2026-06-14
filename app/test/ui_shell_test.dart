@@ -202,30 +202,97 @@ void main() {
     expect(filterText.style?.fontFamilyFallback, YnekoThemeTokens.fontFallback);
   });
 
-  testWidgets(
-    'settings typography keeps menu and entries below heavy display weight',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1280, 900));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets('settings renders root groups and navigates into detail panels', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await tester.pumpWidget(_appWithBackend());
-      await tester.tap(find.text('设置').last);
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(_appWithBackend());
+    await tester.tap(find.text('设置').last);
+    await tester.pumpAndSettle();
 
-      TextStyle textStyleFor(String label) {
-        return tester.widget<Text>(find.text(label).first).style!;
-      }
+    expect(find.byKey(const ValueKey('settings-root-page')), findsOneWidget);
+    expect(find.text('常规'), findsOneWidget);
+    expect(find.text('播放设置'), findsOneWidget);
+    expect(find.text('数据与备份'), findsOneWidget);
+    expect(find.text('下载设置'), findsOneWidget);
+    expect(find.text('规则管理'), findsOneWidget);
+    expect(find.byKey(const ValueKey('yneko-profile-avatar')), findsOneWidget);
+    expect(find.byKey(const ValueKey('profile-avatar-logo')), findsOneWidget);
 
-      expect(textStyleFor('外观').fontWeight, FontWeight.w700);
-      expect(textStyleFor('播放').fontWeight, FontWeight.w600);
-      expect(textStyleFor('深色主题').fontWeight, FontWeight.w600);
-      expect(textStyleFor('深色主题').fontWeight, isNot(FontWeight.w900));
-      expect(
-        textStyleFor('使用 ThemeExtension token 切换浅色/深色').fontWeight,
-        FontWeight.w400,
-      );
-    },
-  );
+    await tester.tap(find.text('外观').first);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('settings-detail-appearance')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('settings-detail-back')), findsNothing);
+    expect(find.text('返回设置'), findsNothing);
+    expect(find.text('主题模式'), findsOneWidget);
+    expect(find.text('配色方案'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('rail-back-button')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('settings-root-page')), findsOneWidget);
+
+    await tester.tap(find.text('规则管理').first);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('settings-detail-rules')), findsOneWidget);
+    expect(find.text('导入规则源'), findsOneWidget);
+    expect(find.text('规则编辑器'), findsOneWidget);
+  });
+
+  testWidgets('mine page renders empty profile shell without fake list data', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(_appWithBackend());
+    await tester.tap(find.text('我的').last);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('mine-page')), findsOneWidget);
+    expect(find.byKey(const ValueKey('mine-profile-card')), findsOneWidget);
+    expect(find.text('追番'), findsWidgets);
+    expect(find.text('历史'), findsWidgets);
+    expect(find.text('缓存'), findsWidgets);
+    expect(find.byKey(const ValueKey('mine-local-search')), findsOneWidget);
+    expect(find.byKey(const ValueKey('yneko-profile-avatar')), findsOneWidget);
+    expect(find.byKey(const ValueKey('profile-avatar-logo')), findsOneWidget);
+    expect(find.byKey(const ValueKey('mine-empty-prompt')), findsOneWidget);
+    expect(find.byKey(const ValueKey('mine-cover-grid')), findsNothing);
+    expect(find.text('星轨回响 第 1-3 话'), findsNothing);
+
+    await tester.tap(find.text('缓存').last);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('mine-empty-prompt')), findsOneWidget);
+    expect(find.text('星轨回响 第 1-3 话'), findsNothing);
+  });
+
+  testWidgets('search route renders result page chrome and horizontal cards', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(_appWithBackend());
+    await tester.enterText(find.byType(TextField).first, '星轨');
+    await tester.pump();
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('search-result-page')), findsOneWidget);
+    expect(find.byKey(const ValueKey('search-back-button')), findsOneWidget);
+    expect(find.byKey(const ValueKey('search-heading')), findsOneWidget);
+    expect(find.byKey(const ValueKey('search-mode-toggle')), findsOneWidget);
+    expect(find.byKey(const ValueKey('search-grid')), findsOneWidget);
+    expect(find.text('已经到底了'), findsOneWidget);
+  });
 
   testWidgets('theme toggle keeps sun halo attached to the clipped sun orb', (
     tester,
@@ -364,7 +431,7 @@ void main() {
   });
 
   testWidgets(
-    'episode playback page has player, episodes, sources, and progress panels',
+    'episode playback page has full detail player and right panel tabs',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1280, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -379,8 +446,18 @@ void main() {
 
       expect(find.text('等待播放源'), findsOneWidget);
       expect(find.text('剧集'), findsOneWidget);
-      expect(find.text('播放源'), findsOneWidget);
-      expect(find.text('进度'), findsOneWidget);
+      expect(find.text('系列'), findsOneWidget);
+      expect(find.text('规则源'), findsOneWidget);
+      expect(find.byKey(const ValueKey('episode-list-panel')), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('episode-layout-toggle')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('episode-grid-panel')), findsOneWidget);
+
+      await tester.tap(find.text('规则源'));
+      await tester.pumpAndSettle();
+      expect(find.text('导出矩阵'), findsOneWidget);
+      expect(find.text('默认规则组'), findsWidgets);
     },
   );
 
