@@ -83,10 +83,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               ),
             ),
             const SizedBox(width: 12),
-            FilledButton.icon(
+            YnekoActionButton(
               onPressed: () {},
               icon: const Icon(Icons.search_rounded),
-              label: const Text('搜索'),
+              label: '搜索',
+              tone: YnekoActionButtonTone.primary,
+              height: 40,
             ),
           ],
         ),
@@ -96,16 +98,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           runSpacing: 10,
           children: [
             for (final label in ['星轨', '治愈', '原创动画', '2026', '高分'])
-              ActionChip(
-                label: Text(label),
+              _SearchHotChip(
+                label: label,
                 onPressed: () =>
                     ref.read(searchQueryProvider.notifier).set(label),
-                backgroundColor: YnekoThemeTokens.of(context).surfaceHigh,
-                side: BorderSide(
-                  color: YnekoThemeTokens.of(
-                    context,
-                  ).outline.withValues(alpha: 0.48),
-                ),
               ),
           ],
         ),
@@ -182,16 +178,19 @@ class _SearchHead extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 1, right: 18),
-          child: OutlinedButton.icon(
+          child: YnekoActionButton(
             key: const ValueKey('search-back-button'),
             onPressed: onBack,
             icon: const Icon(Icons.arrow_back_rounded, size: 16),
-            label: const Text('返回'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: tokens.primaryStrong,
-              side: BorderSide(color: tokens.outline.withValues(alpha: 0.5)),
-              shape: const StadiumBorder(),
-              minimumSize: const Size(78, 36),
+            label: '返回',
+            tone: YnekoActionButtonTone.outline,
+            height: 36,
+            minWidth: 78,
+            borderRadius: 999,
+            textStyle: type.label.copyWith(
+              color: tokens.primaryStrong,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
             ),
           ),
         ),
@@ -216,6 +215,70 @@ class _SearchHead extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SearchHotChip extends StatefulWidget {
+  const _SearchHotChip({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  State<_SearchHotChip> createState() => _SearchHotChipState();
+}
+
+class _SearchHotChipState extends State<_SearchHotChip> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    final active = _hovered || _pressed;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() {
+        _hovered = false;
+        _pressed = false;
+      }),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onPressed,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedScale(
+          duration: YnekoThemeTokens.fastMotion,
+          scale: _pressed ? 0.98 : 1,
+          child: AnimatedContainer(
+            duration: YnekoThemeTokens.fastMotion,
+            constraints: const BoxConstraints(minHeight: 34),
+            padding: const EdgeInsets.symmetric(horizontal: 13),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: active ? tokens.primaryContainer : tokens.surface,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: active
+                    ? Color.lerp(tokens.outline, tokens.primary, 0.38)!
+                    : tokens.outline.withValues(alpha: 0.52),
+              ),
+            ),
+            child: Text(
+              widget.label,
+              style: type.label.copyWith(
+                color: active ? tokens.primary : tokens.muted,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

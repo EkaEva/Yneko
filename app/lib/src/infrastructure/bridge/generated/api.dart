@@ -6,326 +6,1004 @@
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These functions are ignored because they are not marked as `pub`: `error_message`, `http_get_text`, `import_source_text_with_url`, `package_record`, `resolve_bindings_for_record`, `resolve_streams_for_record`, `search_record`, `storage_service`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `SubjectSourceBinding`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`
 
-            // These functions are ignored because they are not marked as `pub`: `error_message`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`
+Future<List<SubjectSummary>> searchSubjects({
+  required String query,
+  required int page,
+}) =>
+    YnekoRustLib.instance.api.crateApiSearchSubjects(query: query, page: page);
 
+Future<SubjectDetail> getSubjectDetail({required int subjectId}) =>
+    YnekoRustLib.instance.api.crateApiGetSubjectDetail(subjectId: subjectId);
 
-            Future<List<SubjectSummary>>  searchSubjects({required String query , required int page }) => YnekoRustLib.instance.api.crateApiSearchSubjects(query: query, page: page);
+Future<List<BangumiCalendarDay>> getCalendar() =>
+    YnekoRustLib.instance.api.crateApiGetCalendar();
 
-Future<SubjectDetail>  getSubjectDetail({required int subjectId }) => YnekoRustLib.instance.api.crateApiGetSubjectDetail(subjectId: subjectId);
+Future<AnimeRankingResponse> getAnimeRanking({
+  required AnimeRankingRequest request,
+}) => YnekoRustLib.instance.api.crateApiGetAnimeRanking(request: request);
 
-Future<List<BangumiCalendarDay>>  getCalendar() => YnekoRustLib.instance.api.crateApiGetCalendar();
+Future<List<SubjectSummary>> browseSubjects({
+  required BangumiBrowseRequest request,
+}) => YnekoRustLib.instance.api.crateApiBrowseSubjects(request: request);
 
-Future<AnimeRankingResponse>  getAnimeRanking({required AnimeRankingRequest request }) => YnekoRustLib.instance.api.crateApiGetAnimeRanking(request: request);
+Future<List<PlaybackCandidate>> resolvePlayback({
+  required int subjectId,
+  required int episodeId,
+}) => YnekoRustLib.instance.api.crateApiResolvePlayback(
+  subjectId: subjectId,
+  episodeId: episodeId,
+);
 
-Future<List<SubjectSummary>>  browseSubjects({required BangumiBrowseRequest request }) => YnekoRustLib.instance.api.crateApiBrowseSubjects(request: request);
+Future<SourceImportResult> importSourceText({required String text}) =>
+    YnekoRustLib.instance.api.crateApiImportSourceText(text: text);
 
-Future<List<PlaybackCandidate>>  resolvePlayback({required int subjectId , required int episodeId }) => YnekoRustLib.instance.api.crateApiResolvePlayback(subjectId: subjectId, episodeId: episodeId);
+Future<SourceImportResult> importSourceUrl({required String url}) =>
+    YnekoRustLib.instance.api.crateApiImportSourceUrl(url: url);
 
-            class AnimeRankingApplied  {
-                final String sort;
-final Map<String, String> filters;
-final String? filterGroup;
-final String? filter;
-final int? year;
-final String? season;
-final String? keyword;
-final int page;
-final int limit;
+Future<List<SourcePackageSummary>> listSourcePackages() =>
+    YnekoRustLib.instance.api.crateApiListSourcePackages();
 
-                const AnimeRankingApplied({required this.sort ,required this.filters ,this.filterGroup ,this.filter ,this.year ,this.season ,this.keyword ,required this.page ,required this.limit ,});
+Future<void> setSourcePackageEnabled({
+  required String id,
+  required bool enabled,
+}) => YnekoRustLib.instance.api.crateApiSetSourcePackageEnabled(
+  id: id,
+  enabled: enabled,
+);
 
-                
-                
+Future<void> deleteSourcePackage({required String id}) =>
+    YnekoRustLib.instance.api.crateApiDeleteSourcePackage(id: id);
 
-                
-        @override
-        int get hashCode => sort.hashCode^filters.hashCode^filterGroup.hashCode^filter.hashCode^year.hashCode^season.hashCode^keyword.hashCode^page.hashCode^limit.hashCode;
-        
+Future<SourcePackageText?> getSourcePackageText({required String id}) =>
+    YnekoRustLib.instance.api.crateApiGetSourcePackageText(id: id);
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is AnimeRankingApplied &&
-                runtimeType == other.runtimeType
-                && sort == other.sort&& filters == other.filters&& filterGroup == other.filterGroup&& filter == other.filter&& year == other.year&& season == other.season&& keyword == other.keyword&& page == other.page&& limit == other.limit;
-        
-            }
+Future<List<RuleGroupSummary>> listRuleGroups() =>
+    YnekoRustLib.instance.api.crateApiListRuleGroups();
 
-class AnimeRankingRequest  {
-                final AnimeRankingSort sort;
-final Map<String, String> filters;
-final String? filterGroup;
-final String? filter;
-final int? year;
-final AnimeSeason? season;
-final String keyword;
-final int page;
-final int limit;
+Future<RuleGroupSummary> saveRuleGroup({required RuleGroupSummary group}) =>
+    YnekoRustLib.instance.api.crateApiSaveRuleGroup(group: group);
 
-                const AnimeRankingRequest({required this.sort ,required this.filters ,this.filterGroup ,this.filter ,this.year ,this.season ,required this.keyword ,required this.page ,required this.limit ,});
+Future<void> deleteRuleGroup({required String id}) =>
+    YnekoRustLib.instance.api.crateApiDeleteRuleGroup(id: id);
 
-                
-                
+Future<List<RuleRepositorySubscription>> listRuleRepositorySubscriptions() =>
+    YnekoRustLib.instance.api.crateApiListRuleRepositorySubscriptions();
 
-                
-        @override
-        int get hashCode => sort.hashCode^filters.hashCode^filterGroup.hashCode^filter.hashCode^year.hashCode^season.hashCode^keyword.hashCode^page.hashCode^limit.hashCode;
-        
+Future<RuleRepositorySubscription> saveRuleRepositorySubscription({
+  required RuleRepositorySubscription subscription,
+}) => YnekoRustLib.instance.api.crateApiSaveRuleRepositorySubscription(
+  subscription: subscription,
+);
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is AnimeRankingRequest &&
-                runtimeType == other.runtimeType
-                && sort == other.sort&& filters == other.filters&& filterGroup == other.filterGroup&& filter == other.filter&& year == other.year&& season == other.season&& keyword == other.keyword&& page == other.page&& limit == other.limit;
-        
-            }
+Future<void> deleteRuleRepositorySubscription({required String id}) =>
+    YnekoRustLib.instance.api.crateApiDeleteRuleRepositorySubscription(id: id);
 
-class AnimeRankingResponse  {
-                final List<SubjectSummary> items;
-final int page;
-final bool hasNext;
-final AnimeRankingApplied applied;
+Future<List<RuleRepositoryIndexEntry>> loadRuleRepositoryIndex({
+  required RuleRepositorySubscription subscription,
+}) => YnekoRustLib.instance.api.crateApiLoadRuleRepositoryIndex(
+  subscription: subscription,
+);
 
-                const AnimeRankingResponse({required this.items ,required this.page ,required this.hasNext ,required this.applied ,});
+Future<SourceImportResult> importRepositoryRule({
+  required String groupId,
+  required RuleRepositoryIndexEntry entry,
+}) => YnekoRustLib.instance.api.crateApiImportRepositoryRule(
+  groupId: groupId,
+  entry: entry,
+);
 
-                
-                
+Future<RuleSourceSearchResult> searchRuleSource({
+  required String ruleId,
+  required int subjectId,
+}) => YnekoRustLib.instance.api.crateApiSearchRuleSource(
+  ruleId: ruleId,
+  subjectId: subjectId,
+);
 
-                
-        @override
-        int get hashCode => items.hashCode^page.hashCode^hasNext.hashCode^applied.hashCode;
-        
+Future<List<RuleSourceSearchResult>> searchRuleSources({
+  required int subjectId,
+  required List<String> ruleIds,
+}) => YnekoRustLib.instance.api.crateApiSearchRuleSources(
+  subjectId: subjectId,
+  ruleIds: ruleIds,
+);
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is AnimeRankingResponse &&
-                runtimeType == other.runtimeType
-                && items == other.items&& page == other.page&& hasNext == other.hasNext&& applied == other.applied;
-        
-            }
+Future<EpisodeBindingResolveResult> resolveEpisodeBindings({
+  required int subjectId,
+  required int episodeId,
+  required SourceCandidate candidate,
+  required List<SourceCandidate> fallbackCandidates,
+}) => YnekoRustLib.instance.api.crateApiResolveEpisodeBindings(
+  subjectId: subjectId,
+  episodeId: episodeId,
+  candidate: candidate,
+  fallbackCandidates: fallbackCandidates,
+);
 
-enum AnimeRankingSort {
-                    rank,
-heat,
-collect,
-date,
-name,
-                    ;
-                    
-                }
+Future<EpisodeStreamResolveResult> resolveEpisodeStreams({
+  required String ruleId,
+  required String playUrl,
+  required List<String> fallbackPlayUrls,
+  String? refererUrl,
+}) => YnekoRustLib.instance.api.crateApiResolveEpisodeStreams(
+  ruleId: ruleId,
+  playUrl: playUrl,
+  fallbackPlayUrls: fallbackPlayUrls,
+  refererUrl: refererUrl,
+);
 
-enum AnimeSeason {
-                    winter,
-spring,
-summer,
-autumn,
-                    ;
-                    
-                }
+class AnimeRankingApplied {
+  final String sort;
+  final Map<String, String> filters;
+  final String? filterGroup;
+  final String? filter;
+  final int? year;
+  final String? season;
+  final String? keyword;
+  final int page;
+  final int limit;
 
-class BangumiBrowseRequest  {
-                final BangumiBrowseSort sort;
-final int? year;
-final int? month;
-final int? limit;
-final int? offset;
+  const AnimeRankingApplied({
+    required this.sort,
+    required this.filters,
+    this.filterGroup,
+    this.filter,
+    this.year,
+    this.season,
+    this.keyword,
+    required this.page,
+    required this.limit,
+  });
 
-                const BangumiBrowseRequest({required this.sort ,this.year ,this.month ,this.limit ,this.offset ,});
+  @override
+  int get hashCode =>
+      sort.hashCode ^
+      filters.hashCode ^
+      filterGroup.hashCode ^
+      filter.hashCode ^
+      year.hashCode ^
+      season.hashCode ^
+      keyword.hashCode ^
+      page.hashCode ^
+      limit.hashCode;
 
-                
-                
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AnimeRankingApplied &&
+          runtimeType == other.runtimeType &&
+          sort == other.sort &&
+          filters == other.filters &&
+          filterGroup == other.filterGroup &&
+          filter == other.filter &&
+          year == other.year &&
+          season == other.season &&
+          keyword == other.keyword &&
+          page == other.page &&
+          limit == other.limit;
+}
 
-                
-        @override
-        int get hashCode => sort.hashCode^year.hashCode^month.hashCode^limit.hashCode^offset.hashCode;
-        
+class AnimeRankingRequest {
+  final AnimeRankingSort sort;
+  final Map<String, String> filters;
+  final String? filterGroup;
+  final String? filter;
+  final int? year;
+  final AnimeSeason? season;
+  final String keyword;
+  final int page;
+  final int limit;
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is BangumiBrowseRequest &&
-                runtimeType == other.runtimeType
-                && sort == other.sort&& year == other.year&& month == other.month&& limit == other.limit&& offset == other.offset;
-        
-            }
+  const AnimeRankingRequest({
+    required this.sort,
+    required this.filters,
+    this.filterGroup,
+    this.filter,
+    this.year,
+    this.season,
+    required this.keyword,
+    required this.page,
+    required this.limit,
+  });
 
-enum BangumiBrowseSort {
-                    rank,
-date,
-                    ;
-                    
-                }
+  @override
+  int get hashCode =>
+      sort.hashCode ^
+      filters.hashCode ^
+      filterGroup.hashCode ^
+      filter.hashCode ^
+      year.hashCode ^
+      season.hashCode ^
+      keyword.hashCode ^
+      page.hashCode ^
+      limit.hashCode;
 
-class BangumiCalendarDay  {
-                final int weekdayId;
-final String weekdayCn;
-final String weekdayEn;
-final List<SubjectSummary> items;
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AnimeRankingRequest &&
+          runtimeType == other.runtimeType &&
+          sort == other.sort &&
+          filters == other.filters &&
+          filterGroup == other.filterGroup &&
+          filter == other.filter &&
+          year == other.year &&
+          season == other.season &&
+          keyword == other.keyword &&
+          page == other.page &&
+          limit == other.limit;
+}
 
-                const BangumiCalendarDay({required this.weekdayId ,required this.weekdayCn ,required this.weekdayEn ,required this.items ,});
+class AnimeRankingResponse {
+  final List<SubjectSummary> items;
+  final int page;
+  final bool hasNext;
+  final AnimeRankingApplied applied;
 
-                
-                
+  const AnimeRankingResponse({
+    required this.items,
+    required this.page,
+    required this.hasNext,
+    required this.applied,
+  });
 
-                
-        @override
-        int get hashCode => weekdayId.hashCode^weekdayCn.hashCode^weekdayEn.hashCode^items.hashCode;
-        
+  @override
+  int get hashCode =>
+      items.hashCode ^ page.hashCode ^ hasNext.hashCode ^ applied.hashCode;
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is BangumiCalendarDay &&
-                runtimeType == other.runtimeType
-                && weekdayId == other.weekdayId&& weekdayCn == other.weekdayCn&& weekdayEn == other.weekdayEn&& items == other.items;
-        
-            }
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AnimeRankingResponse &&
+          runtimeType == other.runtimeType &&
+          items == other.items &&
+          page == other.page &&
+          hasNext == other.hasNext &&
+          applied == other.applied;
+}
 
-class Episode  {
-                final int id;
-final int subjectId;
-final int sort;
-final String title;
-final String? titleCn;
-final String? airDate;
+enum AnimeRankingSort { rank, heat, collect, date, name }
 
-                const Episode({required this.id ,required this.subjectId ,required this.sort ,required this.title ,this.titleCn ,this.airDate ,});
+enum AnimeSeason { winter, spring, summer, autumn }
 
-                
-                
+class BangumiBrowseRequest {
+  final BangumiBrowseSort sort;
+  final int? year;
+  final int? month;
+  final int? limit;
+  final int? offset;
 
-                
-        @override
-        int get hashCode => id.hashCode^subjectId.hashCode^sort.hashCode^title.hashCode^titleCn.hashCode^airDate.hashCode;
-        
+  const BangumiBrowseRequest({
+    required this.sort,
+    this.year,
+    this.month,
+    this.limit,
+    this.offset,
+  });
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is Episode &&
-                runtimeType == other.runtimeType
-                && id == other.id&& subjectId == other.subjectId&& sort == other.sort&& title == other.title&& titleCn == other.titleCn&& airDate == other.airDate;
-        
-            }
+  @override
+  int get hashCode =>
+      sort.hashCode ^
+      year.hashCode ^
+      month.hashCode ^
+      limit.hashCode ^
+      offset.hashCode;
 
-class PlaybackCandidate  {
-                final String id;
-final int subjectId;
-final int episodeId;
-final String sourcePackageId;
-final String title;
-final String url;
-final List<PlaybackHeader> headers;
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BangumiBrowseRequest &&
+          runtimeType == other.runtimeType &&
+          sort == other.sort &&
+          year == other.year &&
+          month == other.month &&
+          limit == other.limit &&
+          offset == other.offset;
+}
 
-                const PlaybackCandidate({required this.id ,required this.subjectId ,required this.episodeId ,required this.sourcePackageId ,required this.title ,required this.url ,required this.headers ,});
+enum BangumiBrowseSort { rank, date }
 
-                
-                
+class BangumiCalendarDay {
+  final int weekdayId;
+  final String weekdayCn;
+  final String weekdayEn;
+  final List<SubjectSummary> items;
 
-                
-        @override
-        int get hashCode => id.hashCode^subjectId.hashCode^episodeId.hashCode^sourcePackageId.hashCode^title.hashCode^url.hashCode^headers.hashCode;
-        
+  const BangumiCalendarDay({
+    required this.weekdayId,
+    required this.weekdayCn,
+    required this.weekdayEn,
+    required this.items,
+  });
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is PlaybackCandidate &&
-                runtimeType == other.runtimeType
-                && id == other.id&& subjectId == other.subjectId&& episodeId == other.episodeId&& sourcePackageId == other.sourcePackageId&& title == other.title&& url == other.url&& headers == other.headers;
-        
-            }
+  @override
+  int get hashCode =>
+      weekdayId.hashCode ^
+      weekdayCn.hashCode ^
+      weekdayEn.hashCode ^
+      items.hashCode;
 
-class PlaybackHeader  {
-                final String name;
-final String value;
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BangumiCalendarDay &&
+          runtimeType == other.runtimeType &&
+          weekdayId == other.weekdayId &&
+          weekdayCn == other.weekdayCn &&
+          weekdayEn == other.weekdayEn &&
+          items == other.items;
+}
 
-                const PlaybackHeader({required this.name ,required this.value ,});
+class Episode {
+  final int id;
+  final int subjectId;
+  final int sort;
+  final String title;
+  final String? titleCn;
+  final String? airDate;
 
-                
-                
+  const Episode({
+    required this.id,
+    required this.subjectId,
+    required this.sort,
+    required this.title,
+    this.titleCn,
+    this.airDate,
+  });
 
-                
-        @override
-        int get hashCode => name.hashCode^value.hashCode;
-        
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      subjectId.hashCode ^
+      sort.hashCode ^
+      title.hashCode ^
+      titleCn.hashCode ^
+      airDate.hashCode;
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is PlaybackHeader &&
-                runtimeType == other.runtimeType
-                && name == other.name&& value == other.value;
-        
-            }
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Episode &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          subjectId == other.subjectId &&
+          sort == other.sort &&
+          title == other.title &&
+          titleCn == other.titleCn &&
+          airDate == other.airDate;
+}
 
-class SubjectDetail  {
-                final SubjectSummary subject;
-final List<Episode> episodes;
-final bool isFavorite;
+class EpisodeBindingResolveResult {
+  final List<EpisodeSourceBinding> bindings;
+  final SourceCandidate? selectedCandidate;
+  final EpisodeSourceBinding? selectedBinding;
+  final List<RuleResolveAttempt> attempts;
 
-                const SubjectDetail({required this.subject ,required this.episodes ,required this.isFavorite ,});
+  const EpisodeBindingResolveResult({
+    required this.bindings,
+    this.selectedCandidate,
+    this.selectedBinding,
+    required this.attempts,
+  });
 
-                
-                
+  @override
+  int get hashCode =>
+      bindings.hashCode ^
+      selectedCandidate.hashCode ^
+      selectedBinding.hashCode ^
+      attempts.hashCode;
 
-                
-        @override
-        int get hashCode => subject.hashCode^episodes.hashCode^isFavorite.hashCode;
-        
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EpisodeBindingResolveResult &&
+          runtimeType == other.runtimeType &&
+          bindings == other.bindings &&
+          selectedCandidate == other.selectedCandidate &&
+          selectedBinding == other.selectedBinding &&
+          attempts == other.attempts;
+}
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is SubjectDetail &&
-                runtimeType == other.runtimeType
-                && subject == other.subject&& episodes == other.episodes&& isFavorite == other.isFavorite;
-        
-            }
+class EpisodeSourceBinding {
+  final int subjectId;
+  final int episodeId;
+  final int episodeOrder;
+  final String ruleId;
+  final String sourceEpisodeKey;
+  final String title;
+  final String playUrl;
+  final List<String> fallbackPlayUrls;
+  final String? refererUrl;
+  final String confidence;
 
-class SubjectSummary  {
-                final int id;
-final String name;
-final String? nameCn;
-final List<String> aliases;
-final String? coverUrl;
-final String? summary;
-final String? airDate;
-final double? ratingScore;
-final int? ratingRank;
-final List<String> tags;
-final int totalEpisodes;
+  const EpisodeSourceBinding({
+    required this.subjectId,
+    required this.episodeId,
+    required this.episodeOrder,
+    required this.ruleId,
+    required this.sourceEpisodeKey,
+    required this.title,
+    required this.playUrl,
+    required this.fallbackPlayUrls,
+    this.refererUrl,
+    required this.confidence,
+  });
 
-                const SubjectSummary({required this.id ,required this.name ,this.nameCn ,required this.aliases ,this.coverUrl ,this.summary ,this.airDate ,this.ratingScore ,this.ratingRank ,required this.tags ,required this.totalEpisodes ,});
+  @override
+  int get hashCode =>
+      subjectId.hashCode ^
+      episodeId.hashCode ^
+      episodeOrder.hashCode ^
+      ruleId.hashCode ^
+      sourceEpisodeKey.hashCode ^
+      title.hashCode ^
+      playUrl.hashCode ^
+      fallbackPlayUrls.hashCode ^
+      refererUrl.hashCode ^
+      confidence.hashCode;
 
-                
-                
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EpisodeSourceBinding &&
+          runtimeType == other.runtimeType &&
+          subjectId == other.subjectId &&
+          episodeId == other.episodeId &&
+          episodeOrder == other.episodeOrder &&
+          ruleId == other.ruleId &&
+          sourceEpisodeKey == other.sourceEpisodeKey &&
+          title == other.title &&
+          playUrl == other.playUrl &&
+          fallbackPlayUrls == other.fallbackPlayUrls &&
+          refererUrl == other.refererUrl &&
+          confidence == other.confidence;
+}
 
-                
-        @override
-        int get hashCode => id.hashCode^name.hashCode^nameCn.hashCode^aliases.hashCode^coverUrl.hashCode^summary.hashCode^airDate.hashCode^ratingScore.hashCode^ratingRank.hashCode^tags.hashCode^totalEpisodes.hashCode;
-        
+class EpisodeStreamResolveResult {
+  final List<PlayStream> streams;
+  final List<RuleResolveAttempt> attempts;
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is SubjectSummary &&
-                runtimeType == other.runtimeType
-                && id == other.id&& name == other.name&& nameCn == other.nameCn&& aliases == other.aliases&& coverUrl == other.coverUrl&& summary == other.summary&& airDate == other.airDate&& ratingScore == other.ratingScore&& ratingRank == other.ratingRank&& tags == other.tags&& totalEpisodes == other.totalEpisodes;
-        
-            }
-            
+  const EpisodeStreamResolveResult({
+    required this.streams,
+    required this.attempts,
+  });
+
+  @override
+  int get hashCode => streams.hashCode ^ attempts.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EpisodeStreamResolveResult &&
+          runtimeType == other.runtimeType &&
+          streams == other.streams &&
+          attempts == other.attempts;
+}
+
+class PlayStream {
+  final String id;
+  final String ruleId;
+  final String kind;
+  final String url;
+  final String? refererUrl;
+  final String? userAgent;
+  final List<PlaybackHeader> headers;
+
+  const PlayStream({
+    required this.id,
+    required this.ruleId,
+    required this.kind,
+    required this.url,
+    this.refererUrl,
+    this.userAgent,
+    required this.headers,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      ruleId.hashCode ^
+      kind.hashCode ^
+      url.hashCode ^
+      refererUrl.hashCode ^
+      userAgent.hashCode ^
+      headers.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlayStream &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          ruleId == other.ruleId &&
+          kind == other.kind &&
+          url == other.url &&
+          refererUrl == other.refererUrl &&
+          userAgent == other.userAgent &&
+          headers == other.headers;
+}
+
+class PlaybackCandidate {
+  final String id;
+  final int subjectId;
+  final int episodeId;
+  final String sourcePackageId;
+  final String title;
+  final String url;
+  final List<PlaybackHeader> headers;
+
+  const PlaybackCandidate({
+    required this.id,
+    required this.subjectId,
+    required this.episodeId,
+    required this.sourcePackageId,
+    required this.title,
+    required this.url,
+    required this.headers,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      subjectId.hashCode ^
+      episodeId.hashCode ^
+      sourcePackageId.hashCode ^
+      title.hashCode ^
+      url.hashCode ^
+      headers.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlaybackCandidate &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          subjectId == other.subjectId &&
+          episodeId == other.episodeId &&
+          sourcePackageId == other.sourcePackageId &&
+          title == other.title &&
+          url == other.url &&
+          headers == other.headers;
+}
+
+class PlaybackHeader {
+  final String name;
+  final String value;
+
+  const PlaybackHeader({required this.name, required this.value});
+
+  @override
+  int get hashCode => name.hashCode ^ value.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlaybackHeader &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          value == other.value;
+}
+
+class RuleGroupSummary {
+  final String id;
+  final String name;
+  final bool enabled;
+  final List<String> ruleIds;
+  final List<String> disabledRuleIds;
+
+  const RuleGroupSummary({
+    required this.id,
+    required this.name,
+    required this.enabled,
+    required this.ruleIds,
+    required this.disabledRuleIds,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      name.hashCode ^
+      enabled.hashCode ^
+      ruleIds.hashCode ^
+      disabledRuleIds.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RuleGroupSummary &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name &&
+          enabled == other.enabled &&
+          ruleIds == other.ruleIds &&
+          disabledRuleIds == other.disabledRuleIds;
+}
+
+class RuleRepositoryIndexEntry {
+  final String name;
+  final String version;
+  final int? lastUpdateMs;
+  final bool antiCrawlerEnabled;
+  final String rawUrl;
+
+  const RuleRepositoryIndexEntry({
+    required this.name,
+    required this.version,
+    this.lastUpdateMs,
+    required this.antiCrawlerEnabled,
+    required this.rawUrl,
+  });
+
+  @override
+  int get hashCode =>
+      name.hashCode ^
+      version.hashCode ^
+      lastUpdateMs.hashCode ^
+      antiCrawlerEnabled.hashCode ^
+      rawUrl.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RuleRepositoryIndexEntry &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          version == other.version &&
+          lastUpdateMs == other.lastUpdateMs &&
+          antiCrawlerEnabled == other.antiCrawlerEnabled &&
+          rawUrl == other.rawUrl;
+}
+
+class RuleRepositorySubscription {
+  final String id;
+  final String name;
+  final String url;
+  final bool enabled;
+  final int updatedAtMs;
+
+  const RuleRepositorySubscription({
+    required this.id,
+    required this.name,
+    required this.url,
+    required this.enabled,
+    required this.updatedAtMs,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      name.hashCode ^
+      url.hashCode ^
+      enabled.hashCode ^
+      updatedAtMs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RuleRepositorySubscription &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name &&
+          url == other.url &&
+          enabled == other.enabled &&
+          updatedAtMs == other.updatedAtMs;
+}
+
+class RuleResolveAttempt {
+  final String ruleId;
+  final String status;
+  final String message;
+
+  const RuleResolveAttempt({
+    required this.ruleId,
+    required this.status,
+    required this.message,
+  });
+
+  @override
+  int get hashCode => ruleId.hashCode ^ status.hashCode ^ message.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RuleResolveAttempt &&
+          runtimeType == other.runtimeType &&
+          ruleId == other.ruleId &&
+          status == other.status &&
+          message == other.message;
+}
+
+class RuleSourceSearchResult {
+  final String ruleId;
+  final String ruleName;
+  final String status;
+  final int elapsedMs;
+  final List<SourceCandidate> candidates;
+  final List<SourceCandidate> rawCandidates;
+  final String? selectedKeyword;
+  final String? selectedTitle;
+  final double? selectedScore;
+  final List<String> keywordTraces;
+  final String? error;
+
+  const RuleSourceSearchResult({
+    required this.ruleId,
+    required this.ruleName,
+    required this.status,
+    required this.elapsedMs,
+    required this.candidates,
+    required this.rawCandidates,
+    this.selectedKeyword,
+    this.selectedTitle,
+    this.selectedScore,
+    required this.keywordTraces,
+    this.error,
+  });
+
+  @override
+  int get hashCode =>
+      ruleId.hashCode ^
+      ruleName.hashCode ^
+      status.hashCode ^
+      elapsedMs.hashCode ^
+      candidates.hashCode ^
+      rawCandidates.hashCode ^
+      selectedKeyword.hashCode ^
+      selectedTitle.hashCode ^
+      selectedScore.hashCode ^
+      keywordTraces.hashCode ^
+      error.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RuleSourceSearchResult &&
+          runtimeType == other.runtimeType &&
+          ruleId == other.ruleId &&
+          ruleName == other.ruleName &&
+          status == other.status &&
+          elapsedMs == other.elapsedMs &&
+          candidates == other.candidates &&
+          rawCandidates == other.rawCandidates &&
+          selectedKeyword == other.selectedKeyword &&
+          selectedTitle == other.selectedTitle &&
+          selectedScore == other.selectedScore &&
+          keywordTraces == other.keywordTraces &&
+          error == other.error;
+}
+
+class SourceCandidate {
+  final String ruleId;
+  final String ruleName;
+  final String sourceItemKey;
+  final String title;
+  final String detailUrl;
+  final String? searchUrl;
+  final String confidence;
+  final double? score;
+  final String? matchedKeyword;
+
+  const SourceCandidate({
+    required this.ruleId,
+    required this.ruleName,
+    required this.sourceItemKey,
+    required this.title,
+    required this.detailUrl,
+    this.searchUrl,
+    required this.confidence,
+    this.score,
+    this.matchedKeyword,
+  });
+
+  @override
+  int get hashCode =>
+      ruleId.hashCode ^
+      ruleName.hashCode ^
+      sourceItemKey.hashCode ^
+      title.hashCode ^
+      detailUrl.hashCode ^
+      searchUrl.hashCode ^
+      confidence.hashCode ^
+      score.hashCode ^
+      matchedKeyword.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SourceCandidate &&
+          runtimeType == other.runtimeType &&
+          ruleId == other.ruleId &&
+          ruleName == other.ruleName &&
+          sourceItemKey == other.sourceItemKey &&
+          title == other.title &&
+          detailUrl == other.detailUrl &&
+          searchUrl == other.searchUrl &&
+          confidence == other.confidence &&
+          score == other.score &&
+          matchedKeyword == other.matchedKeyword;
+}
+
+class SourceImportResult {
+  final SourcePackageSummary package;
+  final List<String> diagnostics;
+
+  const SourceImportResult({required this.package, required this.diagnostics});
+
+  @override
+  int get hashCode => package.hashCode ^ diagnostics.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SourceImportResult &&
+          runtimeType == other.runtimeType &&
+          package == other.package &&
+          diagnostics == other.diagnostics;
+}
+
+class SourcePackageSummary {
+  final String id;
+  final String name;
+  final String version;
+  final bool enabled;
+  final String format;
+  final String? sourceUrl;
+  final List<String> diagnostics;
+  final int importedAtMs;
+  final int updatedAtMs;
+
+  const SourcePackageSummary({
+    required this.id,
+    required this.name,
+    required this.version,
+    required this.enabled,
+    required this.format,
+    this.sourceUrl,
+    required this.diagnostics,
+    required this.importedAtMs,
+    required this.updatedAtMs,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      name.hashCode ^
+      version.hashCode ^
+      enabled.hashCode ^
+      format.hashCode ^
+      sourceUrl.hashCode ^
+      diagnostics.hashCode ^
+      importedAtMs.hashCode ^
+      updatedAtMs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SourcePackageSummary &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name &&
+          version == other.version &&
+          enabled == other.enabled &&
+          format == other.format &&
+          sourceUrl == other.sourceUrl &&
+          diagnostics == other.diagnostics &&
+          importedAtMs == other.importedAtMs &&
+          updatedAtMs == other.updatedAtMs;
+}
+
+class SourcePackageText {
+  final String id;
+  final String name;
+  final String format;
+  final String body;
+
+  const SourcePackageText({
+    required this.id,
+    required this.name,
+    required this.format,
+    required this.body,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^ name.hashCode ^ format.hashCode ^ body.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SourcePackageText &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name &&
+          format == other.format &&
+          body == other.body;
+}
+
+class SubjectDetail {
+  final SubjectSummary subject;
+  final List<Episode> episodes;
+  final bool isFavorite;
+
+  const SubjectDetail({
+    required this.subject,
+    required this.episodes,
+    required this.isFavorite,
+  });
+
+  @override
+  int get hashCode =>
+      subject.hashCode ^ episodes.hashCode ^ isFavorite.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SubjectDetail &&
+          runtimeType == other.runtimeType &&
+          subject == other.subject &&
+          episodes == other.episodes &&
+          isFavorite == other.isFavorite;
+}
+
+class SubjectSummary {
+  final int id;
+  final String name;
+  final String? nameCn;
+  final List<String> aliases;
+  final String? coverUrl;
+  final String? summary;
+  final String? airDate;
+  final double? ratingScore;
+  final int? ratingRank;
+  final List<String> tags;
+  final int totalEpisodes;
+
+  const SubjectSummary({
+    required this.id,
+    required this.name,
+    this.nameCn,
+    required this.aliases,
+    this.coverUrl,
+    this.summary,
+    this.airDate,
+    this.ratingScore,
+    this.ratingRank,
+    required this.tags,
+    required this.totalEpisodes,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      name.hashCode ^
+      nameCn.hashCode ^
+      aliases.hashCode ^
+      coverUrl.hashCode ^
+      summary.hashCode ^
+      airDate.hashCode ^
+      ratingScore.hashCode ^
+      ratingRank.hashCode ^
+      tags.hashCode ^
+      totalEpisodes.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SubjectSummary &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name &&
+          nameCn == other.nameCn &&
+          aliases == other.aliases &&
+          coverUrl == other.coverUrl &&
+          summary == other.summary &&
+          airDate == other.airDate &&
+          ratingScore == other.ratingScore &&
+          ratingRank == other.ratingRank &&
+          tags == other.tags &&
+          totalEpisodes == other.totalEpisodes;
+}

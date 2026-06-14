@@ -8,9 +8,10 @@ version.workspace = true
 
 [dependencies]
 serde.workspace = true
+serde_json.workspace = true
 sqlx.workspace = true
+tokio.workspace = true
 yneko-core = { path = "../yneko-core" }
 
 [lints]
 workspace = true
-

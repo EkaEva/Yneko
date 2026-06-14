@@ -185,3 +185,289 @@ class PlaybackContract {
   final String url;
   final Map<String, String> headers;
 }
+
+class PlayStreamContract {
+  const PlayStreamContract({
+    required this.id,
+    required this.ruleId,
+    required this.kind,
+    required this.url,
+    this.refererUrl,
+    this.userAgent,
+    this.headers = const {},
+  });
+
+  final String id;
+  final String ruleId;
+  final String kind;
+  final String url;
+  final String? refererUrl;
+  final String? userAgent;
+  final Map<String, String> headers;
+
+  PlaybackContract asPlaybackContract({
+    required int subjectId,
+    required int episodeId,
+    required String title,
+  }) {
+    return PlaybackContract(
+      id: id,
+      subjectId: subjectId,
+      episodeId: episodeId,
+      sourcePackageId: ruleId,
+      title: title,
+      url: url,
+      headers: {
+        ...headers,
+        if (refererUrl != null && refererUrl!.trim().isNotEmpty)
+          'Referer': refererUrl!,
+        if (userAgent != null && userAgent!.trim().isNotEmpty)
+          'User-Agent': userAgent!,
+      },
+    );
+  }
+}
+
+class SourcePackageSummary {
+  const SourcePackageSummary({
+    required this.id,
+    required this.name,
+    required this.version,
+    required this.enabled,
+    this.format = 'yaml',
+    this.sourceUrl,
+    this.diagnostics = const [],
+    required this.importedAtMs,
+    required this.updatedAtMs,
+  });
+
+  final String id;
+  final String name;
+  final String version;
+  final bool enabled;
+  final String format;
+  final String? sourceUrl;
+  final List<String> diagnostics;
+  final int importedAtMs;
+  final int updatedAtMs;
+
+  String get sourceLabel {
+    final value = sourceUrl?.trim();
+    if (value == null || value.isEmpty) return '文本导入';
+    return value;
+  }
+}
+
+class SourcePackageText {
+  const SourcePackageText({
+    required this.id,
+    required this.name,
+    required this.format,
+    required this.body,
+  });
+
+  final String id;
+  final String name;
+  final String format;
+  final String body;
+}
+
+class SourceImportResult {
+  const SourceImportResult({
+    required this.package,
+    this.diagnostics = const [],
+  });
+
+  final SourcePackageSummary package;
+  final List<String> diagnostics;
+}
+
+class RuleGroupSummary {
+  const RuleGroupSummary({
+    required this.id,
+    required this.name,
+    required this.enabled,
+    this.ruleIds = const [],
+    this.disabledRuleIds = const [],
+  });
+
+  final String id;
+  final String name;
+  final bool enabled;
+  final List<String> ruleIds;
+  final List<String> disabledRuleIds;
+
+  int enabledRuleCount(Iterable<SourcePackageSummary> packages) {
+    final ids = ruleIds.toSet();
+    return packages
+        .where(
+          (package) =>
+              ids.contains(package.id) &&
+              package.enabled &&
+              !disabledRuleIds.contains(package.id),
+        )
+        .length;
+  }
+
+  RuleGroupSummary copyWith({
+    String? id,
+    String? name,
+    bool? enabled,
+    List<String>? ruleIds,
+    List<String>? disabledRuleIds,
+  }) {
+    return RuleGroupSummary(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      enabled: enabled ?? this.enabled,
+      ruleIds: ruleIds ?? this.ruleIds,
+      disabledRuleIds: disabledRuleIds ?? this.disabledRuleIds,
+    );
+  }
+}
+
+class RuleRepositorySubscription {
+  const RuleRepositorySubscription({
+    required this.id,
+    required this.name,
+    required this.url,
+    required this.enabled,
+    required this.updatedAtMs,
+  });
+
+  final String id;
+  final String name;
+  final String url;
+  final bool enabled;
+  final int updatedAtMs;
+}
+
+class RuleRepositoryIndexEntry {
+  const RuleRepositoryIndexEntry({
+    required this.name,
+    required this.version,
+    this.lastUpdateMs,
+    required this.antiCrawlerEnabled,
+    required this.rawUrl,
+  });
+
+  final String name;
+  final String version;
+  final int? lastUpdateMs;
+  final bool antiCrawlerEnabled;
+  final String rawUrl;
+}
+
+class SourceCandidate {
+  const SourceCandidate({
+    required this.ruleId,
+    required this.ruleName,
+    required this.sourceItemKey,
+    required this.title,
+    required this.detailUrl,
+    this.searchUrl,
+    required this.confidence,
+    this.score,
+    this.matchedKeyword,
+  });
+
+  final String ruleId;
+  final String ruleName;
+  final String sourceItemKey;
+  final String title;
+  final String detailUrl;
+  final String? searchUrl;
+  final String confidence;
+  final double? score;
+  final String? matchedKeyword;
+}
+
+class RuleSourceSearchResult {
+  const RuleSourceSearchResult({
+    required this.ruleId,
+    required this.ruleName,
+    required this.status,
+    required this.elapsedMs,
+    this.candidates = const [],
+    this.rawCandidates = const [],
+    this.selectedKeyword,
+    this.selectedTitle,
+    this.selectedScore,
+    this.keywordTraces = const [],
+    this.error,
+  });
+
+  final String ruleId;
+  final String ruleName;
+  final String status;
+  final int elapsedMs;
+  final List<SourceCandidate> candidates;
+  final List<SourceCandidate> rawCandidates;
+  final String? selectedKeyword;
+  final String? selectedTitle;
+  final double? selectedScore;
+  final List<String> keywordTraces;
+  final String? error;
+}
+
+class EpisodeSourceBinding {
+  const EpisodeSourceBinding({
+    required this.subjectId,
+    required this.episodeId,
+    required this.episodeOrder,
+    required this.ruleId,
+    required this.sourceEpisodeKey,
+    required this.title,
+    required this.playUrl,
+    this.fallbackPlayUrls = const [],
+    this.refererUrl,
+    required this.confidence,
+  });
+
+  final int subjectId;
+  final int episodeId;
+  final int episodeOrder;
+  final String ruleId;
+  final String sourceEpisodeKey;
+  final String title;
+  final String playUrl;
+  final List<String> fallbackPlayUrls;
+  final String? refererUrl;
+  final String confidence;
+}
+
+class RuleResolveAttempt {
+  const RuleResolveAttempt({
+    required this.ruleId,
+    required this.status,
+    required this.message,
+  });
+
+  final String ruleId;
+  final String status;
+  final String message;
+}
+
+class EpisodeBindingResolveResult {
+  const EpisodeBindingResolveResult({
+    this.bindings = const [],
+    this.selectedCandidate,
+    this.selectedBinding,
+    this.attempts = const [],
+  });
+
+  final List<EpisodeSourceBinding> bindings;
+  final SourceCandidate? selectedCandidate;
+  final EpisodeSourceBinding? selectedBinding;
+  final List<RuleResolveAttempt> attempts;
+}
+
+class EpisodeStreamResolveResult {
+  const EpisodeStreamResolveResult({
+    this.streams = const [],
+    this.attempts = const [],
+  });
+
+  final List<PlayStreamContract> streams;
+  final List<RuleResolveAttempt> attempts;
+}

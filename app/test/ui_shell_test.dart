@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yneko/src/features/shell/index.dart';
+import 'package:yneko/src/features/watch/application/watch_providers.dart';
 import 'package:yneko/src/infrastructure/bridge/yneko_backend.dart';
 import 'package:yneko/src/shared/assets/index.dart';
 import 'package:yneko/src/shared/theme/index.dart';
@@ -99,7 +101,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          ynekoBackendProvider.overrideWithValue(const FakeYnekoBackend()),
+          ynekoBackendProvider.overrideWithValue(FakeYnekoBackend()),
           shellThemeModeProvider.overrideWith(
             () => _FixedThemeModeController(ThemeMode.dark),
           ),
@@ -165,6 +167,43 @@ void main() {
       tester.getSize(find.byKey(const ValueKey('window-button-还原'))),
       const Size(44, 38),
     );
+
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer();
+    await mouse.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('window-button-关闭'))),
+    );
+    await tester.pumpAndSettle();
+
+    final closeButton = tester.widget<AnimatedContainer>(
+      find.byKey(const ValueKey('window-button-关闭')),
+    );
+    final closeDecoration = closeButton.decoration! as BoxDecoration;
+    expect(closeDecoration.color, const Color(0xFFFF5C7A));
+  });
+
+  testWidgets('rail hover only recolors icons and keeps transparent surface', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(_appWithBackend());
+
+    final mineButton = find.byKey(const ValueKey('rail-button-我的'));
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer();
+    await mouse.moveTo(tester.getCenter(mineButton));
+    await tester.pumpAndSettle();
+
+    final railButton = tester.widget<AnimatedContainer>(mineButton);
+    final decoration = railButton.decoration! as BoxDecoration;
+    expect(decoration.color, Colors.transparent);
+
+    final mineLabel = tester.widget<Text>(find.text('我的').first);
+    expect(mineLabel.style?.color, YnekoThemeTokens.light.primary);
   });
 
   testWidgets('home top tabs inherit theme font and mapped MiSans weights', (
@@ -220,6 +259,39 @@ void main() {
     expect(find.byKey(const ValueKey('yneko-profile-avatar')), findsOneWidget);
     expect(find.byKey(const ValueKey('profile-avatar-logo')), findsOneWidget);
 
+    final downloadEntry = find.byKey(const ValueKey('settings-entry-下载设置'));
+    final idleEntry = tester.widget<AnimatedContainer>(downloadEntry);
+    final idleDecoration = idleEntry.decoration! as BoxDecoration;
+    expect(idleDecoration.color, YnekoThemeTokens.light.surface);
+    expect(idleDecoration.color, isNot(Colors.transparent));
+    expect(
+      find.ancestor(of: downloadEntry, matching: find.byType(ClipRRect)),
+      findsWidgets,
+    );
+
+    final settingsMouse = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+    );
+    await settingsMouse.addPointer();
+    await settingsMouse.moveTo(tester.getCenter(downloadEntry));
+    await tester.pumpAndSettle();
+
+    final hoveredEntry = tester.widget<AnimatedContainer>(downloadEntry);
+    final hoveredDecoration = hoveredEntry.decoration! as BoxDecoration;
+    expect(
+      hoveredDecoration.color,
+      Color.lerp(
+        YnekoThemeTokens.light.surfaceHigh,
+        YnekoThemeTokens.light.surface,
+        0.12,
+      ),
+    );
+    expect(
+      hoveredDecoration.color,
+      isNot(YnekoThemeTokens.light.primaryContainer),
+    );
+    await settingsMouse.removePointer();
+
     await tester.tap(find.text('外观').first);
     await tester.pumpAndSettle();
 
@@ -229,8 +301,79 @@ void main() {
     );
     expect(find.byKey(const ValueKey('settings-detail-back')), findsNothing);
     expect(find.text('返回设置'), findsNothing);
-    expect(find.text('主题模式'), findsOneWidget);
+    expect(find.text('主题配色'), findsOneWidget);
+    expect(find.text('字体设置'), findsOneWidget);
+    expect(find.text('启动页设置'), findsOneWidget);
+    expect(find.text('默认模式'), findsOneWidget);
     expect(find.text('配色方案'), findsOneWidget);
+    expect(find.text('启动后打开'), findsOneWidget);
+    expect(
+      find.ancestor(
+        of: find.byKey(const ValueKey('settings-entry-默认模式')),
+        matching: find.byType(ClipRRect),
+      ),
+      findsWidgets,
+    );
+    final fontEntry = find.byKey(const ValueKey('settings-entry-使用系统字体'));
+    final fontMouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await fontMouse.addPointer();
+    await fontMouse.moveTo(tester.getCenter(fontEntry));
+    await tester.pumpAndSettle();
+    final hoveredFontEntry = tester.widget<AnimatedContainer>(fontEntry);
+    final hoveredFontDecoration = hoveredFontEntry.decoration! as BoxDecoration;
+    expect(
+      hoveredFontDecoration.color,
+      Color.lerp(
+        YnekoThemeTokens.light.surfaceHigh,
+        YnekoThemeTokens.light.surface,
+        0.12,
+      ),
+    );
+    await fontMouse.removePointer();
+
+    await tester.tap(find.byKey(const ValueKey('settings-entry-配色方案')));
+    await tester.pumpAndSettle();
+    expect(find.text('清爽蓝'), findsOneWidget);
+    expect(find.text('晨雾紫'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('settings-color-scheme-option-Yneko 粉')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('settings-color-scheme-option-暖杏白')),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('清爽蓝'));
+    await tester.pumpAndSettle();
+    expect(find.text('清爽蓝'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('rail-back-button')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('settings-root-page')), findsOneWidget);
+
+    await tester.tap(find.text('播放器设置').first);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('settings-detail-player')),
+      findsOneWidget,
+    );
+    expect(find.text('播放引擎'), findsWidgets);
+    expect(find.text('画面设置'), findsOneWidget);
+    expect(find.text('视频比例'), findsOneWidget);
+    expect(
+      find.ancestor(
+        of: find.byKey(const ValueKey('settings-entry-播放引擎')),
+        matching: find.byType(ClipRRect),
+      ),
+      findsWidgets,
+    );
+    await tester.tap(find.byKey(const ValueKey('settings-entry-视频比例')));
+    await tester.pumpAndSettle();
+    expect(find.text('适应窗口'), findsOneWidget);
+    expect(find.text('填充窗口'), findsOneWidget);
+    await tester.tap(find.text('适应窗口').last);
+    await tester.pumpAndSettle();
+    expect(find.text('适应窗口'), findsWidgets);
 
     await tester.tap(find.byKey(const ValueKey('rail-back-button')));
     await tester.pumpAndSettle();
@@ -240,8 +383,159 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('settings-detail-rules')), findsOneWidget);
-    expect(find.text('导入规则源'), findsOneWidget);
-    expect(find.text('规则编辑器'), findsOneWidget);
+    expect(find.text('规则管理'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('settings-source-import-open')),
+      findsNothing,
+    );
+    expect(find.text('规则组'), findsOneWidget);
+    expect(find.text('默认规则组'), findsOneWidget);
+    expect(find.text('采集插件组'), findsOneWidget);
+    expect(find.text('播放插件组'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('rule-group-create-open')),
+      findsOneWidget,
+    );
+
+    final defaultRuleRow = find.byKey(const ValueKey('source-row-默认规则组'));
+    final idleRuleRow = tester.widget<AnimatedContainer>(defaultRuleRow);
+    final idleRuleDecoration = idleRuleRow.decoration! as BoxDecoration;
+    expect(idleRuleDecoration.color, YnekoThemeTokens.light.surface);
+    expect(idleRuleDecoration.color, isNot(Colors.transparent));
+    expect(
+      find.ancestor(of: defaultRuleRow, matching: find.byType(ClipRRect)),
+      findsWidgets,
+    );
+
+    final ruleMouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await ruleMouse.addPointer();
+    await ruleMouse.moveTo(tester.getCenter(defaultRuleRow));
+    await tester.pumpAndSettle();
+
+    final hoveredRuleRow = tester.widget<AnimatedContainer>(defaultRuleRow);
+    final hoveredRuleDecoration = hoveredRuleRow.decoration! as BoxDecoration;
+    expect(
+      hoveredRuleDecoration.color,
+      Color.lerp(
+        YnekoThemeTokens.light.surfaceHigh,
+        YnekoThemeTokens.light.surface,
+        0.12,
+      ),
+    );
+    expect(
+      hoveredRuleDecoration.color,
+      isNot(YnekoThemeTokens.light.primaryContainer),
+    );
+    await ruleMouse.removePointer();
+
+    await tester.tap(find.byKey(const ValueKey('rule-group-default')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('rule-repository-import-open')));
+    await tester.pumpAndSettle();
+    expect(find.text('KazumiRules'), findsOneWidget);
+    expect(find.text('支持 GitHub 仓库地址或 raw index.json。'), findsOneWidget);
+    expect(find.byType(DropdownButton<String>), findsNothing);
+
+    final menu = find.byKey(
+      const ValueKey('rule-repository-subscription-menu'),
+    );
+    expect(menu, findsOneWidget);
+    await tester.ensureVisible(menu);
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer();
+    await mouse.moveTo(tester.getCenter(menu));
+    await tester.pump(const Duration(milliseconds: 180));
+    expect(
+      find.byKey(const ValueKey('rule-repository-subscription-trigger')),
+      findsOneWidget,
+    );
+    expect(
+      tester.getSize(
+        find.byKey(const ValueKey('rule-repository-refresh-slot')),
+      ),
+      const Size(104, 40),
+    );
+    final refreshButton = find.byKey(
+      const ValueKey('rule-repository-refresh-button'),
+    );
+    expect(refreshButton, findsOneWidget);
+    expect(tester.getSize(refreshButton).width, 104);
+    expect(tester.getSize(refreshButton).height, 40);
+    expect(
+      find.byKey(const ValueKey('yneko-hover-menu-option-KazumiRules')),
+      findsOneWidget,
+    );
+    final subscriptionOption = tester.widget<AnimatedContainer>(
+      find.byKey(const ValueKey('yneko-hover-menu-option-KazumiRules')),
+    );
+    final subscriptionDecoration =
+        subscriptionOption.decoration! as BoxDecoration;
+    expect(subscriptionDecoration.color, YnekoThemeTokens.light.surface);
+    expect(subscriptionDecoration.color, isNot(Colors.transparent));
+    expect(
+      tester
+          .getSize(find.byKey(const ValueKey('yneko-hover-menu-panel')))
+          .width,
+      lessThan(340),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('yneko-hover-menu-option-KazumiRules')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('yneko-hover-menu-option-KazumiRules')),
+      findsNothing,
+    );
+    await mouse.removePointer();
+
+    await tester.tap(
+      find.byKey(const ValueKey('rule-repository-refresh-button')),
+    );
+    await tester.pump();
+    expect(tester.getSize(refreshButton).width, 104);
+    await tester.pumpAndSettle();
+    expect(tester.getSize(refreshButton).width, 104);
+
+    await tester.tap(find.text('关闭'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('rule-source-editor-open')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('source-editor-mode-segmented')),
+      findsOneWidget,
+    );
+    final modeTrack = tester.widget<Container>(
+      find.byKey(const ValueKey('source-editor-mode-segmented')),
+    );
+    final modeTrackDecoration = modeTrack.decoration! as BoxDecoration;
+    expect(modeTrackDecoration.color, YnekoThemeTokens.light.surfaceLow);
+
+    AnimatedPositioned modeThumb() => tester.widget<AnimatedPositioned>(
+      find.byKey(const ValueKey('source-editor-mode-thumb')),
+    );
+    final visualThumb = modeThumb();
+    expect(visualThumb.left, 0);
+    final thumbBox = tester.widget<DecoratedBox>(
+      find.descendant(
+        of: find.byKey(const ValueKey('source-editor-mode-thumb')),
+        matching: find.byType(DecoratedBox),
+      ),
+    );
+    final thumbDecoration = thumbBox.decoration as BoxDecoration;
+    expect(thumbDecoration.color, YnekoThemeTokens.light.surface);
+
+    await tester.tap(find.byKey(const ValueKey('source-editor-mode-config')));
+    await tester.pumpAndSettle();
+    expect(modeThumb().left, 74);
+    final configItem = tester.widget<SizedBox>(
+      find
+          .descendant(
+            of: find.byKey(const ValueKey('source-editor-mode-config')),
+            matching: find.byType(SizedBox),
+          )
+          .first,
+    );
+    expect(configItem.width, 74);
   });
 
   testWidgets('mine page renders empty profile shell without fake list data', (
@@ -259,12 +553,142 @@ void main() {
     expect(find.text('追番'), findsWidgets);
     expect(find.text('历史'), findsWidgets);
     expect(find.text('缓存'), findsWidgets);
+    final mineTabPanel = find.byKey(const ValueKey('mine-tabs-panel'));
+    final mineLibraryTabFinder = find.descendant(
+      of: mineTabPanel,
+      matching: find.text('追番'),
+    );
+    final mineHistoryTabFinder = find.descendant(
+      of: mineTabPanel,
+      matching: find.text('历史'),
+    );
+    final mineLibraryTab = tester.widget<Text>(mineLibraryTabFinder);
+    final mineHistoryTab = tester.widget<Text>(mineHistoryTabFinder);
+    expect(mineLibraryTab.style?.fontWeight, FontWeight.w800);
+    expect(mineHistoryTab.style?.fontWeight, FontWeight.w800);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('mine-tab-underline-追番'))).width,
+      36,
+    );
+    expect(
+      tester.getCenter(find.byKey(const ValueKey('mine-tab-underline-追番'))).dx,
+      closeTo(tester.getCenter(mineLibraryTabFinder).dx, 0.01),
+    );
     expect(find.byKey(const ValueKey('mine-local-search')), findsOneWidget);
     expect(find.byKey(const ValueKey('yneko-profile-avatar')), findsOneWidget);
     expect(find.byKey(const ValueKey('profile-avatar-logo')), findsOneWidget);
     expect(find.byKey(const ValueKey('mine-empty-prompt')), findsOneWidget);
+    expect(find.text('这里什么都没有喵～\n快去追番吧（=^･ω･^=）'), findsOneWidget);
     expect(find.byKey(const ValueKey('mine-cover-grid')), findsNothing);
     expect(find.text('星轨回响 第 1-3 话'), findsNothing);
+
+    final idleSearch = tester.widget<TextField>(
+      find.byKey(const ValueKey('mine-local-search')),
+    );
+    final idleSearchDecoration = idleSearch.decoration!;
+    final idleSearchFrame = tester.widget<AnimatedContainer>(
+      find.byKey(const ValueKey('mine-local-search-frame')),
+    );
+    final idleSearchFrameDecoration =
+        idleSearchFrame.decoration! as BoxDecoration;
+    expect(idleSearchFrameDecoration.color, YnekoThemeTokens.light.surface);
+    expect(idleSearchDecoration.fillColor, Colors.transparent);
+    expect(idleSearchDecoration.hintText, '搜索我的追番');
+    expect(
+      idleSearchDecoration.hintStyle?.color,
+      YnekoThemeTokens.light.muted.withValues(alpha: 0.72),
+    );
+    expect(
+      (idleSearchDecoration.suffixIcon! as Icon).color,
+      YnekoThemeTokens.light.muted,
+    );
+    expect(
+      idleSearchFrameDecoration.border!.top.color,
+      YnekoThemeTokens.light.outline.withValues(alpha: 0.66),
+    );
+    expect(idleSearchFrameDecoration.border!.top.width, 1);
+
+    final searchMouse = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+    );
+    await searchMouse.addPointer();
+    await searchMouse.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('mine-local-search-frame'))),
+    );
+    await tester.pumpAndSettle();
+    final hoveredSearchFrame = tester.widget<AnimatedContainer>(
+      find.byKey(const ValueKey('mine-local-search-frame')),
+    );
+    final hoveredSearchFrameDecoration =
+        hoveredSearchFrame.decoration! as BoxDecoration;
+    expect(hoveredSearchFrameDecoration.color, YnekoThemeTokens.light.surface);
+    await searchMouse.removePointer();
+
+    await tester.tap(find.byKey(const ValueKey('mine-local-search')));
+    await tester.pumpAndSettle();
+    final focusedSearchFrame = tester.widget<AnimatedContainer>(
+      find.byKey(const ValueKey('mine-local-search-frame')),
+    );
+    final focusedSearchFrameDecoration =
+        focusedSearchFrame.decoration! as BoxDecoration;
+    expect(focusedSearchFrameDecoration.color, YnekoThemeTokens.light.surface);
+    expect(
+      focusedSearchFrameDecoration.border!.top.color,
+      Color.lerp(
+        YnekoThemeTokens.light.outline,
+        YnekoThemeTokens.light.primary,
+        0.48,
+      ),
+    );
+    expect(focusedSearchFrameDecoration.border!.top.width, 1);
+    expect(focusedSearchFrameDecoration.boxShadow, isNotNull);
+    expect(focusedSearchFrameDecoration.boxShadow!.single.blurRadius, 22);
+
+    final focusedSearch = tester.widget<TextField>(
+      find.byKey(const ValueKey('mine-local-search')),
+    );
+    expect(
+      (focusedSearch.decoration!.suffixIcon! as Icon).color,
+      YnekoThemeTokens.light.muted,
+    );
+
+    final statusMouse = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+    );
+    await statusMouse.addPointer();
+    await statusMouse.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('mine-status-trigger'))),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('全部'), findsWidgets);
+    expect(
+      find.byKey(const ValueKey('yneko-hover-menu-option-全部')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('yneko-hover-menu-option-搁置')),
+      findsOneWidget,
+    );
+    final idleMenuOption = tester.widget<AnimatedContainer>(
+      find.byKey(const ValueKey('yneko-hover-menu-option-搁置')),
+    );
+    final idleMenuDecoration = idleMenuOption.decoration! as BoxDecoration;
+    expect(idleMenuDecoration.color, YnekoThemeTokens.light.surface);
+    expect(idleMenuDecoration.color, isNot(Colors.transparent));
+    expect(
+      tester
+          .getSize(find.byKey(const ValueKey('yneko-hover-menu-panel')))
+          .width,
+      lessThan(180),
+    );
+    await statusMouse.moveTo(const Offset(40, 40));
+    await tester.pump(const Duration(milliseconds: 120));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('yneko-hover-menu-option-搁置')),
+      findsNothing,
+    );
+    await statusMouse.removePointer();
 
     await tester.tap(find.text('缓存').last);
     await tester.pumpAndSettle();
@@ -436,7 +860,10 @@ void main() {
     expect(find.byKey(const ValueKey('watch-page')), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     expect(find.byKey(const ValueKey('rail-back-button')), findsNothing);
-    expect(find.text('等待播放源'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('player-svg-${YnekoAssets.playerPause}')),
+      findsWidgets,
+    );
     expect(find.text('剧集'), findsOneWidget);
     expect(find.text('系列'), findsOneWidget);
     expect(find.text('规则源'), findsOneWidget);
@@ -460,7 +887,10 @@ void main() {
           .openWatch(subjectId: FakeYnekoBackend.subject.id);
       await tester.pumpAndSettle();
 
-      expect(find.text('等待播放源'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('player-svg-${YnekoAssets.playerPause}')),
+        findsWidgets,
+      );
       expect(find.text('剧集'), findsOneWidget);
       expect(find.text('系列'), findsOneWidget);
       expect(find.text('规则源'), findsOneWidget);
@@ -470,16 +900,41 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('episode-grid-panel')), findsOneWidget);
 
+      expect(find.byKey(const ValueKey('watch-follow-button')), findsOneWidget);
+      expect(find.text('追番'), findsWidgets);
+      await tester.tap(find.byKey(const ValueKey('watch-follow-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('在看'), findsWidgets);
+      expect(find.text('想看'), findsOneWidget);
+      expect(find.text('看过'), findsOneWidget);
+      expect(find.text('搁置'), findsOneWidget);
+      expect(find.text('抛弃'), findsOneWidget);
+      expect(find.text('取消追番'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey('watch-follow-option-planned')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('想看'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('watch-follow-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('watch-follow-option-cancel')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('追番'), findsWidgets);
+
       await tester.tap(find.text('规则源'));
       await tester.pumpAndSettle();
-      expect(find.text('导出矩阵'), findsOneWidget);
       expect(find.text('默认规则组'), findsWidgets);
+      expect(find.text('Demo'), findsWidgets);
+      expect(find.text(FakeYnekoBackend.subject.displayTitle), findsWidgets);
 
       final svgPictures = tester.widgetList<SvgPicture>(
         find.byType(SvgPicture),
       );
       for (final asset in [
-        YnekoAssets.playerPlay,
+        YnekoAssets.playerPause,
         YnekoAssets.playerEpisodePrevious,
         YnekoAssets.playerEpisodeNext,
         YnekoAssets.playerDanmakuOn,
@@ -567,7 +1022,10 @@ class _FixedThemeModeController extends ShellThemeModeController {
 Widget _appWithBackend() {
   return ProviderScope(
     overrides: [
-      ynekoBackendProvider.overrideWithValue(const FakeYnekoBackend()),
+      ynekoBackendProvider.overrideWithValue(FakeYnekoBackend()),
+      watchPlayerAdapterFactoryProvider.overrideWithValue(
+        (_) => FakePlayerAdapter(),
+      ),
     ],
     child: const YnekoApp(),
   );

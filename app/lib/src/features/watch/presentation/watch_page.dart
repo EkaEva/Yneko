@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
+import '../../../infrastructure/player/player_adapter.dart';
 import '../../../infrastructure/platform/window_chrome/index.dart';
 import '../../shell/index.dart';
+import '../../sources/index.dart';
 import '../application/watch_providers.dart';
 import '../../../shared/assets/index.dart';
 import '../../../shared/domain/index.dart';
-import '../../../shared/mock/index.dart';
 import '../../../shared/theme/index.dart';
 import '../../../shared/ui/index.dart';
 
@@ -27,9 +29,6 @@ class _WatchPageState extends ConsumerState<WatchPage> {
   _WatchPanelTab _tab = _WatchPanelTab.episodes;
   bool _gridEpisodes = false;
   bool _reverseEpisodes = false;
-  bool _sourceGroupOpen = false;
-  String _sourceGroup = '默认规则组';
-  String _sourceMatrixStatus = '';
   int? _selectedEpisodeId;
 
   @override
@@ -39,8 +38,6 @@ class _WatchPageState extends ConsumerState<WatchPage> {
         oldWidget.initialEpisodeId != widget.initialEpisodeId) {
       _selectedEpisodeId = widget.initialEpisodeId;
       _tab = _WatchPanelTab.episodes;
-      _sourceGroupOpen = false;
-      _sourceMatrixStatus = '';
     }
   }
 
@@ -106,20 +103,16 @@ class _WatchPageState extends ConsumerState<WatchPage> {
             tab: _tab,
             gridEpisodes: _gridEpisodes,
             reverseEpisodes: _reverseEpisodes,
-            sourceGroupOpen: _sourceGroupOpen,
-            sourceGroup: _sourceGroup,
-            sourceMatrixStatus: _sourceMatrixStatus,
+            playbackKey: activeEpisode == null
+                ? null
+                : WatchPlaybackKey(
+                    subjectId: detail.subject.id,
+                    episodeId: activeEpisode.id,
+                  ),
             onTab: (tab) => setState(() => _tab = tab),
             onToggleGrid: () => setState(() => _gridEpisodes = !_gridEpisodes),
             onToggleReverse: () =>
                 setState(() => _reverseEpisodes = !_reverseEpisodes),
-            onToggleSourceGroup: () =>
-                setState(() => _sourceGroupOpen = !_sourceGroupOpen),
-            onSourceGroup: (group) => setState(() {
-              _sourceGroup = group;
-              _sourceGroupOpen = false;
-            }),
-            onExportMatrix: () => setState(() => _sourceMatrixStatus = '矩阵已复制'),
             onEpisode: _selectEpisode,
           ),
         ),
@@ -173,11 +166,12 @@ class _WatchError extends ConsumerWidget {
                 description: error.toString(),
               ),
               const SizedBox(height: 12),
-              FilledButton.tonalIcon(
+              YnekoActionButton(
                 onPressed: () =>
                     ref.invalidate(watchSubjectDetailProvider(subjectId)),
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text('重试'),
+                label: '重试',
+                tone: YnekoActionButtonTone.primary,
               ),
             ],
           ),
@@ -187,7 +181,7 @@ class _WatchError extends ConsumerWidget {
   }
 }
 
-class _WatchPlaybackStage extends StatefulWidget {
+class _WatchPlaybackStage extends ConsumerStatefulWidget {
   const _WatchPlaybackStage({
     required this.subject,
     required this.episode,
@@ -211,19 +205,34 @@ class _WatchPlaybackStage extends StatefulWidget {
   final ValueChanged<AnimeEpisode> onSelectEpisode;
 
   @override
-  State<_WatchPlaybackStage> createState() => _WatchPlaybackStageState();
+  ConsumerState<_WatchPlaybackStage> createState() =>
+      _WatchPlaybackStageState();
 }
 
-class _WatchPlaybackStageState extends State<_WatchPlaybackStage> {
-  bool _playing = false;
+class _WatchPlaybackStageState extends ConsumerState<_WatchPlaybackStage> {
   bool _controlsVisible = true;
   String _activePanel = '';
-  bool _muted = false;
+  VideoController? _videoController;
+  Object? _videoPlayerIdentity;
 
   @override
   Widget build(BuildContext context) {
     final type = YnekoTypography.of(context);
     final title = _title;
+    final playbackKey = widget.episode == null
+        ? null
+        : WatchPlaybackKey(
+            subjectId: widget.subject.id,
+            episodeId: widget.episode!.id,
+          );
+    final playback = playbackKey == null
+        ? null
+        : ref.watch(watchPlayerControllerProvider(playbackKey));
+    final playbackController = playbackKey == null
+        ? null
+        : ref.read(watchPlayerControllerProvider(playbackKey).notifier);
+    final snapshot = playback?.playerSnapshot ?? const PlayerSnapshot();
+    final video = playback == null ? null : _videoFor(playback);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _controlsVisible = true),
@@ -234,36 +243,56 @@ class _WatchPlaybackStageState extends State<_WatchPlaybackStage> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _PlayerCenterPlayGlyph(
-                      playing: _playing,
-                      onTap: () => setState(() => _playing = !_playing),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      _playing ? '正在播放 UI 预览' : '等待播放源',
-                      style: type.sectionTitle.copyWith(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ?video,
+                  if (playback == null ||
+                      playback.selectedCandidate == null ||
+                      playback.searching ||
+                      playback.binding ||
+                      playback.opening ||
+                      playback.error != null)
+                    Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (playback?.searching == true ||
+                              playback?.binding == true ||
+                              playback?.opening == true)
+                            const YnekoRingLoader(size: 64)
+                          else
+                            _PlayerCenterPlayGlyph(
+                              playing: snapshot.playing,
+                              onTap: playbackController?.togglePlay,
+                            ),
+                          const SizedBox(height: 10),
+                          Text(
+                            _stageMessage(playback),
+                            style: type.sectionTitle.copyWith(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            playback?.error ??
+                                playback?.selectedCandidate?.title ??
+                                (widget.episode == null
+                                    ? '请选择剧集'
+                                    : '等待规则源返回播放候选'),
+                            textAlign: TextAlign.center,
+                            style: type.label.copyWith(
+                              color: Colors.white.withValues(alpha: 0.68),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.episode == null
-                          ? 'subject=${widget.subject.id}'
-                          : 'subject=${widget.subject.id} episode=${widget.episode!.id}',
-                      style: type.label.copyWith(
-                        color: Colors.white.withValues(alpha: 0.68),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
             Positioned(
@@ -274,12 +303,19 @@ class _WatchPlaybackStageState extends State<_WatchPlaybackStage> {
                 visible: _controlsVisible,
                 child: Row(
                   children: [
-                    IconButton(
+                    YnekoIconActionButton(
                       key: const ValueKey('watch-back-button'),
                       tooltip: '返回',
                       onPressed: widget.onBack,
-                      color: Colors.white.withValues(alpha: 0.78),
-                      icon: const Icon(Icons.chevron_left_rounded, size: 28),
+                      tone: YnekoActionButtonTone.ghost,
+                      transparent: true,
+                      size: 40,
+                      iconSize: 28,
+                      icon: Icon(
+                        Icons.chevron_left_rounded,
+                        color: Colors.white.withValues(alpha: 0.82),
+                        size: 28,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -316,13 +352,19 @@ class _WatchPlaybackStageState extends State<_WatchPlaybackStage> {
                     _ => '弹幕',
                   },
                   child: switch (_activePanel) {
-                    'speed' => const _SpeedOptions(),
+                    'speed' => _SpeedOptions(
+                      value: snapshot.rate,
+                      onChanged: playbackController?.setRate,
+                    ),
                     'episodes' => _EpisodeOptions(
                       episodes: widget.episodes,
                       activeEpisodeId: widget.episode?.id,
                       onSelect: widget.onSelectEpisode,
                     ),
-                    'volume' => const _VolumeOptions(),
+                    'volume' => _VolumeOptions(
+                      value: snapshot.muted ? 0 : snapshot.volume,
+                      onChanged: playbackController?.setVolume,
+                    ),
                     'settings' => const _SettingsOptions(),
                     _ => const _DanmakuOptions(),
                   },
@@ -335,14 +377,15 @@ class _WatchPlaybackStageState extends State<_WatchPlaybackStage> {
               child: _PlayerChromeOpacity(
                 visible: _controlsVisible,
                 child: _ControlBar(
-                  playing: _playing,
-                  muted: _muted,
-                  progress: mockPlaybackState.progress,
-                  positionLabel: mockPlaybackState.positionLabel,
-                  durationLabel: mockPlaybackState.durationLabel,
+                  playing: snapshot.playing,
+                  muted: snapshot.muted,
+                  progress: snapshot.progress,
+                  positionLabel: _formatDuration(snapshot.position),
+                  durationLabel: _formatDuration(snapshot.duration),
                   activePanel: _activePanel,
-                  onTogglePlay: () => setState(() => _playing = !_playing),
-                  onToggleMute: () => setState(() => _muted = !_muted),
+                  onTogglePlay: playbackController?.togglePlay,
+                  onSeek: playbackController?.seekFraction,
+                  onToggleMute: playbackController?.toggleMute,
                   onPreviousEpisode: widget.onPreviousEpisode,
                   onNextEpisode: widget.onNextEpisode,
                   onTogglePanel: (panel) => setState(
@@ -372,6 +415,42 @@ class _WatchPlaybackStageState extends State<_WatchPlaybackStage> {
       _ => 132,
     };
   }
+
+  Widget _videoFor(WatchPlaybackState playback) {
+    final player = playback.player.player;
+    if (player == null) return const SizedBox.shrink();
+    final identity = player;
+    if (_videoController == null || _videoPlayerIdentity != identity) {
+      _videoPlayerIdentity = identity;
+      _videoController = VideoController(player);
+    }
+    return Video(
+      key: const ValueKey('watch-video-surface'),
+      controller: _videoController!,
+      controls: NoVideoControls,
+      fit: BoxFit.contain,
+      fill: Colors.black,
+    );
+  }
+
+  String _stageMessage(WatchPlaybackState? playback) {
+    if (playback == null) return '暂无剧集';
+    if (playback.searching) return '正在搜索候选源';
+    if (playback.binding) return '正在匹配剧集';
+    if (playback.opening) return '正在打开播放器';
+    if (playback.error != null) return '播放源不可用';
+    if (playback.selectedCandidate != null) return '播放准备就绪';
+    if (playback.candidates.isEmpty) return '没有可用播放源';
+    return '请选择播放候选';
+  }
+
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    if (hours > 0) return '$hours:$minutes:$seconds';
+    return '$minutes:$seconds';
+  }
 }
 
 class _PlayerChromeOpacity extends StatelessWidget {
@@ -394,7 +473,7 @@ class _PlayerCenterPlayGlyph extends StatelessWidget {
   const _PlayerCenterPlayGlyph({required this.playing, required this.onTap});
 
   final bool playing;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -420,6 +499,7 @@ class _ControlBar extends StatelessWidget {
     required this.durationLabel,
     required this.activePanel,
     required this.onTogglePlay,
+    required this.onSeek,
     required this.onToggleMute,
     required this.onPreviousEpisode,
     required this.onNextEpisode,
@@ -432,8 +512,9 @@ class _ControlBar extends StatelessWidget {
   final String positionLabel;
   final String durationLabel;
   final String activePanel;
-  final VoidCallback onTogglePlay;
-  final VoidCallback onToggleMute;
+  final VoidCallback? onTogglePlay;
+  final ValueChanged<double>? onSeek;
+  final VoidCallback? onToggleMute;
   final VoidCallback? onPreviousEpisode;
   final VoidCallback? onNextEpisode;
   final ValueChanged<String> onTogglePanel;
@@ -456,13 +537,23 @@ class _ControlBar extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(22, 56, 22, 16),
             child: Column(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    minHeight: 4,
-                    value: progress,
-                    backgroundColor: Colors.white.withValues(alpha: 0.18),
-                    color: const Color(0xFFFF6699),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 4,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 5,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 12,
+                    ),
+                    activeTrackColor: const Color(0xFFFF6699),
+                    inactiveTrackColor: Colors.white.withValues(alpha: 0.18),
+                    thumbColor: Colors.white,
+                    overlayColor: const Color(0x33FF6699),
+                  ),
+                  child: Slider(
+                    value: progress.clamp(0, 1).toDouble(),
+                    onChanged: onSeek,
                   ),
                 ),
                 const SizedBox(height: 13),
@@ -512,10 +603,12 @@ class _ControlBar extends StatelessWidget {
                                 : YnekoAssets.playerVolume,
                             tooltip: muted ? '取消静音' : '音量',
                             active: activePanel == 'volume',
-                            onPressed: () {
-                              onToggleMute();
-                              onTogglePanel('volume');
-                            },
+                            onPressed: onToggleMute == null
+                                ? null
+                                : () {
+                                    onToggleMute!();
+                                    onTogglePanel('volume');
+                                  },
                           ),
                           _PlayerInlineIconButton(
                             tooltip: '全屏',
@@ -579,10 +672,12 @@ class _ControlBar extends StatelessWidget {
                             : YnekoAssets.playerVolume,
                         tooltip: muted ? '取消静音' : '音量',
                         active: activePanel == 'volume',
-                        onPressed: () {
-                          onToggleMute();
-                          onTogglePanel('volume');
-                        },
+                        onPressed: onToggleMute == null
+                            ? null
+                            : () {
+                                onToggleMute!();
+                                onTogglePanel('volume');
+                              },
                       ),
                       _PlayerInlineIconButton(
                         tooltip: '全屏',
@@ -610,7 +705,7 @@ class _PlaybackCluster extends StatelessWidget {
   });
 
   final bool playing;
-  final VoidCallback onTogglePlay;
+  final VoidCallback? onTogglePlay;
   final VoidCallback? onPreviousEpisode;
   final VoidCallback? onNextEpisode;
 
@@ -757,16 +852,21 @@ class _PlayerInlineIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: IconButton(
-        onPressed: onPressed,
-        color: active
-            ? const Color(0xFFFF6699)
-            : onPressed == null
-            ? Colors.white.withValues(alpha: 0.34)
-            : Colors.white,
-        icon: child,
+    final color = active
+        ? const Color(0xFFFF6699)
+        : onPressed == null
+        ? Colors.white.withValues(alpha: 0.34)
+        : Colors.white;
+    return YnekoIconActionButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      tone: YnekoActionButtonTone.ghost,
+      transparent: true,
+      size: 38,
+      iconSize: 22,
+      icon: IconTheme(
+        data: IconThemeData(color: color, size: 22),
+        child: child,
       ),
     );
   }
@@ -780,17 +880,24 @@ class _PlayerTextButton extends StatelessWidget {
   });
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool active;
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
+    return YnekoActionButton(
+      label: label,
       onPressed: onPressed,
-      style: TextButton.styleFrom(
-        foregroundColor: active ? const Color(0xFFFF6699) : Colors.white,
+      tone: YnekoActionButtonTone.ghost,
+      height: 32,
+      minWidth: 42,
+      horizontalPadding: 8,
+      textStyle: TextStyle(
+        color: active ? const Color(0xFFFF6699) : Colors.white,
+        fontWeight: FontWeight.w700,
+        fontSize: 13,
+        height: 1,
       ),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
     );
   }
 }
@@ -808,6 +915,10 @@ class _PlayerSvgIcon extends StatelessWidget {
       key: ValueKey('player-svg-$asset'),
       width: size,
       height: size,
+      colorFilter: ColorFilter.mode(
+        IconTheme.of(context).color ?? Colors.white,
+        BlendMode.srcIn,
+      ),
     );
   }
 }
@@ -877,14 +988,22 @@ class _PlayerPopupPanel extends StatelessWidget {
 }
 
 class _SpeedOptions extends StatelessWidget {
-  const _SpeedOptions();
+  const _SpeedOptions({required this.value, required this.onChanged});
+
+  final double value;
+  final ValueChanged<double>? onChanged;
 
   @override
   Widget build(BuildContext context) {
+    final speeds = const [2.0, 1.5, 1.25, 1.0, 0.75];
     return Column(
       children: [
-        for (final speed in ['2.0x', '1.5x', '1.25x', '1.0x', '0.75x'])
-          _PanelChoice(label: speed, active: speed == '1.0x'),
+        for (final speed in speeds)
+          _PanelChoice(
+            label: '${speed}x',
+            active: (value - speed).abs() < 0.01,
+            onTap: onChanged == null ? null : () => onChanged!(speed),
+          ),
       ],
     );
   }
@@ -928,7 +1047,10 @@ class _EpisodeOptions extends StatelessWidget {
 }
 
 class _VolumeOptions extends StatelessWidget {
-  const _VolumeOptions();
+  const _VolumeOptions({required this.value, required this.onChanged});
+
+  final double value;
+  final ValueChanged<double>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -937,7 +1059,12 @@ class _VolumeOptions extends StatelessWidget {
       height: 140,
       child: RotatedBox(
         quarterTurns: -1,
-        child: Slider(value: 0.72, onChanged: (_) {}),
+        child: Slider(
+          value: (value / 100).clamp(0, 1).toDouble(),
+          onChanged: onChanged == null
+              ? null
+              : (next) => onChanged!(next * 100),
+        ),
       ),
     );
   }
@@ -988,25 +1115,33 @@ class _PanelChoice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: onTap ?? () {},
-      style: TextButton.styleFrom(
-        foregroundColor: active ? const Color(0xFFFF6699) : Colors.white70,
-        backgroundColor: active
-            ? Colors.white.withValues(alpha: 0.08)
-            : Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        minimumSize: const Size(0, 32),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-      ),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          label,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-        ),
-      ),
+    return YnekoPressable(
+      onTap: onTap,
+      borderRadius: 4,
+      builder: (context, hovered, pressed) {
+        final highlighted = active || hovered || pressed;
+        return AnimatedContainer(
+          duration: YnekoThemeTokens.fastMotion,
+          constraints: const BoxConstraints(minHeight: 32),
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: highlighted
+                ? Colors.white.withValues(alpha: active ? 0.08 : 0.06)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: active ? const Color(0xFFFF6699) : Colors.white70,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1020,15 +1155,10 @@ class _WatchSidePanel extends StatelessWidget {
     required this.tab,
     required this.gridEpisodes,
     required this.reverseEpisodes,
-    required this.sourceGroupOpen,
-    required this.sourceGroup,
-    required this.sourceMatrixStatus,
+    required this.playbackKey,
     required this.onTab,
     required this.onToggleGrid,
     required this.onToggleReverse,
-    required this.onToggleSourceGroup,
-    required this.onSourceGroup,
-    required this.onExportMatrix,
     required this.onEpisode,
   });
 
@@ -1039,15 +1169,10 @@ class _WatchSidePanel extends StatelessWidget {
   final _WatchPanelTab tab;
   final bool gridEpisodes;
   final bool reverseEpisodes;
-  final bool sourceGroupOpen;
-  final String sourceGroup;
-  final String sourceMatrixStatus;
+  final WatchPlaybackKey? playbackKey;
   final ValueChanged<_WatchPanelTab> onTab;
   final VoidCallback onToggleGrid;
   final VoidCallback onToggleReverse;
-  final VoidCallback onToggleSourceGroup;
-  final ValueChanged<String> onSourceGroup;
-  final VoidCallback onExportMatrix;
   final ValueChanged<AnimeEpisode> onEpisode;
 
   @override
@@ -1101,15 +1226,10 @@ class _WatchSidePanel extends StatelessWidget {
                   activeEpisodeId: activeEpisodeId,
                   gridEpisodes: gridEpisodes,
                   reverseEpisodes: reverseEpisodes,
-                  sourceGroupOpen: sourceGroupOpen,
-                  sourceGroup: sourceGroup,
-                  sourceMatrixStatus: sourceMatrixStatus,
+                  playbackKey: playbackKey,
                   onTab: onTab,
                   onToggleGrid: onToggleGrid,
                   onToggleReverse: onToggleReverse,
-                  onToggleSourceGroup: onToggleSourceGroup,
-                  onSourceGroup: onSourceGroup,
-                  onExportMatrix: onExportMatrix,
                   onEpisode: onEpisode,
                 ),
                 const SizedBox(height: 16),
@@ -1215,23 +1335,7 @@ class _OverviewCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              FilledButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.favorite_border_rounded, size: 17),
-                label: const Text('追番'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF5F99),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(102, 42),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
+              const _FollowMenu(),
             ],
           ),
           const SizedBox(height: 14),
@@ -1286,6 +1390,288 @@ class _OverviewCard extends StatelessWidget {
   }
 }
 
+enum _FollowStatus { watching, planned, completed, paused, dropped }
+
+class _FollowMenu extends StatefulWidget {
+  const _FollowMenu();
+
+  @override
+  State<_FollowMenu> createState() => _FollowMenuState();
+}
+
+class _FollowMenuState extends State<_FollowMenu> {
+  final Object _tapRegionGroup = Object();
+  final _overlayController = OverlayPortalController();
+  final _layerLink = LayerLink();
+  _FollowStatus? _status;
+  bool _open = false;
+  bool _hovered = false;
+
+  void _setOpen(bool open) {
+    setState(() => _open = open);
+    if (open) {
+      _overlayController.show();
+    } else {
+      _overlayController.hide();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    final motion = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : YnekoThemeTokens.fastMotion;
+    final marked = _status != null;
+    final label = marked ? _followStatusLabel(_status!) : '追番';
+    return TapRegion(
+      groupId: _tapRegionGroup,
+      onTapOutside: (_) {
+        if (_open) _setOpen(false);
+      },
+      child: MouseRegion(
+        onEnter: (_) => setState(() {
+          _hovered = true;
+          if (marked) {
+            _open = true;
+            _overlayController.show();
+          }
+        }),
+        onExit: (_) => setState(() => _hovered = false),
+        child: OverlayPortal(
+          controller: _overlayController,
+          overlayChildBuilder: (context) => TapRegion(
+            groupId: _tapRegionGroup,
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              targetAnchor: Alignment.bottomRight,
+              followerAnchor: Alignment.topRight,
+              offset: const Offset(0, 8),
+              child: AnimatedOpacity(
+                duration: motion,
+                opacity: _open ? 1 : 0,
+                child: AnimatedSlide(
+                  duration: motion,
+                  curve: Curves.easeOut,
+                  offset: _open ? Offset.zero : const Offset(0, -0.08),
+                  child: _FollowMenuPanel(
+                    status: _status,
+                    onStatus: (status) {
+                      setState(() => _status = status);
+                      _setOpen(false);
+                    },
+                    onCancel: () {
+                      setState(() => _status = null);
+                      _setOpen(false);
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+          child: SizedBox(
+            width: 116,
+            height: 34,
+            child: CompositedTransformTarget(
+              link: _layerLink,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  if (_status == null) {
+                    setState(() => _status = _FollowStatus.watching);
+                    _setOpen(true);
+                  } else {
+                    _setOpen(!_open);
+                  }
+                },
+                child: AnimatedSlide(
+                  duration: motion,
+                  curve: Curves.easeOut,
+                  offset: _hovered ? const Offset(0, -0.04) : Offset.zero,
+                  child: AnimatedContainer(
+                    key: const ValueKey('watch-follow-button'),
+                    duration: motion,
+                    height: 34,
+                    padding: const EdgeInsets.symmetric(horizontal: 13),
+                    decoration: BoxDecoration(
+                      color: _hovered || _open
+                          ? tokens.primaryContainer
+                          : Color.lerp(
+                              tokens.surfaceHigh,
+                              Colors.transparent,
+                              0.24,
+                            ),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Color.lerp(
+                          tokens.outline,
+                          Colors.transparent,
+                          0.44,
+                        )!,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          marked
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
+                          size: 17,
+                          color: tokens.primaryStrong,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            label,
+                            overflow: TextOverflow.ellipsis,
+                            style: type.label.copyWith(
+                              color: tokens.primaryStrong,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FollowMenuPanel extends StatelessWidget {
+  const _FollowMenuPanel({
+    required this.status,
+    required this.onStatus,
+    required this.onCancel,
+  });
+
+  final _FollowStatus? status;
+  final ValueChanged<_FollowStatus> onStatus;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: tokens.outline.withValues(alpha: 0.82)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 32,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final item in _FollowStatus.values)
+              _FollowMenuOption(
+                key: ValueKey('watch-follow-option-${item.name}'),
+                label: _followStatusLabel(item),
+                active: item == status,
+                onTap: () => onStatus(item),
+              ),
+            _FollowMenuOption(
+              key: const ValueKey('watch-follow-option-cancel'),
+              label: '取消追番',
+              danger: true,
+              onTap: onCancel,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FollowMenuOption extends StatefulWidget {
+  const _FollowMenuOption({
+    super.key,
+    required this.label,
+    required this.onTap,
+    this.active = false,
+    this.danger = false,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool active;
+  final bool danger;
+
+  @override
+  State<_FollowMenuOption> createState() => _FollowMenuOptionState();
+}
+
+class _FollowMenuOptionState extends State<_FollowMenuOption> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    final motion = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 160);
+    final dangerColor = const Color(0xFFBD2D3A);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: motion,
+          constraints: const BoxConstraints(minWidth: 122, minHeight: 40),
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          color: _hovered ? tokens.primaryContainer : Colors.transparent,
+          child: Text(
+            widget.label,
+            style: type.label.copyWith(
+              color: widget.danger
+                  ? dangerColor
+                  : _hovered
+                  ? tokens.primary
+                  : widget.active
+                  ? tokens.ink
+                  : tokens.muted,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _followStatusLabel(_FollowStatus status) {
+  return switch (status) {
+    _FollowStatus.watching => '在看',
+    _FollowStatus.planned => '想看',
+    _FollowStatus.completed => '看过',
+    _FollowStatus.paused => '搁置',
+    _FollowStatus.dropped => '抛弃',
+  };
+}
+
 class _InlineMeta extends StatelessWidget {
   const _InlineMeta({required this.label});
 
@@ -1311,15 +1697,10 @@ class _EpisodeSwitchCard extends StatelessWidget {
     required this.activeEpisodeId,
     required this.gridEpisodes,
     required this.reverseEpisodes,
-    required this.sourceGroupOpen,
-    required this.sourceGroup,
-    required this.sourceMatrixStatus,
+    required this.playbackKey,
     required this.onTab,
     required this.onToggleGrid,
     required this.onToggleReverse,
-    required this.onToggleSourceGroup,
-    required this.onSourceGroup,
-    required this.onExportMatrix,
     required this.onEpisode,
   });
 
@@ -1328,15 +1709,10 @@ class _EpisodeSwitchCard extends StatelessWidget {
   final int? activeEpisodeId;
   final bool gridEpisodes;
   final bool reverseEpisodes;
-  final bool sourceGroupOpen;
-  final String sourceGroup;
-  final String sourceMatrixStatus;
+  final WatchPlaybackKey? playbackKey;
   final ValueChanged<_WatchPanelTab> onTab;
   final VoidCallback onToggleGrid;
   final VoidCallback onToggleReverse;
-  final VoidCallback onToggleSourceGroup;
-  final ValueChanged<String> onSourceGroup;
-  final VoidCallback onExportMatrix;
   final ValueChanged<AnimeEpisode> onEpisode;
 
   @override
@@ -1404,14 +1780,7 @@ class _EpisodeSwitchCard extends StatelessWidget {
                 embedded: true,
               ),
               _WatchPanelTab.series => const _SeriesPanel(currentSubjectId: -1),
-              _WatchPanelTab.sources => _SourcesPanel(
-                sourceGroup: sourceGroup,
-                open: sourceGroupOpen,
-                matrixStatus: sourceMatrixStatus,
-                onToggleGroup: onToggleSourceGroup,
-                onSourceGroup: onSourceGroup,
-                onExportMatrix: onExportMatrix,
-              ),
+              _WatchPanelTab.sources => _SourcesPanel(playbackKey: playbackKey),
             },
           ),
         ],
@@ -1426,7 +1795,6 @@ class _RecommendationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
-    final item = mockAnimeCards.first;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1434,75 +1802,23 @@ class _RecommendationCard extends StatelessWidget {
         border: Border.all(color: tokens.outline.withValues(alpha: 0.66)),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
+      child: const Column(
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   '相关推荐',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                 ),
               ),
-              Text(
-                '喜欢这部动画的人也喜欢',
-                style: YnekoTypography.of(context).label.copyWith(
-                  color: const Color(0xFF5F6672),
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
             ],
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              border: Border.all(color: tokens.outline.withValues(alpha: 0.62)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 58,
-                  height: 70,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: item.coverColor,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    item.title.characters.first,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.title,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${item.subtitle} · 评分 ${item.score}',
-                        overflow: TextOverflow.ellipsis,
-                        style: YnekoTypography.of(context).meta,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          SizedBox(height: 12),
+          YnekoEmptyState(
+            icon: Icons.auto_awesome_rounded,
+            title: '推荐暂未接入',
+            description: '后续会基于真实 Bangumi 关联与本地历史展示。',
           ),
         ],
       ),
@@ -1558,20 +1874,23 @@ class _PanelTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = YnekoThemeTokens.of(context);
     return Expanded(
-      child: TextButton(
-        onPressed: onTap,
-        style: TextButton.styleFrom(
-          padding: EdgeInsets.zero,
-          foregroundColor: active ? Colors.white : tokens.muted,
-          backgroundColor: active ? tokens.primary : tokens.surfaceHigh,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: Text(
-          label,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: YnekoActionButton(
+          label: label,
+          onPressed: onTap,
+          tone: active
+              ? YnekoActionButtonTone.primary
+              : YnekoActionButtonTone.outline,
+          height: 34,
+          minWidth: 0,
+          horizontalPadding: 8,
+          textStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            height: 1,
+          ),
         ),
       ),
     );
@@ -1717,18 +2036,20 @@ class _EpisodeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
     final type = YnekoTypography.of(context);
-    return Material(
-      color: active
-          ? const Color(0xFFFFF0F6)
-          : grid
-          ? tokens.surface
-          : Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
+    return YnekoPressable(
+      onTap: onTap,
+      builder: (context, hovered, pressed) {
+        final highlighted = active || hovered || pressed;
+        return AnimatedContainer(
+          duration: YnekoThemeTokens.fastMotion,
           decoration: BoxDecoration(
+            color: active
+                ? const Color(0xFFFFF0F6)
+                : highlighted
+                ? Color.lerp(tokens.primaryContainer, tokens.surface, 0.64)
+                : grid
+                ? tokens.surface
+                : Colors.transparent,
             border: grid ? Border.all(color: tokens.outline) : null,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -1769,8 +2090,8 @@ class _EpisodeTile extends StatelessWidget {
                     ),
                   ],
                 ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -1782,226 +2103,493 @@ class _SeriesPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = mockAnimeCards
-        .where((item) => item.id != currentSubjectId)
-        .toList();
-    return YnekoPanel(
-      padding: const EdgeInsets.all(14),
-      child: ListView.builder(
-        itemCount: items.length + 1,
-        itemBuilder: (context, index) {
-          if (index == items.length) {
-            return const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: YnekoEmptyState(
-                icon: Icons.forum_rounded,
-                title: '评论源暂未接入',
-                description: '更多内容会在后续模块接入。',
-              ),
-            );
-          }
-          final item = items[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _SeriesRow(item: item),
-          );
-        },
+    return const YnekoPanel(
+      padding: EdgeInsets.all(14),
+      child: YnekoEmptyState(
+        icon: Icons.auto_stories_rounded,
+        title: '系列信息暂未接入',
+        description: '这里不会再展示假数据，后续接真实关联条目。',
       ),
     );
   }
 }
 
-class _SeriesRow extends StatelessWidget {
-  const _SeriesRow({required this.item});
+class _SourcesPanel extends ConsumerWidget {
+  const _SourcesPanel({required this.playbackKey});
 
-  final UiAnimeCard item;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = YnekoThemeTokens.of(context);
-    final type = YnekoTypography.of(context);
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: tokens.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: tokens.outline),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 74,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: item.coverColor,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              item.title.characters.first,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.title,
-                  overflow: TextOverflow.ellipsis,
-                  style: type.controlTitle,
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  item.subtitle,
-                  overflow: TextOverflow.ellipsis,
-                  style: type.meta,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SourcesPanel extends StatelessWidget {
-  const _SourcesPanel({
-    required this.sourceGroup,
-    required this.open,
-    required this.matrixStatus,
-    required this.onToggleGroup,
-    required this.onSourceGroup,
-    required this.onExportMatrix,
-  });
-
-  final String sourceGroup;
-  final bool open;
-  final String matrixStatus;
-  final VoidCallback onToggleGroup;
-  final ValueChanged<String> onSourceGroup;
-  final VoidCallback onExportMatrix;
+  final WatchPlaybackKey? playbackKey;
 
   @override
-  Widget build(BuildContext context) {
-    final groups = const ['默认规则组', '备用规则组', '实验规则组'];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final library = ref.watch(sourceLibraryControllerProvider);
+    final playback = playbackKey == null
+        ? null
+        : ref.watch(watchPlayerControllerProvider(playbackKey!));
+    final playbackController = playbackKey == null
+        ? null
+        : ref.read(watchPlayerControllerProvider(playbackKey!).notifier);
     return YnekoPanel(
       padding: const EdgeInsets.all(14),
       child: ListView(
         children: [
-          _SourceGroupCard(
-            title: sourceGroup,
-            open: open,
-            onTap: onToggleGroup,
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  '规则源',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                ),
+              ),
+              YnekoActionButton(
+                label: '搜索',
+                onPressed: () => playbackController?.searchSources(),
+                icon: const Icon(Icons.refresh_rounded, size: 16),
+                tone: YnekoActionButtonTone.outline,
+                height: 32,
+                minWidth: 70,
+              ),
+            ],
           ),
-          if (open)
-            Padding(
-              padding: const EdgeInsets.only(top: 6, bottom: 8),
-              child: Column(
-                children: [
-                  for (final group in groups)
-                    _SourceGroupOption(
-                      label: group,
-                      active: group == sourceGroup,
-                      onTap: () => onSourceGroup(group),
-                    ),
-                ],
+          const SizedBox(height: 8),
+          library.when(
+            loading: () => const SizedBox(
+              height: 80,
+              child: Center(child: YnekoRingLoader(size: 42)),
+            ),
+            error: (error, stackTrace) => YnekoEmptyState(
+              icon: Icons.error_outline_rounded,
+              title: '规则源加载失败',
+              description: error.toString(),
+            ),
+            data: (state) => _RuleGroupSummaryCard(
+              state: state,
+              onSearchGroup: (group) => playbackController?.searchSources(
+                ruleIds: state.enabledRuleIdsForGroup(group.id),
               ),
             ),
-          FilledButton.icon(
-            onPressed: onExportMatrix,
-            icon: const Icon(Icons.download_rounded),
-            label: const Text('导出矩阵'),
           ),
-          if (matrixStatus.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(matrixStatus, style: YnekoTypography.of(context).meta),
-          ],
           const SizedBox(height: 12),
-          for (final candidate in mockSourceCandidates)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: SourceCandidateRow(
-                candidate: candidate,
-                active: candidate.name == sourceGroup || candidate.matched,
-              ),
+          if (playback?.searching == true ||
+              playback?.binding == true ||
+              playback?.opening == true)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 18),
+              child: Center(child: YnekoRingLoader()),
+            )
+          else if (playback?.error != null)
+            YnekoEmptyState(
+              icon: Icons.error_outline_rounded,
+              title: '解析失败',
+              description: playback!.error!,
+            )
+          else if (playback == null)
+            const YnekoEmptyState(
+              icon: Icons.live_tv_rounded,
+              title: '暂无剧集',
+              description: '选择剧集后会显示播放候选。',
+            )
+          else if (playback.candidates.isEmpty)
+            const YnekoEmptyState(
+              icon: Icons.tune_rounded,
+              title: '没有可用播放源',
+              description: '启用规则组后可重新搜索当前番剧。',
+            )
+          else
+            _RuleSourceResultList(
+              playback: playback,
+              onCandidate: playbackController?.openCandidate,
             ),
-          const SizedBox(height: 10),
-          const YnekoEmptyState(
-            icon: Icons.tune_rounded,
-            title: '暂无更多候选',
-            description: '可以重新搜索，或到设置里添加规则源。',
-          ),
+          if (playback != null &&
+              (playback.bindingAttempts.isNotEmpty ||
+                  playback.streamAttempts.isNotEmpty)) ...[
+            const SizedBox(height: 10),
+            _AttemptList(
+              attempts: [
+                ...playback.bindingAttempts,
+                ...playback.streamAttempts,
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _SourceGroupCard extends StatelessWidget {
-  const _SourceGroupCard({
+class _RuleGroupSummaryCard extends StatelessWidget {
+  const _RuleGroupSummaryCard({
+    required this.state,
+    required this.onSearchGroup,
+  });
+
+  final SourceLibraryState state;
+  final ValueChanged<RuleGroupSummary> onSearchGroup;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.packages.isEmpty) {
+      return const YnekoEmptyState(
+        icon: Icons.tune_rounded,
+        title: '还没有规则源',
+        description: '请到设置或规则源页面导入声明式规则包。',
+      );
+    }
+    final group = state.defaultGroup;
+    final enabled = group.enabledRuleCount(state.packages);
+    return Column(
+      children: [
+        _SourceCurrentCard(
+          title: group.name,
+          subtitle: '${group.ruleIds.length} 个规则源，$enabled 个可用',
+          onTap: () => onSearchGroup(group),
+        ),
+        const SizedBox(height: 8),
+        for (final item in state.groups)
+          _SourceGroupOption(
+            group: item,
+            enabledCount: item.enabledRuleCount(state.packages),
+            onTap: () => onSearchGroup(item),
+          ),
+      ],
+    );
+  }
+}
+
+class _SourceCurrentCard extends StatelessWidget {
+  const _SourceCurrentCard({
     required this.title,
-    required this.open,
+    required this.subtitle,
     required this.onTap,
   });
 
   final String title;
-  final bool open;
+  final String subtitle;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final tokens = YnekoThemeTokens.of(context);
+    return YnekoPressable(
       onTap: onTap,
-      child: SourceCandidateRow(
-        candidate: UiSourceCandidate(
-          name: title,
-          status: '已选择',
-          detail: '点击切换规则组',
-          matched: true,
-        ),
-        active: open,
-      ),
+      builder: (context, hovered, pressed) {
+        final highlighted = hovered || pressed;
+        return AnimatedContainer(
+          duration: YnekoThemeTokens.fastMotion,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: highlighted
+                ? tokens.primaryContainer
+                : Color.lerp(tokens.primaryContainer, tokens.surface, 0.45),
+            border: Border.all(
+              color: tokens.primary.withValues(
+                alpha: highlighted ? 0.46 : 0.28,
+              ),
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: YnekoTypography.of(context).controlTitle,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(subtitle, style: YnekoTypography.of(context).meta),
+                  ],
+                ),
+              ),
+              Icon(Icons.search_rounded, size: 18, color: tokens.primary),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
 class _SourceGroupOption extends StatelessWidget {
   const _SourceGroupOption({
-    required this.label,
-    required this.active,
+    required this.group,
+    required this.enabledCount,
     required this.onTap,
   });
 
-  final String label;
-  final bool active;
+  final RuleGroupSummary group;
+  final int enabledCount;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 5),
-      child: Material(
-        color: active
-            ? Color.lerp(tokens.primaryContainer, tokens.surface, 0.32)
-            : tokens.surface,
+    return YnekoPressable(
+      onTap: onTap,
+      builder: (context, hovered, pressed) {
+        final highlighted = hovered || pressed;
+        return AnimatedContainer(
+          duration: YnekoThemeTokens.fastMotion,
+          margin: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: highlighted ? tokens.primaryContainer : tokens.surface,
+            border: Border.all(
+              color: highlighted
+                  ? Color.lerp(tokens.outline, tokens.primary, 0.38)!
+                  : tokens.outline.withValues(alpha: 0.58),
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  group.name,
+                  overflow: TextOverflow.ellipsis,
+                  style: YnekoTypography.of(context).label.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: tokens.ink,
+                  ),
+                ),
+              ),
+              Text('$enabledCount 可用', style: YnekoTypography.of(context).meta),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RuleSourceResultList extends StatelessWidget {
+  const _RuleSourceResultList({
+    required this.playback,
+    required this.onCandidate,
+  });
+
+  final WatchPlaybackState playback;
+  final ValueChanged<SourceCandidate>? onCandidate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (final result in playback.sourceResults)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _RuleSourceResultCard(
+              result: result,
+              selected: playback.selectedCandidate,
+              onCandidate: onCandidate,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _RuleSourceResultCard extends StatelessWidget {
+  const _RuleSourceResultCard({
+    required this.result,
+    required this.selected,
+    required this.onCandidate,
+  });
+
+  final RuleSourceSearchResult result;
+  final SourceCandidate? selected;
+  final ValueChanged<SourceCandidate>? onCandidate;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final matched = result.status == 'match';
+    final danger = result.status == 'error';
+    return Container(
+      padding: const EdgeInsets.all(9),
+      decoration: BoxDecoration(
+        color: tokens.surface,
         borderRadius: BorderRadius.circular(8),
-        child: ListTile(
-          dense: true,
-          title: Text(label),
-          trailing: active
-              ? Icon(Icons.check_rounded, color: tokens.primary)
-              : null,
-          onTap: onTap,
-        ),
+        border: Border.all(color: tokens.outline.withValues(alpha: 0.62)),
       ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _RuleStatusDot(status: result.status),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      result.ruleName,
+                      overflow: TextOverflow.ellipsis,
+                      style: YnekoTypography.of(context).label.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: tokens.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      result.error ??
+                          (matched
+                              ? '${result.candidates.length} 个候选 · ${result.elapsedMs}ms'
+                              : '没有匹配候选'),
+                      overflow: TextOverflow.ellipsis,
+                      style: YnekoTypography.of(context).meta.copyWith(
+                        color: danger ? const Color(0xFFBD2D3A) : tokens.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (result.candidates.isNotEmpty) ...[
+            const SizedBox(height: 7),
+            for (final candidate in result.candidates)
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: _PlaybackCandidateRow(
+                  candidate: candidate,
+                  active: candidate.detailUrl == selected?.detailUrl,
+                  onTap: () => onCandidate?.call(candidate),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RuleStatusDot extends StatelessWidget {
+  const _RuleStatusDot({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (status) {
+      'match' => const Color(0xFF2DBF6F),
+      'error' => const Color(0xFFFF5F87),
+      'pending' => YnekoThemeTokens.of(context).muted,
+      _ => YnekoThemeTokens.of(context).soft,
+    };
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: color.withValues(alpha: 0.18), spreadRadius: 3),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaybackCandidateRow extends StatelessWidget {
+  const _PlaybackCandidateRow({
+    required this.candidate,
+    required this.active,
+    required this.onTap,
+  });
+
+  final SourceCandidate candidate;
+  final bool active;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return YnekoPressable(
+      onTap: onTap,
+      borderRadius: 7,
+      builder: (context, hovered, pressed) {
+        final highlighted = active || hovered || pressed;
+        return AnimatedContainer(
+          duration: YnekoThemeTokens.fastMotion,
+          constraints: const BoxConstraints(minHeight: 34),
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          decoration: BoxDecoration(
+            color: active
+                ? Color.lerp(tokens.primaryContainer, tokens.surface, 0.35)
+                : highlighted
+                ? tokens.primaryContainer
+                : tokens.surfaceLow,
+            borderRadius: BorderRadius.circular(7),
+            border: Border.all(
+              color: highlighted
+                  ? tokens.primary.withValues(alpha: 0.62)
+                  : tokens.outline.withValues(alpha: 0.50),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  candidate.title,
+                  overflow: TextOverflow.ellipsis,
+                  style: YnekoTypography.of(context).label.copyWith(
+                    color: tokens.ink,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              if (candidate.score != null)
+                Text(
+                  '${(candidate.score! * 100).round()}%',
+                  style: YnekoTypography.of(context).meta,
+                ),
+              const SizedBox(width: 7),
+              Icon(
+                active
+                    ? Icons.play_circle_fill_rounded
+                    : Icons.play_arrow_rounded,
+                size: 17,
+                color: active ? tokens.primary : tokens.muted,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AttemptList extends StatelessWidget {
+  const _AttemptList({required this.attempts});
+
+  final List<RuleResolveAttempt> attempts;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (final attempt in attempts.take(4))
+          Padding(
+            padding: const EdgeInsets.only(bottom: 5),
+            child: Row(
+              children: [
+                _RuleStatusDot(
+                  status: attempt.status == 'success' ? 'match' : 'error',
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    attempt.message,
+                    overflow: TextOverflow.ellipsis,
+                    style: YnekoTypography.of(context).meta,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -2022,26 +2610,15 @@ class _SmallIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = YnekoThemeTokens.of(context);
-    return Tooltip(
-      message: tooltip,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: active ? tokens.primaryContainer : tokens.surfaceHigh,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: tokens.outline.withValues(alpha: 0.66)),
-          ),
-          child: Icon(
-            icon,
-            size: 15,
-            color: active ? tokens.primary : tokens.muted,
-          ),
-        ),
-      ),
+    return YnekoIconActionButton(
+      tooltip: tooltip,
+      icon: Icon(icon, size: 15),
+      onPressed: onTap,
+      tone: active
+          ? YnekoActionButtonTone.ghost
+          : YnekoActionButtonTone.outline,
+      size: 30,
+      iconSize: 15,
     );
   }
 }

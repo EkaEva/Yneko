@@ -246,7 +246,7 @@ class _RailBackButtonState extends State<_RailBackButton> {
                   ? Color.lerp(tokens.surfaceHigh, tokens.railSurface, 0.22)
                   : _hovered
                   ? Color.lerp(tokens.surface, tokens.railSurface, 0.28)
-                  : Colors.transparent,
+                  : tokens.railSurface,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: _hovered || _pressed
@@ -297,45 +297,56 @@ class _RailIconButton extends StatefulWidget {
 
 class _RailIconButtonState extends State<_RailIconButton> {
   bool _hovered = false;
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
-    final active = widget.active || _hovered;
+    final highlighted = widget.active || _hovered;
     final motion = _motionDuration(context, YnekoThemeTokens.fastMotion);
     return Tooltip(
       message: widget.label,
       waitDuration: const Duration(milliseconds: 700),
       child: MouseRegion(
         onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
+        onExit: (_) => setState(() {
+          _hovered = false;
+          _pressed = false;
+        }),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: widget.onTap,
-          child: AnimatedContainer(
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
+          child: AnimatedScale(
             duration: motion,
-            width: 50,
-            height: 50,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _RailIcon(glyph: widget.icon, active: active),
-                const SizedBox(height: 3),
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    color: active ? tokens.primary : tokens.railLabel,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    height: 1.12,
+            curve: Curves.easeOut,
+            scale: _pressed ? 0.97 : 1,
+            child: AnimatedContainer(
+              key: ValueKey('rail-button-${widget.label}'),
+              duration: motion,
+              width: 50,
+              height: 50,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+              decoration: const BoxDecoration(color: Colors.transparent),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _RailIcon(glyph: widget.icon, active: highlighted),
+                  const SizedBox(height: 3),
+                  Text(
+                    widget.label,
+                    style: TextStyle(
+                      color: highlighted ? tokens.primary : tokens.railLabel,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      height: 1.12,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -512,7 +523,7 @@ class _TopBar extends ConsumerWidget {
                                 onChanged: onSearchModeChanged,
                               )
                             : Text(
-                                _pageTitle(route),
+                                _pageTitle(route, ref),
                                 style: type.topTab.copyWith(
                                   color: tokens.primary,
                                   fontSize: 18,
@@ -554,13 +565,26 @@ class _TopBar extends ConsumerWidget {
     );
   }
 
-  String _pageTitle(ShellRoute route) {
+  String _pageTitle(ShellRoute route, WidgetRef ref) {
     return switch (route) {
       HomeRoute() => '首页',
       MineRoute() => '我的',
       SearchRoute() => '搜索',
       WatchRoute() => '播放',
-      SettingsRoute() => '设置',
+      SettingsRoute() => _settingsTitle(ref),
+    };
+  }
+
+  String _settingsTitle(WidgetRef ref) {
+    return switch (ref.watch(settingsPanelProvider)) {
+      SettingsPanel.appearance => '外观',
+      SettingsPanel.download => '下载设置',
+      SettingsPanel.rules => '规则管理',
+      SettingsPanel.player => '播放器设置',
+      SettingsPanel.danmaku => '弹幕实验室',
+      SettingsPanel.backup => '本地备份',
+      SettingsPanel.cache => '缓存清理',
+      SettingsPanel.root => '设置',
     };
   }
 }
@@ -636,15 +660,16 @@ class _TopSearchState extends State<_TopSearch> {
             suffixIcon: SizedBox(
               width: 48,
               height: 46,
-              child: IconButton(
-                tooltip: '搜索',
-                onPressed: () => widget.onSubmitted(_controller.text),
-                style: IconButton.styleFrom(
-                  minimumSize: const Size(48, 46),
-                  fixedSize: const Size(48, 46),
-                  padding: EdgeInsets.zero,
+              child: Center(
+                child: YnekoIconActionButton(
+                  tooltip: '搜索',
+                  onPressed: () => widget.onSubmitted(_controller.text),
+                  icon: Icon(Icons.search_rounded, color: tokens.ink, size: 23),
+                  tone: YnekoActionButtonTone.chrome,
+                  transparent: true,
+                  size: 38,
+                  iconSize: 23,
                 ),
-                icon: Icon(Icons.search_rounded, color: tokens.ink, size: 23),
               ),
             ),
             suffixIconConstraints: const BoxConstraints.tightFor(
@@ -1362,6 +1387,10 @@ class ShellThemeModeController extends Notifier<ThemeMode> {
 
   void toggle() {
     state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+  }
+
+  void setMode(ThemeMode mode) {
+    state = mode;
   }
 }
 

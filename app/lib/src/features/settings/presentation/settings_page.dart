@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../application/settings_navigation_controller.dart';
 import '../../shell/index.dart';
+import '../../sources/index.dart';
 import '../../../shared/theme/index.dart';
 import '../../../shared/ui/index.dart';
 
@@ -18,12 +19,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   String _startupPage = '首页';
   String _downloadPath = 'D:\\Yneko\\Downloads';
   int _downloadConcurrency = 3;
-  String _downloadStrategy = '优先清晰度';
-  String _playerEngine = 'media_kit';
+  String _downloadStrategy = '自动';
+  String _playerEngine = '自动';
   String _superResolution = '关闭';
-  String _aspectRatio = '自适应';
-  String _danmakuSource = '接口占位';
-  String _danmakuBlockRule = '默认';
+  String _aspectRatio = '自动';
+  String _danmakuSource = '自动匹配';
+  String _danmakuBlockRule = '基础屏蔽';
   bool _useSystemFont = false;
   bool _mirror = false;
   bool _subtitleRendering = true;
@@ -242,13 +243,17 @@ class _SettingsEntryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final radius = BorderRadius.circular(20);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: tokens.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: radius,
         border: Border.all(color: tokens.outline.withValues(alpha: 0.54)),
       ),
-      child: Column(children: children),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Column(children: children),
+      ),
     );
   }
 }
@@ -272,14 +277,26 @@ class _SettingsEntry extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
     final type = YnekoTypography.of(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 76),
+    return YnekoPressable(
+      onTap: onTap ?? () {},
+      cursor: onTap == null
+          ? SystemMouseCursors.basic
+          : SystemMouseCursors.click,
+      borderRadius: 0,
+      scaleOnPress: false,
+      builder: (context, hovered, pressed) {
+        final hoverBackground = Color.lerp(
+          tokens.surfaceHigh,
+          tokens.surface,
+          pressed ? 0.04 : 0.12,
+        )!;
+        return AnimatedContainer(
+          key: ValueKey('settings-entry-$title'),
+          duration: YnekoThemeTokens.fastMotion,
+          constraints: const BoxConstraints(minHeight: 68),
           padding: const EdgeInsets.symmetric(horizontal: 25),
           decoration: BoxDecoration(
+            color: hovered || pressed ? hoverBackground : tokens.surface,
             border: Border(bottom: BorderSide(color: tokens.dividerFaint)),
           ),
           child: Row(
@@ -295,15 +312,21 @@ class _SettingsEntry extends StatelessWidget {
                       title,
                       overflow: TextOverflow.ellipsis,
                       style: type.controlTitle.copyWith(
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      overflow: TextOverflow.ellipsis,
-                      style: type.label.copyWith(fontWeight: FontWeight.w500),
-                    ),
+                    if (description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        overflow: TextOverflow.ellipsis,
+                        style: type.label.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -314,8 +337,64 @@ class _SettingsEntry extends StatelessWidget {
               ],
             ],
           ),
-        ),
+        );
+      },
+    );
+  }
+}
+
+class _SettingsDetailGroup extends StatelessWidget {
+  const _SettingsDetailGroup({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = YnekoTypography.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: type.controlTitle.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _SettingsEntryList(children: children),
+        ],
       ),
+    );
+  }
+}
+
+class _SettingsControlRow extends StatelessWidget {
+  const _SettingsControlRow({
+    required this.icon,
+    required this.title,
+    this.description,
+    this.trailing,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? description;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsEntry(
+      icon: icon,
+      title: title,
+      description: description ?? '',
+      trailing: trailing,
+      onTap: onTap,
     );
   }
 }
@@ -328,12 +407,18 @@ class _SettingsDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showContentTitle = panel != SettingsPanel.rules;
     return ListView(
       key: ValueKey('settings-detail-${panel.name}'),
-      padding: const EdgeInsets.fromLTRB(28, 24, 28, 48),
+      padding: EdgeInsets.fromLTRB(28, showContentTitle ? 24 : 28, 28, 48),
       children: [
-        Text(_panelTitle(panel), style: YnekoTypography.of(context).pageTitle),
-        const SizedBox(height: 20),
+        if (showContentTitle) ...[
+          Text(
+            _panelTitle(panel),
+            style: YnekoTypography.of(context).pageTitle,
+          ),
+          const SizedBox(height: 20),
+        ],
         child,
       ],
     );
@@ -372,48 +457,63 @@ class _AppearancePanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return _SettingsEntryList(
+    final themeMode = ref.watch(shellThemeModeProvider);
+    return Column(
       children: [
-        _SettingsEntry(
-          icon: Icons.dark_mode_outlined,
-          title: '主题模式',
-          description: '浅色 / 深色外观会立即作用于界面。',
-          trailing: _SegmentedControl(
-            options: const ['浅色', '深色'],
-            value: ref.watch(shellThemeModeProvider) == ThemeMode.dark
-                ? '深色'
-                : '浅色',
-            onChanged: (_) =>
-                ref.read(shellThemeModeProvider.notifier).toggle(),
-          ),
+        _SettingsDetailGroup(
+          title: '主题配色',
+          children: [
+            _SettingsControlRow(
+              icon: Icons.palette_outlined,
+              title: '默认模式',
+              trailing: _SegmentedControl(
+                options: const ['浅色', '深色'],
+                value: themeMode == ThemeMode.dark ? '深色' : '浅色',
+                onChanged: (value) => ref
+                    .read(shellThemeModeProvider.notifier)
+                    .setMode(value == '深色' ? ThemeMode.dark : ThemeMode.light),
+              ),
+            ),
+            _SettingsControlRow(
+              icon: Icons.auto_awesome_rounded,
+              title: '配色方案',
+              description: colorScheme,
+              onTap: () => _showColorSchemeDialog(
+                context,
+                value: colorScheme,
+                onChanged: onColorScheme,
+              ),
+            ),
+          ],
         ),
-        _SettingsEntry(
-          icon: Icons.color_lens_outlined,
-          title: '配色方案',
-          description: colorScheme,
-          trailing: _ColorSwatches(
-            value: colorScheme,
-            onChanged: onColorScheme,
-          ),
+        _SettingsDetailGroup(
+          title: '字体设置',
+          children: [
+            _SettingsControlRow(
+              icon: Icons.text_fields_rounded,
+              title: '使用系统字体',
+              description: '关闭时优先使用项目内置 MiSansYneko。',
+              trailing: _SettingsSwitch(
+                checked: useSystemFont,
+                onTap: onSystemFont,
+              ),
+            ),
+          ],
         ),
-        _SettingsEntry(
-          icon: Icons.font_download_outlined,
-          title: '使用系统字体',
-          description: '关闭时优先使用项目内置 MiSansYneko。',
-          trailing: _SettingsSwitch(
-            checked: useSystemFont,
-            onTap: onSystemFont,
-          ),
-        ),
-        _SettingsEntry(
-          icon: Icons.home_outlined,
-          title: '启动页',
-          description: startupPage,
-          trailing: _SegmentedControl(
-            options: const ['首页', '我的', '设置'],
-            value: startupPage,
-            onChanged: onStartupPage,
-          ),
+        _SettingsDetailGroup(
+          title: '启动页设置',
+          children: [
+            _SettingsControlRow(
+              icon: Icons.monitor_rounded,
+              title: '启动后打开',
+              description: startupPage,
+              trailing: _SegmentedControl(
+                options: const ['首页', '我的'],
+                value: startupPage == '设置' ? '首页' : startupPage,
+                onChanged: onStartupPage,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -441,99 +541,83 @@ class _DownloadPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _SettingsEntryList(
+        _SettingsDetailGroup(
+          title: '下载位置',
           children: [
-            _SettingsEntry(
+            _SettingsControlRow(
               icon: Icons.folder_open_rounded,
               title: '下载路径',
               description: path,
-              trailing: SizedBox(
-                width: 260,
-                child: TextField(
-                  controller: TextEditingController(text: path),
+              trailing: _RuleActionButtonShell(
+                label: '修改',
+                onPressed: () => _showTextSettingDialog(
+                  context,
+                  title: '下载路径',
+                  initialValue: path,
                   onSubmitted: onPath,
-                  decoration: const InputDecoration(hintText: '下载路径'),
                 ),
               ),
             ),
-            _SettingsEntry(
+          ],
+        ),
+        _SettingsDetailGroup(
+          title: '下载任务',
+          children: [
+            _SettingsControlRow(
               icon: Icons.format_list_numbered_rounded,
               title: '并发任务',
               description: '限制同时下载的任务数量。',
               trailing: _Stepper(value: concurrency, onChanged: onConcurrency),
             ),
-            _SettingsEntry(
+            _SettingsControlRow(
               icon: Icons.rule_rounded,
               title: '下载策略',
               description: strategy,
-              trailing: _SegmentedControl(
-                options: const ['优先清晰度', '节省空间', '手动选择'],
+              trailing: _ChoicePill(label: strategy),
+              onTap: () => _showChoiceDialog(
+                context,
+                title: '下载策略',
                 value: strategy,
+                options: const [
+                  _SettingsChoice('自动', '按当前网络和片源状态自动选择。'),
+                  _SettingsChoice('仅 Wi-Fi', '预留移动端网络策略。'),
+                  _SettingsChoice('手动确认', '每次下载前显示确认提示。'),
+                ],
                 onChanged: onStrategy,
               ),
             ),
-            const _SettingsEntry(
+            const _SettingsControlRow(
               icon: Icons.text_snippet_outlined,
               title: '命名模板',
               description: '{title}/S01E{episode} - {episodeTitle}',
             ),
           ],
         ),
-        const SizedBox(height: 14),
         const _HintPanel(text: '下载与离线缓存不在 V1 范围内，本页先保留完整设置入口。'),
       ],
     );
   }
 }
 
-class _RulesPanel extends StatelessWidget {
+class _RulesPanel extends ConsumerWidget {
   const _RulesPanel();
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _SettingsEntryList(
-          children: [
-            const _SettingsEntry(
-              icon: Icons.account_tree_outlined,
-              title: '默认规则组',
-              description: '3 个规则源 · 自动匹配候选',
-              trailing: _RuleStatusDot(active: true),
-            ),
-            const _SettingsEntry(
-              icon: Icons.account_tree_outlined,
-              title: '备用规则组',
-              description: '2 个规则源 · 手动选择',
-              trailing: _RuleStatusDot(active: true),
-            ),
-            _SettingsEntry(
-              icon: Icons.add_rounded,
-              title: '导入规则源',
-              description: '支持粘贴仓库地址或本地规则包路径。',
-              trailing: FilledButton.icon(
-                onPressed: null,
-                icon: const Icon(Icons.download_rounded),
-                label: const Text('导入'),
-              ),
-            ),
-            _SettingsEntry(
-              icon: Icons.edit_note_rounded,
-              title: '规则编辑器',
-              description: '配置测试、候选矩阵与规则分组维护入口。',
-              trailing: FilledButton.tonalIcon(
-                onPressed: null,
-                icon: const Icon(Icons.open_in_new_rounded),
-                label: const Text('打开'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        const _HintPanel(
-          text: '规则源仍遵守 declarative source package 边界；这里不会执行脚本或保存凭据。',
-        ),
-      ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    final library = ref.watch(sourceLibraryControllerProvider);
+    return library.when(
+      loading: () => const YnekoPanel(
+        child: SizedBox(height: 180, child: Center(child: YnekoRingLoader())),
+      ),
+      error: (error, stackTrace) => Column(
+        children: [
+          SourceLibraryView(
+            state: const SourceLibraryState(),
+            warning: error.toString(),
+          ),
+        ],
+      ),
+      data: (state) => Column(children: [SourceLibraryView(state: state)]),
     );
   }
 }
@@ -561,43 +645,76 @@ class _PlayerPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SettingsEntryList(
+    return Column(
       children: [
-        _SettingsEntry(
-          icon: Icons.memory_rounded,
+        _SettingsDetailGroup(
           title: '播放引擎',
-          description: engine,
-          trailing: _SegmentedControl(
-            options: const ['media_kit', '占位'],
-            value: engine,
-            onChanged: onEngine,
-          ),
+          children: [
+            _SettingsControlRow(
+              icon: Icons.memory_rounded,
+              title: '播放引擎',
+              description: engine,
+              trailing: _ChoicePill(label: engine),
+              onTap: () => _showChoiceDialog(
+                context,
+                title: '播放引擎',
+                value: engine,
+                options: const [
+                  _SettingsChoice('自动', '根据片源类型自动选择当前最稳的播放链路。'),
+                  _SettingsChoice('media_kit', '使用 Flutter media_kit 播放适配器。'),
+                  _SettingsChoice('占位', '保留后续播放器引擎入口。', disabled: true),
+                ],
+                onChanged: onEngine,
+              ),
+            ),
+          ],
         ),
-        _SettingsEntry(
-          icon: Icons.auto_awesome_rounded,
-          title: '超分辨率',
-          description: superResolution,
-          trailing: _SegmentedControl(
-            options: const ['关闭', '2x', '4x'],
-            value: superResolution,
-            onChanged: onSuperResolution,
-          ),
-        ),
-        _SettingsEntry(
-          icon: Icons.aspect_ratio_rounded,
-          title: '视频比例',
-          description: aspectRatio,
-          trailing: _SegmentedControl(
-            options: const ['自适应', '16:9', '4:3'],
-            value: aspectRatio,
-            onChanged: onAspectRatio,
-          ),
-        ),
-        _SettingsEntry(
-          icon: Icons.flip_rounded,
-          title: '镜像画面',
-          description: '播放器控件壳预留设置项。',
-          trailing: _SettingsSwitch(checked: mirror, onTap: onMirror),
+        _SettingsDetailGroup(
+          title: '画面设置',
+          children: [
+            _SettingsControlRow(
+              icon: Icons.auto_awesome_rounded,
+              title: '超分辨率',
+              description: superResolution,
+              trailing: _ChoicePill(label: superResolution),
+              onTap: () => _showChoiceDialog(
+                context,
+                title: '超分辨率',
+                value: superResolution,
+                options: const [
+                  _SettingsChoice('关闭', '保持原始分辨率与当前播放性能。'),
+                  _SettingsChoice('均衡', '预留 GPU 超分增强，优先控制功耗。', disabled: true),
+                  _SettingsChoice('画质优先', '预留高质量超分增强，适合大屏播放。', disabled: true),
+                ],
+                onChanged: onSuperResolution,
+              ),
+            ),
+            _SettingsControlRow(
+              icon: Icons.aspect_ratio_rounded,
+              title: '视频比例',
+              description: aspectRatio,
+              trailing: _ChoicePill(label: aspectRatio),
+              onTap: () => _showChoiceDialog(
+                context,
+                title: '视频比例',
+                value: aspectRatio,
+                options: const [
+                  _SettingsChoice('自动', '按视频原始比例显示，避免画面变形。'),
+                  _SettingsChoice('适应窗口', '完整显示画面，保留必要黑边。'),
+                  _SettingsChoice('填充窗口', '铺满播放区域，可能裁切边缘内容。'),
+                  _SettingsChoice('16:9', '固定为宽屏比例。'),
+                  _SettingsChoice('4:3', '固定为经典比例。'),
+                ],
+                onChanged: onAspectRatio,
+              ),
+            ),
+            _SettingsControlRow(
+              icon: Icons.flip_rounded,
+              title: '镜像画面',
+              description: '播放器控件壳预留设置项。',
+              trailing: _SettingsSwitch(checked: mirror, onTap: onMirror),
+            ),
+          ],
         ),
       ],
     );
@@ -623,36 +740,69 @@ class _DanmakuPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SettingsEntryList(
+    return Column(
       children: [
-        _SettingsEntry(
-          icon: Icons.forum_outlined,
-          title: '弹幕源',
-          description: source,
-          trailing: _SegmentedControl(
-            options: const ['接口占位', '本地测试'],
-            value: source,
-            onChanged: onSource,
-          ),
+        _SettingsDetailGroup(
+          title: '弹幕来源',
+          children: [
+            _SettingsControlRow(
+              icon: Icons.forum_outlined,
+              title: '弹幕源',
+              description: source,
+              trailing: _ChoicePill(label: source),
+              onTap: () => _showChoiceDialog(
+                context,
+                title: '弹幕源',
+                value: source,
+                options: const [
+                  _SettingsChoice('自动匹配', '随当前播放源尝试匹配可用弹幕数据。'),
+                  _SettingsChoice(
+                    '本地弹幕文件',
+                    '预留 XML / ASS 本地弹幕导入能力。',
+                    disabled: true,
+                  ),
+                  _SettingsChoice('插件弹幕源', '由插件库扩展弹幕来源，后续接入。', disabled: true),
+                ],
+                onChanged: onSource,
+              ),
+            ),
+          ],
         ),
-        _SettingsEntry(
-          icon: Icons.block_rounded,
-          title: '屏蔽规则',
-          description: blockRule,
-          trailing: _SegmentedControl(
-            options: const ['默认', '严格', '关闭'],
-            value: blockRule,
-            onChanged: onBlockRule,
-          ),
-        ),
-        _SettingsEntry(
-          icon: Icons.subtitles_rounded,
-          title: '字幕渲染',
-          description: '保留播放器字幕/弹幕组合入口。',
-          trailing: _SettingsSwitch(
-            checked: subtitleRendering,
-            onTap: onSubtitleRendering,
-          ),
+        _SettingsDetailGroup(
+          title: '显示与过滤',
+          children: [
+            _SettingsControlRow(
+              icon: Icons.block_rounded,
+              title: '屏蔽规则',
+              description: blockRule,
+              trailing: _ChoicePill(label: blockRule),
+              onTap: () => _showChoiceDialog(
+                context,
+                title: '屏蔽规则',
+                value: blockRule,
+                options: const [
+                  _SettingsChoice('关闭屏蔽', '显示所有弹幕内容，不做额外过滤。'),
+                  _SettingsChoice('基础屏蔽', '过滤重复、空白和明显异常的弹幕内容。'),
+                  _SettingsChoice('严格屏蔽', '扩大重复检测与低质量内容过滤范围。'),
+                  _SettingsChoice(
+                    '自定义规则',
+                    '预留关键词、正则和用户规则编辑能力。',
+                    disabled: true,
+                  ),
+                ],
+                onChanged: onBlockRule,
+              ),
+            ),
+            _SettingsControlRow(
+              icon: Icons.subtitles_rounded,
+              title: '字幕渲染',
+              description: '保留播放器字幕/弹幕组合入口。',
+              trailing: _SettingsSwitch(
+                checked: subtitleRendering,
+                onTap: onSubtitleRendering,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -664,17 +814,22 @@ class _BackupPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _SettingsEntryList(
+    return const Column(
       children: [
-        _SettingsEntry(
-          icon: Icons.file_upload_outlined,
-          title: '导出本地备份',
-          description: '导出追番、历史、规则源和设置。',
-        ),
-        _SettingsEntry(
-          icon: Icons.file_download_outlined,
-          title: '导入本地备份',
-          description: '从本地备份恢复应用数据。',
+        _SettingsDetailGroup(
+          title: '本地备份',
+          children: [
+            _SettingsControlRow(
+              icon: Icons.file_upload_outlined,
+              title: '导出本地备份',
+              description: '导出追番、历史、规则源和设置。',
+            ),
+            _SettingsControlRow(
+              icon: Icons.file_download_outlined,
+              title: '导入本地备份',
+              description: '从本地备份恢复应用数据。',
+            ),
+          ],
         ),
       ],
     );
@@ -686,17 +841,22 @@ class _CachePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _SettingsEntryList(
+    return const Column(
       children: [
-        _SettingsEntry(
-          icon: Icons.storage_rounded,
-          title: '离线缓存',
-          description: '约 1.6 GB · V1 暂不启用下载。',
-        ),
-        _SettingsEntry(
-          icon: Icons.cleaning_services_outlined,
-          title: '清理临时数据',
-          description: '清理封面缓存、日志与临时索引。',
+        _SettingsDetailGroup(
+          title: '缓存清理',
+          children: [
+            _SettingsControlRow(
+              icon: Icons.storage_rounded,
+              title: '离线缓存',
+              description: '约 1.6 GB · V1 暂不启用下载。',
+            ),
+            _SettingsControlRow(
+              icon: Icons.cleaning_services_outlined,
+              title: '清理临时数据',
+              description: '清理封面缓存、日志与临时索引。',
+            ),
+          ],
         ),
       ],
     );
@@ -718,6 +878,9 @@ class _SegmentedControl extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
     final type = YnekoTypography.of(context);
+    final selectedIndex = options.indexOf(value).clamp(0, options.length - 1);
+    const minItemWidth = 58.0;
+    final itemWidth = options.length > 2 ? 64.0 : minItemWidth;
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
@@ -725,32 +888,97 @@ class _SegmentedControl extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: tokens.dividerFaint),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final option in options)
-            GestureDetector(
-              onTap: () => onChanged(option),
-              child: Container(
-                height: 30,
-                constraints: const BoxConstraints(minWidth: 58),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: SizedBox(
+        width: itemWidth * options.length,
+        height: 30,
+        child: Stack(
+          children: [
+            AnimatedPositioned(
+              duration: YnekoThemeTokens.fastMotion,
+              curve: Curves.easeOutCubic,
+              left: selectedIndex * itemWidth,
+              top: 0,
+              width: itemWidth,
+              height: 30,
+              child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: option == value ? tokens.surface : Colors.transparent,
+                  color: tokens.surface,
                   borderRadius: BorderRadius.circular(6),
-                  boxShadow: option == value ? tokens.shadow : null,
-                ),
-                child: Text(
-                  option,
-                  style: type.label.copyWith(
-                    color: option == value ? tokens.ink : tokens.muted,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  boxShadow: tokens.shadow,
                 ),
               ),
             ),
-        ],
+            Row(
+              children: [
+                for (final option in options)
+                  _SegmentedButton(
+                    width: itemWidth,
+                    label: option,
+                    selected: option == value,
+                    textStyle: type.label,
+                    inkColor: tokens.ink,
+                    mutedColor: tokens.muted,
+                    onTap: () => onChanged(option),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SegmentedButton extends StatefulWidget {
+  const _SegmentedButton({
+    required this.width,
+    required this.label,
+    required this.selected,
+    required this.textStyle,
+    required this.inkColor,
+    required this.mutedColor,
+    required this.onTap,
+  });
+
+  final double width;
+  final String label;
+  final bool selected;
+  final TextStyle textStyle;
+  final Color inkColor;
+  final Color mutedColor;
+  final VoidCallback onTap;
+
+  @override
+  State<_SegmentedButton> createState() => _SegmentedButtonState();
+}
+
+class _SegmentedButtonState extends State<_SegmentedButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: SizedBox(
+          width: widget.width,
+          height: 30,
+          child: Center(
+            child: Text(
+              widget.label,
+              style: widget.textStyle.copyWith(
+                color: widget.selected || _hovered
+                    ? widget.inkColor
+                    : widget.mutedColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -795,6 +1023,593 @@ class _SettingsSwitch extends StatelessWidget {
   }
 }
 
+class _ColorSchemeOption {
+  const _ColorSchemeOption(this.label, this.colors);
+
+  final String label;
+  final List<Color> colors;
+}
+
+const _colorSchemeOptions = [
+  _ColorSchemeOption('Yneko 粉', [
+    Color(0xFFFF6699),
+    Color(0xFF00A1D6),
+    Color(0xFFFFF0F5),
+  ]),
+  _ColorSchemeOption('清爽蓝', [
+    Color(0xFF2F8AF5),
+    Color(0xFFEDF6FF),
+    Color(0xFFF8FBFF),
+  ]),
+  _ColorSchemeOption('经典灰', [
+    Color(0xFF6C727A),
+    Color(0xFFEDEFF2),
+    Color(0xFFFBFBFC),
+  ]),
+  _ColorSchemeOption('薄荷绿', [
+    Color(0xFF16A085),
+    Color(0xFFEDF9F5),
+    Color(0xFFFBFFFD),
+  ]),
+  _ColorSchemeOption('云杉青', [
+    Color(0xFF0F8B8D),
+    Color(0xFFEDF8F8),
+    Color(0xFFF9FDFD),
+  ]),
+  _ColorSchemeOption('晨雾紫', [
+    Color(0xFF7C6BD8),
+    Color(0xFFF2F0FF),
+    Color(0xFFFCFBFF),
+  ]),
+  _ColorSchemeOption('暖杏白', [
+    Color(0xFFD9824B),
+    Color(0xFFFFF4EB),
+    Color(0xFFFFFDF9),
+  ]),
+];
+
+Future<void> _showColorSchemeDialog(
+  BuildContext context, {
+  required String value,
+  required ValueChanged<String> onChanged,
+}) {
+  return showDialog<void>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.28),
+    builder: (context) => _ColorSchemeDialog(
+      value: value,
+      onChanged: (scheme) {
+        onChanged(scheme);
+        Navigator.of(context).pop();
+      },
+    ),
+  );
+}
+
+class _ColorSchemeDialog extends StatelessWidget {
+  const _ColorSchemeDialog({required this.value, required this.onChanged});
+
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(32),
+      child: Container(
+        width: 820,
+        padding: const EdgeInsets.fromLTRB(34, 30, 34, 34),
+        decoration: BoxDecoration(
+          color: tokens.surface,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: tokens.outline.withValues(alpha: 0.52)),
+          boxShadow: tokens.shadowStrong,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '配色方案',
+                    style: type.sectionTitle.copyWith(fontSize: 24),
+                  ),
+                ),
+                YnekoIconActionButton(
+                  tooltip: '关闭配色方案',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                  transparent: true,
+                  size: 34,
+                ),
+              ],
+            ),
+            const SizedBox(height: 28),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (final option in _colorSchemeOptions)
+                  _ColorSchemeOptionTile(
+                    option: option,
+                    active: option.label == value,
+                    onTap: () => onChanged(option.label),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ColorSchemeOptionTile extends StatelessWidget {
+  const _ColorSchemeOptionTile({
+    required this.option,
+    required this.active,
+    required this.onTap,
+  });
+
+  final _ColorSchemeOption option;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return YnekoPressable(
+      onTap: onTap,
+      borderRadius: 18,
+      scaleOnPress: false,
+      builder: (context, hovered, pressed) {
+        return AnimatedScale(
+          key: ValueKey('settings-color-scheme-option-${option.label}'),
+          duration: YnekoThemeTokens.fastMotion,
+          curve: Curves.easeOutCubic,
+          scale: pressed
+              ? 0.97
+              : hovered
+              ? 1.03
+              : 1,
+          child: SizedBox(
+            width: 86,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 58,
+                  height: 58,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                            if (active || hovered)
+                              BoxShadow(
+                                color: option.colors.first.withValues(
+                                  alpha: 0.18,
+                                ),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
+                              ),
+                          ],
+                        ),
+                        child: CustomPaint(
+                          size: const Size.square(58),
+                          painter: _ColorSchemePreviewPainter(
+                            primary: option.colors[0],
+                            secondary: option.colors[1],
+                            soft: option.colors[2],
+                            ring: Color.lerp(
+                              tokens.surface,
+                              Colors.transparent,
+                              0.22,
+                            )!,
+                          ),
+                        ),
+                      ),
+                      if (active)
+                        Container(
+                          width: 34,
+                          height: 34,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Color.lerp(
+                              option.colors.first,
+                              Colors.black,
+                              0.28,
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.12),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  option.label,
+                  textAlign: TextAlign.center,
+                  style: YnekoTypography.of(context).label.copyWith(
+                    color: tokens.ink,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ColorSchemePreviewPainter extends CustomPainter {
+  const _ColorSchemePreviewPainter({
+    required this.primary,
+    required this.secondary,
+    required this.soft,
+    required this.ring,
+  });
+
+  final Color primary;
+  final Color secondary;
+  final Color soft;
+  final Color ring;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final circle = Path()..addOval(rect);
+    canvas.save();
+    canvas.clipPath(circle);
+
+    final left = Rect.fromLTWH(0, 0, size.width / 2, size.height);
+    final right = Rect.fromLTWH(size.width / 2, 0, size.width / 2, size.height);
+    canvas.drawRect(left, Paint()..color = Color.lerp(primary, soft, 0.42)!);
+    canvas.drawRect(
+      right,
+      Paint()..color = Color.lerp(secondary, primary, 0.22)!,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height / 2),
+      Paint()..color = Color.lerp(soft, Colors.white, 0.18)!,
+    );
+    canvas.restore();
+
+    canvas.drawCircle(
+      rect.center,
+      size.width / 2 - 4,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 8
+        ..color = ring,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ColorSchemePreviewPainter oldDelegate) {
+    return primary != oldDelegate.primary ||
+        secondary != oldDelegate.secondary ||
+        soft != oldDelegate.soft ||
+        ring != oldDelegate.ring;
+  }
+}
+
+class _SettingsChoice {
+  const _SettingsChoice(this.label, this.description, {this.disabled = false});
+
+  final String label;
+  final String description;
+  final bool disabled;
+}
+
+class _ChoicePill extends StatelessWidget {
+  const _ChoicePill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: tokens.surfaceLow,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: tokens.dividerFaint),
+      ),
+      child: Text(
+        label,
+        style: YnekoTypography.of(
+          context,
+        ).label.copyWith(color: tokens.ink, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+Future<void> _showChoiceDialog(
+  BuildContext context, {
+  required String title,
+  required String value,
+  required List<_SettingsChoice> options,
+  required ValueChanged<String> onChanged,
+}) {
+  return showDialog<void>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.28),
+    builder: (context) => _SettingsChoiceDialog(
+      title: title,
+      value: value,
+      options: options,
+      onChanged: (next) {
+        onChanged(next);
+        Navigator.of(context).pop();
+      },
+    ),
+  );
+}
+
+class _SettingsChoiceDialog extends StatelessWidget {
+  const _SettingsChoiceDialog({
+    required this.title,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String value;
+  final List<_SettingsChoice> options;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(32),
+      child: Container(
+        width: 560,
+        padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+        decoration: BoxDecoration(
+          color: tokens.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: tokens.outline.withValues(alpha: 0.52)),
+          boxShadow: tokens.shadowStrong,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text(title, style: type.sectionTitle)),
+                YnekoIconActionButton(
+                  tooltip: '关闭$title',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                  transparent: true,
+                  size: 34,
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            for (final option in options)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _SettingsChoiceTile(
+                  option: option,
+                  active: option.label == value,
+                  onTap: option.disabled ? null : () => onChanged(option.label),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsChoiceTile extends StatelessWidget {
+  const _SettingsChoiceTile({
+    required this.option,
+    required this.active,
+    required this.onTap,
+  });
+
+  final _SettingsChoice option;
+  final bool active;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return Opacity(
+      opacity: option.disabled ? 0.58 : 1,
+      child: YnekoPressable(
+        onTap: onTap,
+        borderRadius: 12,
+        scaleOnPress: false,
+        builder: (context, hovered, pressed) {
+          final highlighted = active || hovered || pressed;
+          return AnimatedContainer(
+            duration: YnekoThemeTokens.fastMotion,
+            constraints: const BoxConstraints(minHeight: 74),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+            decoration: BoxDecoration(
+              color: active
+                  ? Color.lerp(tokens.primaryContainer, tokens.surface, 0.38)
+                  : Color.lerp(tokens.surfaceLow, tokens.surface, 0.28),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: active
+                    ? tokens.primary.withValues(alpha: 0.58)
+                    : highlighted
+                    ? Color.lerp(tokens.outline, tokens.primary, 0.32)!
+                    : tokens.outline.withValues(alpha: 0.58),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        option.label,
+                        overflow: TextOverflow.ellipsis,
+                        style: YnekoTypography.of(context).controlTitle,
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        option.description,
+                        overflow: TextOverflow.ellipsis,
+                        style: YnekoTypography.of(
+                          context,
+                        ).label.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  width: 24,
+                  child: active
+                      ? Icon(
+                          Icons.check_rounded,
+                          color: tokens.primary,
+                          size: 20,
+                        )
+                      : null,
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+Future<void> _showTextSettingDialog(
+  BuildContext context, {
+  required String title,
+  required String initialValue,
+  required ValueChanged<String> onSubmitted,
+}) {
+  final controller = TextEditingController(text: initialValue);
+  return showDialog<void>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.28),
+    builder: (context) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(32),
+      child: Container(
+        width: 540,
+        padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+        decoration: BoxDecoration(
+          color: YnekoThemeTokens.of(context).surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: YnekoThemeTokens.of(context).outline.withValues(alpha: 0.52),
+          ),
+          boxShadow: YnekoThemeTokens.of(context).shadowStrong,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: YnekoTypography.of(context).sectionTitle),
+            const SizedBox(height: 18),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: InputDecoration(hintText: title),
+              onSubmitted: (value) {
+                onSubmitted(value);
+                Navigator.of(context).pop();
+              },
+            ),
+            const SizedBox(height: 18),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                _RuleActionButtonShell(
+                  label: '取消',
+                  onPressed: () => Navigator.of(context).pop(),
+                  ghost: true,
+                ),
+                const SizedBox(width: 10),
+                _RuleActionButtonShell(
+                  label: '保存',
+                  onPressed: () {
+                    onSubmitted(controller.text);
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _RuleActionButtonShell extends StatelessWidget {
+  const _RuleActionButtonShell({
+    required this.label,
+    required this.onPressed,
+    this.ghost = false,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool ghost;
+
+  @override
+  Widget build(BuildContext context) {
+    return YnekoActionButton(
+      label: label,
+      onPressed: onPressed,
+      tone: ghost ? YnekoActionButtonTone.ghost : YnekoActionButtonTone.outline,
+      height: 34,
+      minWidth: 64,
+      borderRadius: 8,
+      horizontalPadding: 12,
+    );
+  }
+}
+
 class _Stepper extends StatelessWidget {
   const _Stepper({required this.value, required this.onChanged});
 
@@ -815,11 +1630,14 @@ class _Stepper extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints.tightFor(width: 30, height: 28),
+          YnekoIconActionButton(
+            tooltip: '减少',
             onPressed: () => onChanged(value - 1),
             icon: const Icon(Icons.remove_rounded, size: 16),
+            tone: YnekoActionButtonTone.ghost,
+            transparent: true,
+            size: 30,
+            iconSize: 16,
           ),
           SizedBox(
             width: 30,
@@ -831,92 +1649,16 @@ class _Stepper extends StatelessWidget {
               ).label.copyWith(color: tokens.ink, fontWeight: FontWeight.w800),
             ),
           ),
-          IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints.tightFor(width: 30, height: 28),
+          YnekoIconActionButton(
+            tooltip: '增加',
             onPressed: () => onChanged(value + 1),
             icon: const Icon(Icons.add_rounded, size: 16),
+            tone: YnekoActionButtonTone.ghost,
+            transparent: true,
+            size: 30,
+            iconSize: 16,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ColorSwatches extends StatelessWidget {
-  const _ColorSwatches({required this.value, required this.onChanged});
-
-  final String value;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final options = const [
-      ('Yneko 粉', [Color(0xFFFF6699), Color(0xFFFFF0F5), Color(0xFF00A1D6)]),
-      ('海风蓝', [Color(0xFF00A1D6), Color(0xFFE6F7FF), Color(0xFFFF6699)]),
-      ('薄荷绿', [Color(0xFF16A085), Color(0xFFE8FFF7), Color(0xFF2F8AF5)]),
-    ];
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final option in options)
-          Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: Tooltip(
-              message: option.$1,
-              child: InkWell(
-                onTap: () => onChanged(option.$1),
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  height: 32,
-                  padding: const EdgeInsets.symmetric(horizontal: 9),
-                  decoration: BoxDecoration(
-                    color: YnekoThemeTokens.of(context).surfaceLow,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: value == option.$1
-                          ? YnekoThemeTokens.of(context).primary
-                          : Colors.transparent,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      for (final color in option.$2)
-                        Container(
-                          width: 14,
-                          height: 14,
-                          margin: const EdgeInsets.only(right: 2),
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _RuleStatusDot extends StatelessWidget {
-  const _RuleStatusDot({required this.active});
-
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 9,
-      height: 9,
-      decoration: BoxDecoration(
-        color: active
-            ? const Color(0xFF2DBF6F)
-            : YnekoThemeTokens.of(context).soft,
-        shape: BoxShape.circle,
       ),
     );
   }

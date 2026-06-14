@@ -2,7 +2,8 @@
 
 ## Responsibilities
 
-- Settings UI placeholder.
+- Settings root and second-level settings pages.
+- Rule management entry that reuses the shared source package controller.
 
 ## Public Contracts
 
@@ -10,6 +11,8 @@
   controller so the shell back button can return from a settings detail panel
   to the settings root page.
 - Settings UI is exported through presentation/settings_page.dart.
+- Rule source import and package list state come from `features/sources`;
+  settings does not own source persistence.
 
 ## Public Index Export List
 

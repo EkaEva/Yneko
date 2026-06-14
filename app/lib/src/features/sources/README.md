@@ -2,14 +2,20 @@
 
 ## Responsibilities
 
-- Source repository and package management UI placeholder.
+- Source package management UI for user-imported declarative playback rules.
+- Text and URL import flows for V1 YAML/JSON packages.
+- Shared rule-source state consumed by settings and watch presentation.
 
 ## Public Contracts
 
-- Public Dart exports are limited to presentation/sources_page.dart through index.dart.
+- Public Dart exports are limited to source package application providers and
+  presentation/sources_page.dart through index.dart.
+- Widgets call `SourcePackagesController`; generated bridge calls stay behind
+  the backend port.
 
 ## Public Index Export List
 
+- application/source_packages_controller.dart
 - presentation/sources_page.dart
 
 ## Forbidden

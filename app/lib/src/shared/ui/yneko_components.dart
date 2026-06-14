@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -99,6 +101,825 @@ class YnekoSectionTitle extends StatelessWidget {
         ),
         ?trailing,
       ],
+    );
+  }
+}
+
+enum YnekoActionButtonTone { primary, outline, ghost, danger, player, chrome }
+
+typedef YnekoPressableBuilder =
+    Widget Function(BuildContext context, bool hovered, bool pressed);
+
+class YnekoPressable extends StatefulWidget {
+  const YnekoPressable({
+    super.key,
+    required this.builder,
+    this.onTap,
+    this.borderRadius = 8,
+    this.scaleOnPress = true,
+    this.cursor = SystemMouseCursors.click,
+  });
+
+  final YnekoPressableBuilder builder;
+  final VoidCallback? onTap;
+  final double borderRadius;
+  final bool scaleOnPress;
+  final MouseCursor cursor;
+
+  @override
+  State<YnekoPressable> createState() => _YnekoPressableState();
+}
+
+class _YnekoPressableState extends State<YnekoPressable> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  bool get _enabled => widget.onTap != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final child = widget.builder(context, _hovered, _pressed);
+    return MouseRegion(
+      cursor: _enabled ? widget.cursor : SystemMouseCursors.basic,
+      onEnter: (_) {
+        if (_enabled) setState(() => _hovered = true);
+      },
+      onExit: (_) {
+        if (_hovered || _pressed) {
+          setState(() {
+            _hovered = false;
+            _pressed = false;
+          });
+        }
+      },
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        onTapDown: _enabled ? (_) => setState(() => _pressed = true) : null,
+        onTapUp: _enabled ? (_) => setState(() => _pressed = false) : null,
+        onTapCancel: _enabled ? () => setState(() => _pressed = false) : null,
+        child: AnimatedScale(
+          duration: _motionDuration(context, YnekoThemeTokens.fastMotion),
+          curve: Curves.easeOut,
+          scale: widget.scaleOnPress && _pressed ? 0.985 : 1,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class YnekoActionButton extends StatefulWidget {
+  const YnekoActionButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.tone = YnekoActionButtonTone.outline,
+    this.height = 34,
+    this.minWidth = 72,
+    this.borderRadius = 8,
+    this.horizontalPadding = 14,
+    this.textStyle,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final Widget? icon;
+  final YnekoActionButtonTone tone;
+  final double height;
+  final double minWidth;
+  final double borderRadius;
+  final double horizontalPadding;
+  final TextStyle? textStyle;
+
+  @override
+  State<YnekoActionButton> createState() => _YnekoActionButtonState();
+}
+
+class _YnekoActionButtonState extends State<YnekoActionButton> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  bool get _enabled => widget.onPressed != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final motion = _motionDuration(context, YnekoThemeTokens.fastMotion);
+    final colors = _YnekoActionColors.resolve(
+      tokens: tokens,
+      tone: widget.tone,
+      enabled: _enabled,
+      hovered: _hovered,
+      pressed: _pressed,
+    );
+    final type = YnekoTypography.of(context);
+    final labelStyle = (widget.textStyle ?? type.label).copyWith(
+      color: colors.foreground,
+    );
+    final content = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (widget.icon != null) ...[
+            IconTheme(
+              data: IconThemeData(color: colors.foreground, size: 17),
+              child: widget.icon!,
+            ),
+            const SizedBox(width: 7),
+          ],
+          Text(widget.label),
+        ],
+      ),
+    );
+
+    return TooltipVisibility(
+      visible: false,
+      child: MouseRegion(
+        cursor: _enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        onEnter: (_) {
+          if (_enabled) setState(() => _hovered = true);
+        },
+        onExit: (_) {
+          if (_hovered || _pressed) {
+            setState(() {
+              _hovered = false;
+              _pressed = false;
+            });
+          }
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onPressed,
+          onTapDown: _enabled ? (_) => setState(() => _pressed = true) : null,
+          onTapUp: _enabled ? (_) => setState(() => _pressed = false) : null,
+          onTapCancel: _enabled ? () => setState(() => _pressed = false) : null,
+          child: Semantics(
+            button: true,
+            enabled: _enabled,
+            label: widget.label,
+            child: AnimatedSlide(
+              duration: motion,
+              curve: Curves.easeOut,
+              offset:
+                  _hovered &&
+                      _enabled &&
+                      widget.tone == YnekoActionButtonTone.player
+                  ? const Offset(0, -0.045)
+                  : Offset.zero,
+              child: AnimatedScale(
+                duration: motion,
+                curve: Curves.easeOut,
+                scale: _pressed ? 0.985 : 1,
+                child: AnimatedContainer(
+                  duration: motion,
+                  curve: Curves.easeOut,
+                  constraints: BoxConstraints(
+                    minWidth: widget.minWidth,
+                    minHeight: widget.height,
+                  ),
+                  height: widget.height,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: widget.horizontalPadding,
+                  ),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: colors.background,
+                    borderRadius: BorderRadius.circular(widget.borderRadius),
+                    border: Border.all(color: colors.border),
+                    boxShadow: colors.shadow,
+                  ),
+                  child: IconTheme(
+                    data: IconThemeData(color: colors.foreground, size: 17),
+                    child: DefaultTextStyle(
+                      style: labelStyle.copyWith(
+                        fontWeight: labelStyle.fontWeight ?? FontWeight.w800,
+                        fontSize: labelStyle.fontSize ?? 13,
+                        height: labelStyle.height ?? 1,
+                      ),
+                      child: content,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class YnekoIconActionButton extends StatefulWidget {
+  const YnekoIconActionButton({
+    super.key,
+    this.buttonKey,
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+    this.tone = YnekoActionButtonTone.outline,
+    this.size = 32,
+    this.width,
+    this.height,
+    this.iconSize = 17,
+    this.transparent = false,
+    this.close = false,
+  });
+
+  final Key? buttonKey;
+  final String tooltip;
+  final Widget icon;
+  final VoidCallback? onPressed;
+  final YnekoActionButtonTone tone;
+  final double size;
+  final double? width;
+  final double? height;
+  final double iconSize;
+  final bool transparent;
+  final bool close;
+
+  @override
+  State<YnekoIconActionButton> createState() => _YnekoIconActionButtonState();
+}
+
+class _YnekoIconActionButtonState extends State<YnekoIconActionButton> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  bool get _enabled => widget.onPressed != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final motion = _motionDuration(context, YnekoThemeTokens.fastMotion);
+    final colors = widget.close
+        ? _YnekoActionColors(
+            background: (_hovered || _pressed) && _enabled
+                ? const Color(0xFFFF5C7A)
+                : const Color(0x00FF5C7A),
+            border: const Color(0x00FF5C7A),
+            foreground: (_hovered || _pressed) && _enabled
+                ? Colors.white
+                : tokens.muted,
+          )
+        : _YnekoActionColors.resolve(
+            tokens: tokens,
+            tone: widget.transparent ? widget.tone : widget.tone,
+            enabled: _enabled,
+            hovered: _hovered,
+            pressed: _pressed,
+          );
+
+    return Tooltip(
+      message: widget.tooltip,
+      waitDuration: const Duration(milliseconds: 700),
+      child: MouseRegion(
+        cursor: _enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        onEnter: (_) {
+          if (_enabled) setState(() => _hovered = true);
+        },
+        onExit: (_) {
+          if (_hovered || _pressed) {
+            setState(() {
+              _hovered = false;
+              _pressed = false;
+            });
+          }
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onPressed,
+          onTapDown: _enabled ? (_) => setState(() => _pressed = true) : null,
+          onTapUp: _enabled ? (_) => setState(() => _pressed = false) : null,
+          onTapCancel: _enabled ? () => setState(() => _pressed = false) : null,
+          child: Semantics(
+            button: true,
+            enabled: _enabled,
+            label: widget.tooltip,
+            child: AnimatedScale(
+              duration: motion,
+              curve: Curves.easeOut,
+              scale: _pressed ? 0.96 : 1,
+              child: AnimatedContainer(
+                key: widget.buttonKey,
+                duration: motion,
+                curve: Curves.easeOut,
+                width: widget.width ?? widget.size,
+                height: widget.height ?? widget.size,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: colors.background,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: widget.transparent
+                        ? Colors.transparent
+                        : colors.border,
+                  ),
+                ),
+                child: IconTheme(
+                  data: IconThemeData(
+                    color: colors.foreground,
+                    size: widget.iconSize,
+                  ),
+                  child: widget.icon,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _YnekoActionColors {
+  const _YnekoActionColors({
+    required this.background,
+    required this.border,
+    required this.foreground,
+    this.shadow,
+  });
+
+  final Color background;
+  final Color border;
+  final Color foreground;
+  final List<BoxShadow>? shadow;
+
+  static _YnekoActionColors resolve({
+    required YnekoThemeTokens tokens,
+    required YnekoActionButtonTone tone,
+    required bool enabled,
+    required bool hovered,
+    required bool pressed,
+  }) {
+    final danger = const Color(0xFFBD2D3A);
+    final primaryBorder = Color.lerp(tokens.outline, tokens.primary, 0.38)!;
+    if (!enabled) {
+      final disabledForeground = tokens.muted.withValues(alpha: 0.56);
+      return _YnekoActionColors(
+        background: tone == YnekoActionButtonTone.ghost
+            ? tokens.primaryContainer.withValues(alpha: 0)
+            : tone == YnekoActionButtonTone.chrome
+            ? tokens.surfaceHigh.withValues(alpha: 0)
+            : tokens.surface,
+        border:
+            tone == YnekoActionButtonTone.ghost ||
+                tone == YnekoActionButtonTone.chrome
+            ? tokens.outline.withValues(alpha: 0)
+            : tokens.outline.withValues(alpha: 0.48),
+        foreground: disabledForeground,
+      );
+    }
+
+    switch (tone) {
+      case YnekoActionButtonTone.primary:
+        return _YnekoActionColors(
+          background: pressed
+              ? tokens.primaryStrong
+              : hovered
+              ? Color.lerp(tokens.primary, Colors.black, 0.08)!
+              : tokens.primary,
+          border: Color.lerp(tokens.primary, Colors.transparent, 0.30)!,
+          foreground: Colors.white,
+          shadow: hovered || pressed
+              ? [
+                  BoxShadow(
+                    color: tokens.primary.withValues(alpha: 0.16),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        );
+      case YnekoActionButtonTone.outline:
+        return _YnekoActionColors(
+          background: pressed
+              ? tokens.primaryContainer.withValues(alpha: 0.86)
+              : hovered
+              ? tokens.primaryContainer
+              : tokens.surface,
+          border: hovered || pressed
+              ? primaryBorder
+              : tokens.outline.withValues(alpha: 0.66),
+          foreground: hovered || pressed ? tokens.primary : tokens.ink,
+        );
+      case YnekoActionButtonTone.ghost:
+        return _YnekoActionColors(
+          background: pressed
+              ? tokens.primaryContainer.withValues(alpha: 0.76)
+              : hovered
+              ? tokens.primaryContainer.withValues(alpha: 0.52)
+              : tokens.primaryContainer.withValues(alpha: 0),
+          border: tokens.primaryContainer.withValues(alpha: 0),
+          foreground: hovered || pressed ? tokens.primary : tokens.muted,
+        );
+      case YnekoActionButtonTone.danger:
+        return _YnekoActionColors(
+          background: hovered || pressed
+              ? Color.lerp(tokens.surfaceLow, danger, 0.10)!
+              : tokens.surfaceLow,
+          border: hovered || pressed
+              ? Color.lerp(tokens.outline, danger, 0.46)!
+              : tokens.outline.withValues(alpha: 0.56),
+          foreground: danger,
+        );
+      case YnekoActionButtonTone.player:
+        return _YnekoActionColors(
+          background: pressed
+              ? tokens.primaryContainer.withValues(alpha: 0.86)
+              : hovered
+              ? tokens.primaryContainer
+              : tokens.surfaceHigh.withValues(alpha: 0.76),
+          border: Color.lerp(tokens.outline, Colors.transparent, 0.56)!,
+          foreground: tokens.primaryStrong,
+        );
+      case YnekoActionButtonTone.chrome:
+        return _YnekoActionColors(
+          background: pressed
+              ? Color.lerp(tokens.surfaceHigh, tokens.ink, 0.04)!
+              : hovered
+              ? tokens.surfaceHigh
+              : tokens.surfaceHigh.withValues(alpha: 0),
+          border: tokens.surfaceHigh.withValues(alpha: 0),
+          foreground: hovered || pressed ? tokens.ink : tokens.muted,
+        );
+    }
+  }
+}
+
+class YnekoHoverMenuItem<T> {
+  const YnekoHoverMenuItem({required this.value, required this.label});
+
+  final T value;
+  final String label;
+}
+
+class YnekoHoverMenu<T> extends StatefulWidget {
+  const YnekoHoverMenu({
+    super.key,
+    required this.items,
+    required this.value,
+    required this.onChanged,
+    this.height = 38,
+    this.panelMaxWidth = 320,
+    this.triggerKey,
+    this.optionAlignment = Alignment.centerLeft,
+    this.optionMinWidth = 160,
+    this.triggerFontSize = 13,
+    this.optionFontSize = 13,
+    this.leadingPadding = 14,
+    this.trailingPadding = 10,
+    this.showOpenShadow = true,
+    this.centerTriggerContent = false,
+  });
+
+  final List<YnekoHoverMenuItem<T>> items;
+  final T value;
+  final ValueChanged<T> onChanged;
+  final double height;
+  final double panelMaxWidth;
+  final Key? triggerKey;
+  final AlignmentGeometry optionAlignment;
+  final double optionMinWidth;
+  final double triggerFontSize;
+  final double optionFontSize;
+  final double leadingPadding;
+  final double trailingPadding;
+  final bool showOpenShadow;
+  final bool centerTriggerContent;
+
+  @override
+  State<YnekoHoverMenu<T>> createState() => _YnekoHoverMenuState<T>();
+}
+
+class _YnekoHoverMenuState<T> extends State<YnekoHoverMenu<T>> {
+  final Object _tapRegionGroup = Object();
+  final _overlayController = OverlayPortalController();
+  final _layerLink = LayerLink();
+  Timer? _closeTimer;
+  bool _open = false;
+  bool _hovered = false;
+  bool _panelHovered = false;
+
+  @override
+  void dispose() {
+    _closeTimer?.cancel();
+    super.dispose();
+  }
+
+  void _show() {
+    _closeTimer?.cancel();
+    if (_open) return;
+    setState(() => _open = true);
+    _overlayController.show();
+  }
+
+  void _hide() {
+    _closeTimer?.cancel();
+    if (!_open) return;
+    setState(() {
+      _open = false;
+      _panelHovered = false;
+    });
+    _overlayController.hide();
+  }
+
+  void _scheduleHide() {
+    _closeTimer?.cancel();
+    _closeTimer = Timer(const Duration(milliseconds: 90), () {
+      if (!mounted || _hovered || _panelHovered) return;
+      _hide();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final motion = _motionDuration(context, YnekoThemeTokens.fastMotion);
+    final selected = widget.items.firstWhere(
+      (item) => item.value == widget.value,
+      orElse: () => widget.items.isEmpty
+          ? YnekoHoverMenuItem(value: widget.value, label: '')
+          : widget.items.first,
+    );
+    final active = _open || _hovered || _panelHovered;
+    final border = active
+        ? Color.lerp(tokens.outline, tokens.primary, 0.36)!
+        : tokens.outline.withValues(alpha: 0.64);
+    final background = active ? tokens.primaryContainer : tokens.surface;
+
+    final trigger = MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) {
+        setState(() => _hovered = true);
+        _show();
+      },
+      onExit: (_) {
+        setState(() => _hovered = false);
+        _scheduleHide();
+      },
+      child: CompositedTransformTarget(
+        link: _layerLink,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _open ? _hide() : _show(),
+          child: AnimatedContainer(
+            key:
+                widget.triggerKey ??
+                const ValueKey('rule-repository-subscription-trigger'),
+            duration: motion,
+            height: widget.height,
+            padding: EdgeInsets.only(
+              left: widget.leadingPadding,
+              right: widget.trailingPadding,
+            ),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: border),
+              boxShadow: _open && widget.showOpenShadow
+                  ? [
+                      BoxShadow(
+                        color: tokens.primary.withValues(alpha: 0.12),
+                        blurRadius: 0,
+                        spreadRadius: 3,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: widget.centerTriggerContent
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: _YnekoHoverMenuTriggerLabel(
+                          label: selected.label,
+                          active: active,
+                          fontSize: widget.triggerFontSize,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      _YnekoHoverMenuChevron(active: active),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: _YnekoHoverMenuTriggerLabel(
+                          label: selected.label,
+                          active: active,
+                          fontSize: widget.triggerFontSize,
+                        ),
+                      ),
+                      _YnekoHoverMenuChevron(active: active),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+
+    final panel = TapRegion(
+      groupId: _tapRegionGroup,
+      child: CompositedTransformFollower(
+        link: _layerLink,
+        targetAnchor: Alignment.bottomLeft,
+        followerAnchor: Alignment.topLeft,
+        offset: const Offset(0, 8),
+        showWhenUnlinked: false,
+        child: UnconstrainedBox(
+          alignment: Alignment.topLeft,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => setState(() {
+              _closeTimer?.cancel();
+              _panelHovered = true;
+            }),
+            onExit: (_) {
+              setState(() => _panelHovered = false);
+              _scheduleHide();
+            },
+            child: AnimatedSlide(
+              duration: motion,
+              curve: Curves.easeOut,
+              offset: _open ? Offset.zero : const Offset(0, -0.08),
+              child: ConstrainedBox(
+                key: const ValueKey('yneko-hover-menu-panel'),
+                constraints: BoxConstraints(
+                  minWidth: widget.optionMinWidth,
+                  maxWidth: widget.panelMaxWidth,
+                ),
+                child: IntrinsicWidth(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: tokens.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: tokens.outline.withValues(alpha: 0.82),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 32,
+                          offset: const Offset(0, 14),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final item in widget.items)
+                            _YnekoHoverMenuOption<T>(
+                              item: item,
+                              active: item.value == widget.value,
+                              alignment: widget.optionAlignment,
+                              minWidth: widget.optionMinWidth,
+                              fontSize: widget.optionFontSize,
+                              onTap: () {
+                                widget.onChanged(item.value);
+                                _hide();
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    return TapRegion(
+      groupId: _tapRegionGroup,
+      onTapOutside: (_) => _hide(),
+      child: OverlayPortal(
+        controller: _overlayController,
+        overlayChildBuilder: (context) => panel,
+        child: trigger,
+      ),
+    );
+  }
+}
+
+class _YnekoHoverMenuTriggerLabel extends StatelessWidget {
+  const _YnekoHoverMenuTriggerLabel({
+    required this.label,
+    required this.active,
+    required this.fontSize,
+  });
+
+  final String label;
+  final bool active;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return Text(
+      label,
+      overflow: TextOverflow.ellipsis,
+      style: YnekoTypography.of(context).label.copyWith(
+        color: active ? tokens.primary : tokens.ink,
+        fontSize: fontSize,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  }
+}
+
+class _YnekoHoverMenuChevron extends StatelessWidget {
+  const _YnekoHoverMenuChevron({required this.active});
+
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return AnimatedRotation(
+      duration: _motionDuration(context, YnekoThemeTokens.fastMotion),
+      turns: active ? -0.25 : 0.25,
+      child: Icon(
+        Icons.chevron_right_rounded,
+        color: active ? tokens.primary : tokens.muted,
+        size: 18,
+      ),
+    );
+  }
+}
+
+class _YnekoHoverMenuOption<T> extends StatefulWidget {
+  const _YnekoHoverMenuOption({
+    required this.item,
+    required this.active,
+    required this.alignment,
+    required this.minWidth,
+    required this.fontSize,
+    required this.onTap,
+  });
+
+  final YnekoHoverMenuItem<T> item;
+  final bool active;
+  final AlignmentGeometry alignment;
+  final double minWidth;
+  final double fontSize;
+  final VoidCallback onTap;
+
+  @override
+  State<_YnekoHoverMenuOption<T>> createState() =>
+      _YnekoHoverMenuOptionState<T>();
+}
+
+class _YnekoHoverMenuOptionState<T> extends State<_YnekoHoverMenuOption<T>> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    final motion = _motionDuration(context, const Duration(milliseconds: 160));
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          key: ValueKey('yneko-hover-menu-option-${widget.item.label}'),
+          duration: motion,
+          constraints: BoxConstraints(minHeight: 42, minWidth: widget.minWidth),
+          alignment: widget.alignment,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: _hovered ? tokens.primaryContainer : tokens.surface,
+          ),
+          child: Text(
+            widget.item.label,
+            overflow: TextOverflow.ellipsis,
+            style: type.label.copyWith(
+              color: _hovered
+                  ? tokens.primary
+                  : widget.active
+                  ? tokens.ink
+                  : tokens.muted,
+              fontSize: widget.fontSize,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -301,21 +1122,25 @@ class _YnekoFilterChipState extends State<_YnekoFilterChip> {
       child: AnimatedSlide(
         duration: motion,
         offset: _hovered ? const Offset(0, -0.04) : Offset.zero,
-        child: TextButton(
-          onPressed: () {},
-          style: TextButton.styleFrom(
-            minimumSize: const Size(0, 40),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {},
+          child: AnimatedContainer(
+            duration: motion,
+            constraints: const BoxConstraints(minHeight: 40),
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            foregroundColor: active ? tokens.primary : tokens.ink,
-            backgroundColor: active
-                ? tokens.primaryContainer
-                : Colors.transparent,
-            shape: RoundedRectangleBorder(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: active ? tokens.primaryContainer : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
-            textStyle: type.controlTitle,
+            child: Text(
+              widget.label,
+              style: type.controlTitle.copyWith(
+                color: active ? tokens.primary : tokens.ink,
+              ),
+            ),
           ),
-          child: Text(widget.label),
         ),
       ),
     );
@@ -576,6 +1401,98 @@ class SourceCandidateRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class YnekoRingLoader extends StatefulWidget {
+  const YnekoRingLoader({super.key, this.size = 58});
+
+  final double size;
+
+  @override
+  State<YnekoRingLoader> createState() => _YnekoRingLoaderState();
+}
+
+class _YnekoRingLoaderState extends State<YnekoRingLoader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1450),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return SizedBox.square(
+      dimension: widget.size,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) => CustomPaint(
+          painter: _RingLoaderPainter(
+            progress: MediaQuery.disableAnimationsOf(context)
+                ? 0
+                : _controller.value,
+            primary: tokens.primary,
+            secondary: tokens.primaryStrong,
+            soft: tokens.primaryContainer,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RingLoaderPainter extends CustomPainter {
+  const _RingLoaderPainter({
+    required this.progress,
+    required this.primary,
+    required this.secondary,
+    required this.soft,
+  });
+
+  final double progress;
+  final Color primary;
+  final Color secondary;
+  final Color soft;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final base = size.shortestSide / 2;
+    final colors = [primary, secondary, soft, primary.withValues(alpha: 0.62)];
+    for (var index = 0; index < 4; index++) {
+      final radius = base - 5 - index * 5;
+      final rect = Rect.fromCircle(center: center, radius: radius);
+      final paint = Paint()
+        ..color = colors[index]
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round;
+      final direction = index.isEven ? 1.0 : -1.0;
+      final start = (progress * direction * 6.28318) + index * 0.92;
+      final sweep = 1.18 + (index * 0.18);
+      canvas.drawArc(rect, start, sweep, false, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _RingLoaderPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.primary != primary ||
+        oldDelegate.secondary != secondary ||
+        oldDelegate.soft != soft;
   }
 }
 

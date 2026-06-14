@@ -7,6 +7,10 @@
 ## Public Contracts
 
 - V1 supports manifest plus YAML/JSON rules only.
+- Required manifest fields are `id`, `name`, and `version`.
+- Playback supports `staticCandidates` and `urlTemplate`.
+- URL templates may only reference local fields: `subjectId`, `episodeId`,
+  `episodeOrder`, `title`, and `episodeTitle`.
 
 ## Public Index Export List
 
@@ -23,4 +27,3 @@
 ## Required Checks
 
 - Source-rule policy tests and local quality gate.
-

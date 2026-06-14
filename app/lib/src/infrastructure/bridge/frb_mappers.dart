@@ -123,3 +123,206 @@ PlaybackContract playbackFromFrb(frb.PlaybackCandidate candidate) {
     },
   );
 }
+
+PlayStreamContract playStreamFromFrb(frb.PlayStream stream) {
+  return PlayStreamContract(
+    id: stream.id,
+    ruleId: stream.ruleId,
+    kind: stream.kind,
+    url: stream.url,
+    refererUrl: stream.refererUrl,
+    userAgent: stream.userAgent,
+    headers: {for (final header in stream.headers) header.name: header.value},
+  );
+}
+
+SourcePackageSummary sourcePackageSummaryFromFrb(
+  frb.SourcePackageSummary package,
+) {
+  return SourcePackageSummary(
+    id: package.id,
+    name: package.name,
+    version: package.version,
+    enabled: package.enabled,
+    format: package.format,
+    sourceUrl: package.sourceUrl,
+    diagnostics: package.diagnostics,
+    importedAtMs: package.importedAtMs,
+    updatedAtMs: package.updatedAtMs,
+  );
+}
+
+SourceImportResult sourceImportResultFromFrb(frb.SourceImportResult result) {
+  return SourceImportResult(
+    package: sourcePackageSummaryFromFrb(result.package),
+    diagnostics: result.diagnostics,
+  );
+}
+
+SourcePackageText sourcePackageTextFromFrb(frb.SourcePackageText text) {
+  return SourcePackageText(
+    id: text.id,
+    name: text.name,
+    format: text.format,
+    body: text.body,
+  );
+}
+
+RuleGroupSummary ruleGroupFromFrb(frb.RuleGroupSummary group) {
+  return RuleGroupSummary(
+    id: group.id,
+    name: group.name,
+    enabled: group.enabled,
+    ruleIds: group.ruleIds,
+    disabledRuleIds: group.disabledRuleIds,
+  );
+}
+
+frb.RuleGroupSummary ruleGroupToFrb(RuleGroupSummary group) {
+  return frb.RuleGroupSummary(
+    id: group.id,
+    name: group.name,
+    enabled: group.enabled,
+    ruleIds: group.ruleIds,
+    disabledRuleIds: group.disabledRuleIds,
+  );
+}
+
+RuleRepositorySubscription repositorySubscriptionFromFrb(
+  frb.RuleRepositorySubscription subscription,
+) {
+  return RuleRepositorySubscription(
+    id: subscription.id,
+    name: subscription.name,
+    url: subscription.url,
+    enabled: subscription.enabled,
+    updatedAtMs: subscription.updatedAtMs,
+  );
+}
+
+frb.RuleRepositorySubscription repositorySubscriptionToFrb(
+  RuleRepositorySubscription subscription,
+) {
+  return frb.RuleRepositorySubscription(
+    id: subscription.id,
+    name: subscription.name,
+    url: subscription.url,
+    enabled: subscription.enabled,
+    updatedAtMs: subscription.updatedAtMs,
+  );
+}
+
+RuleRepositoryIndexEntry repositoryIndexEntryFromFrb(
+  frb.RuleRepositoryIndexEntry entry,
+) {
+  return RuleRepositoryIndexEntry(
+    name: entry.name,
+    version: entry.version,
+    lastUpdateMs: entry.lastUpdateMs,
+    antiCrawlerEnabled: entry.antiCrawlerEnabled,
+    rawUrl: entry.rawUrl,
+  );
+}
+
+frb.RuleRepositoryIndexEntry repositoryIndexEntryToFrb(
+  RuleRepositoryIndexEntry entry,
+) {
+  return frb.RuleRepositoryIndexEntry(
+    name: entry.name,
+    version: entry.version,
+    lastUpdateMs: entry.lastUpdateMs,
+    antiCrawlerEnabled: entry.antiCrawlerEnabled,
+    rawUrl: entry.rawUrl,
+  );
+}
+
+SourceCandidate sourceCandidateFromFrb(frb.SourceCandidate candidate) {
+  return SourceCandidate(
+    ruleId: candidate.ruleId,
+    ruleName: candidate.ruleName,
+    sourceItemKey: candidate.sourceItemKey,
+    title: candidate.title,
+    detailUrl: candidate.detailUrl,
+    searchUrl: candidate.searchUrl,
+    confidence: candidate.confidence,
+    score: candidate.score,
+    matchedKeyword: candidate.matchedKeyword,
+  );
+}
+
+frb.SourceCandidate sourceCandidateToFrb(SourceCandidate candidate) {
+  return frb.SourceCandidate(
+    ruleId: candidate.ruleId,
+    ruleName: candidate.ruleName,
+    sourceItemKey: candidate.sourceItemKey,
+    title: candidate.title,
+    detailUrl: candidate.detailUrl,
+    searchUrl: candidate.searchUrl,
+    confidence: candidate.confidence,
+    score: candidate.score,
+    matchedKeyword: candidate.matchedKeyword,
+  );
+}
+
+RuleSourceSearchResult searchResultFromFrb(frb.RuleSourceSearchResult result) {
+  return RuleSourceSearchResult(
+    ruleId: result.ruleId,
+    ruleName: result.ruleName,
+    status: result.status,
+    elapsedMs: result.elapsedMs,
+    candidates: result.candidates.map(sourceCandidateFromFrb).toList(),
+    rawCandidates: result.rawCandidates.map(sourceCandidateFromFrb).toList(),
+    selectedKeyword: result.selectedKeyword,
+    selectedTitle: result.selectedTitle,
+    selectedScore: result.selectedScore,
+    keywordTraces: result.keywordTraces,
+    error: result.error,
+  );
+}
+
+EpisodeSourceBinding episodeBindingFromFrb(frb.EpisodeSourceBinding binding) {
+  return EpisodeSourceBinding(
+    subjectId: binding.subjectId,
+    episodeId: binding.episodeId,
+    episodeOrder: binding.episodeOrder,
+    ruleId: binding.ruleId,
+    sourceEpisodeKey: binding.sourceEpisodeKey,
+    title: binding.title,
+    playUrl: binding.playUrl,
+    fallbackPlayUrls: binding.fallbackPlayUrls,
+    refererUrl: binding.refererUrl,
+    confidence: binding.confidence,
+  );
+}
+
+RuleResolveAttempt resolveAttemptFromFrb(frb.RuleResolveAttempt attempt) {
+  return RuleResolveAttempt(
+    ruleId: attempt.ruleId,
+    status: attempt.status,
+    message: attempt.message,
+  );
+}
+
+EpisodeBindingResolveResult bindingResolveResultFromFrb(
+  frb.EpisodeBindingResolveResult result,
+) {
+  return EpisodeBindingResolveResult(
+    bindings: result.bindings.map(episodeBindingFromFrb).toList(),
+    selectedCandidate: result.selectedCandidate == null
+        ? null
+        : sourceCandidateFromFrb(result.selectedCandidate!),
+    selectedBinding: result.selectedBinding == null
+        ? null
+        : episodeBindingFromFrb(result.selectedBinding!),
+    attempts: result.attempts.map(resolveAttemptFromFrb).toList(),
+  );
+}
+
+EpisodeStreamResolveResult streamResolveResultFromFrb(
+  frb.EpisodeStreamResolveResult result,
+) {
+  return EpisodeStreamResolveResult(
+    streams: result.streams.map(playStreamFromFrb).toList(),
+    attempts: result.attempts.map(resolveAttemptFromFrb).toList(),
+  );
+}

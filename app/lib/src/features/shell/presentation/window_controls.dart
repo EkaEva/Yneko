@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../infrastructure/platform/window_chrome/index.dart';
-import '../../../shared/theme/index.dart';
+import '../../../shared/ui/index.dart';
 
 class YnekoWindowControls extends StatelessWidget {
   const YnekoWindowControls({super.key});
@@ -76,41 +76,22 @@ class _WindowButton extends StatefulWidget {
 }
 
 class _WindowButtonState extends State<_WindowButton> {
-  bool _hovered = false;
-
   @override
   Widget build(BuildContext context) {
-    final tokens = YnekoThemeTokens.of(context);
-    final motion = _motionDuration(context, const Duration(milliseconds: 160));
-    final closeHover = widget.close && _hovered;
-    return Tooltip(
-      message: widget.tooltip,
-      waitDuration: const Duration(milliseconds: 700),
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: GestureDetector(
-          onTap: () => widget.onTap(),
-          child: AnimatedContainer(
-            key: ValueKey('window-button-${widget.tooltip}'),
-            duration: motion,
-            width: 44,
-            height: 38,
-            decoration: BoxDecoration(
-              color: closeHover
-                  ? const Color(0xFFFF5C7A)
-                  : _hovered
-                  ? const Color(0xFFE3E5E7).withValues(alpha: 0.56)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: _WindowControlSvgIcon(
-              key: ValueKey('window-icon-${widget.icon.name}'),
-              glyph: widget.icon,
-              color: closeHover ? Colors.white : tokens.muted,
-            ),
-          ),
-        ),
+    return YnekoIconActionButton(
+      buttonKey: ValueKey('window-button-${widget.tooltip}'),
+      tooltip: widget.tooltip,
+      onPressed: () => widget.onTap(),
+      tone: YnekoActionButtonTone.chrome,
+      size: 44,
+      width: 44,
+      height: 38,
+      iconSize: 16,
+      transparent: true,
+      close: widget.close,
+      icon: _WindowControlSvgIcon(
+        key: ValueKey('window-icon-${widget.icon.name}'),
+        glyph: widget.icon,
       ),
     );
   }
@@ -119,20 +100,16 @@ class _WindowButtonState extends State<_WindowButton> {
 enum _WindowControlGlyph { minimize, maximize, restore, close }
 
 class _WindowControlSvgIcon extends StatelessWidget {
-  const _WindowControlSvgIcon({
-    super.key,
-    required this.glyph,
-    required this.color,
-  });
+  const _WindowControlSvgIcon({super.key, required this.glyph});
 
   final _WindowControlGlyph glyph;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
+    final color = IconTheme.of(context).color ?? const Color(0xFF61666D);
     return Center(
       child: SvgPicture.string(
-        _svg,
+        _svg(color),
         width: 16,
         height: 16,
         allowDrawingOutsideViewBox: false,
@@ -140,7 +117,7 @@ class _WindowControlSvgIcon extends StatelessWidget {
     );
   }
 
-  String get _svg {
+  String _svg(Color color) {
     final stroke = _svgColor(color);
     final body = switch (glyph) {
       _WindowControlGlyph.minimize => '<path d="M5 12h14"/>',
@@ -163,8 +140,4 @@ class _WindowControlSvgIcon extends StatelessWidget {
 String _svgColor(Color color) {
   final value = color.toARGB32() & 0xFFFFFFFF;
   return '#${value.toRadixString(16).padLeft(8, '0').substring(2)}';
-}
-
-Duration _motionDuration(BuildContext context, Duration duration) {
-  return MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration;
 }

@@ -813,10 +813,11 @@ class _ErrorPanel extends StatelessWidget {
             description: description,
           ),
           const SizedBox(height: 12),
-          FilledButton.tonalIcon(
+          YnekoActionButton(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh_rounded),
-            label: const Text('重试'),
+            label: '重试',
+            tone: YnekoActionButtonTone.primary,
           ),
         ],
       ),

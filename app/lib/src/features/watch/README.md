@@ -6,6 +6,8 @@
 - Full-window watch layout with left player surface and right episode, series,
   and source panels.
 - Watch-local episode selection and player control shell.
+- Playback resolution orchestration through watch application providers.
+- Candidate selection and basic player controls backed by the player adapter.
 
 ## Public Contracts
 
@@ -13,6 +15,8 @@
   index.dart.
 - Widgets consume watch providers; generated bridge calls stay behind the
   documented backend port.
+- Player controls talk to `PlayerAdapter`; `media_kit` is not exposed to
+  presentation code.
 
 ## Public Index Export List
 
@@ -27,7 +31,7 @@
 
 ## Allowed Dependencies
 
-- Shared UI/domain/mock preview contracts.
+- Shared UI/domain contracts.
 - Documented infrastructure backend port through watch application providers.
 - Other feature public index.dart files when route composition requires them.
 

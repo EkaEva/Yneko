@@ -7,7 +7,7 @@ import '../../../shared/ui/index.dart';
 
 enum _MineTab { library, history, cache }
 
-enum _LibraryFilter { all, watching, watched, wish }
+enum _LibraryFilter { all, watching, wish, watched, paused, dropped }
 
 class MinePage extends StatefulWidget {
   const MinePage({super.key});
@@ -237,24 +237,14 @@ class _MineTabsPanel extends StatelessWidget {
                     const SizedBox(width: 10),
                   ],
                   Expanded(
-                    child: TextField(
-                      key: const ValueKey('mine-local-search'),
+                    child: _MineSearchField(
                       controller: queryController,
+                      hintText: switch (tab) {
+                        _MineTab.library => '搜索我的追番',
+                        _MineTab.history => '搜索历史',
+                        _MineTab.cache => '搜索缓存',
+                      },
                       onChanged: onQueryChanged,
-                      style: YnekoTypography.of(context).body,
-                      decoration: InputDecoration(
-                        hintText: switch (tab) {
-                          _MineTab.library => '搜索追番',
-                          _MineTab.history => '搜索历史',
-                          _MineTab.cache => '搜索缓存',
-                        },
-                        suffixIcon: const Icon(Icons.search_rounded),
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
                     ),
                   ),
                 ],
@@ -282,39 +272,166 @@ class _MineTabButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
     final type = YnekoTypography.of(context);
-    return InkWell(
+    final textStyle = type.topTab.copyWith(
+      fontSize: 18,
+      fontWeight: FontWeight.w800,
+    );
+    return YnekoPressable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: SizedBox(
-        height: 48,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Text(
-              label,
-              style: type.topTab.copyWith(
-                color: active ? tokens.primary : tokens.ink,
-                fontSize: 18,
-                fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+      borderRadius: 0,
+      scaleOnPress: false,
+      builder: (context, hovered, pressed) {
+        final highlighted = active || hovered || pressed;
+        return SizedBox(
+          height: 48,
+          width: 36,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Text(
+                label,
+                style: textStyle.copyWith(
+                  color: highlighted ? tokens.primary : tokens.ink,
+                ),
               ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: AnimatedOpacity(
-                duration: YnekoThemeTokens.fastMotion,
-                opacity: active ? 1 : 0,
-                child: Container(
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: tokens.primary,
-                    borderRadius: BorderRadius.circular(999),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: -1,
+                child: TweenAnimationBuilder<double>(
+                  duration: YnekoThemeTokens.fastMotion,
+                  curve: Curves.easeOut,
+                  tween: Tween(begin: 0.36, end: active ? 1 : 0.36),
+                  builder: (context, scale, child) => Transform.scale(
+                    alignment: Alignment.centerLeft,
+                    scaleX: scale,
+                    child: child,
+                  ),
+                  child: AnimatedOpacity(
+                    duration: YnekoThemeTokens.fastMotion,
+                    opacity: active ? 1 : 0,
+                    child: Container(
+                      key: ValueKey('mine-tab-underline-$label'),
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: tokens.primary,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MineSearchField extends StatefulWidget {
+  const _MineSearchField({
+    required this.controller,
+    required this.hintText,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_MineSearchField> createState() => _MineSearchFieldState();
+}
+
+class _MineSearchFieldState extends State<_MineSearchField> {
+  final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_handleFocusChanged);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_handleFocusChanged);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _handleFocusChanged() {
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    final focused = _focusNode.hasFocus;
+    final searchIconColor = tokens.muted;
+    final hintColor = tokens.muted.withValues(alpha: 0.72);
+    final borderColor = focused
+        ? Color.lerp(tokens.outline, tokens.primary, 0.48)!
+        : tokens.outline.withValues(alpha: 0.66);
+    return AnimatedContainer(
+      key: const ValueKey('mine-local-search-frame'),
+      duration: YnekoThemeTokens.fastMotion,
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor),
+        boxShadow: focused
+            ? [
+                BoxShadow(
+                  color: tokens.primary.withValues(alpha: 0.12),
+                  blurRadius: 22,
+                  offset: const Offset(0, 8),
+                ),
+              ]
+            : null,
+      ),
+      child: TextField(
+        key: const ValueKey('mine-local-search'),
+        focusNode: _focusNode,
+        controller: widget.controller,
+        onChanged: widget.onChanged,
+        cursorColor: tokens.primary,
+        style: type.body.copyWith(
+          color: tokens.ink,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+          hintStyle: type.body.copyWith(
+            color: hintColor,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+          suffixIcon: Icon(
+            Icons.search_rounded,
+            color: searchIconColor,
+            size: 20,
+          ),
+          suffixIconConstraints: const BoxConstraints.tightFor(
+            width: 48,
+            height: 40,
+          ),
+          filled: true,
+          fillColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          focusColor: Colors.transparent,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 13,
+          ),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
         ),
       ),
     );
@@ -329,17 +446,25 @@ class _MineStatusMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<_LibraryFilter>(
-      tooltip: '追番状态',
-      onSelected: onChanged,
-      itemBuilder: (context) => [
+    return YnekoHoverMenu<_LibraryFilter>(
+      key: const ValueKey('mine-status-menu'),
+      triggerKey: const ValueKey('mine-status-trigger'),
+      value: value,
+      height: 40,
+      panelMaxWidth: 160,
+      optionMinWidth: 118,
+      optionAlignment: Alignment.center,
+      triggerFontSize: 14,
+      optionFontSize: 14,
+      leadingPadding: 16,
+      trailingPadding: 12,
+      showOpenShadow: false,
+      centerTriggerContent: true,
+      items: [
         for (final option in _LibraryFilter.values)
-          PopupMenuItem(value: option, child: Text(_filterLabel(option))),
+          YnekoHoverMenuItem(value: option, label: _filterLabel(option)),
       ],
-      child: _MineSmallControl(
-        icon: Icons.chevron_right_rounded,
-        label: _filterLabel(value),
-      ),
+      onChanged: onChanged,
     );
   }
 
@@ -347,8 +472,10 @@ class _MineStatusMenu extends StatelessWidget {
     return switch (filter) {
       _LibraryFilter.all => '全部',
       _LibraryFilter.watching => '在看',
-      _LibraryFilter.watched => '看过',
       _LibraryFilter.wish => '想看',
+      _LibraryFilter.watched => '看过',
+      _LibraryFilter.paused => '搁置',
+      _LibraryFilter.dropped => '抛弃',
     };
   }
 }
@@ -387,35 +514,48 @@ class _MineSmallControl extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
     final type = YnekoTypography.of(context);
-    return InkWell(
+    return YnekoPressable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: tokens.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: tokens.outline),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 16, color: tokens.muted),
-            const SizedBox(width: 7),
-            Flexible(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: type.label.copyWith(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
+      borderRadius: 8,
+      builder: (context, hovered, pressed) {
+        final highlighted = hovered || pressed;
+        return AnimatedContainer(
+          duration: YnekoThemeTokens.fastMotion,
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: highlighted ? tokens.primaryContainer : tokens.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: highlighted
+                  ? Color.lerp(tokens.outline, tokens.primary, 0.38)!
+                  : tokens.outline,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: highlighted ? tokens.primary : tokens.muted,
+              ),
+              const SizedBox(width: 7),
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: type.label.copyWith(
+                    color: highlighted ? tokens.primary : tokens.ink,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -444,10 +584,12 @@ class _MineEmptyPrompt extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            '今日的风儿甚是喧嚣啊^-﹏-^ ੭',
+            '这里什么都没有喵～\n快去追番吧（=^･ω･^=）',
+            textAlign: TextAlign.center,
             style: type.body.copyWith(
               color: tokens.soft,
               fontWeight: FontWeight.w600,
+              height: 1.65,
             ),
           ),
         ],

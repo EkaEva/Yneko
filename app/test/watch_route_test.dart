@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yneko/src/features/shell/index.dart';
+import 'package:yneko/src/features/watch/application/watch_providers.dart';
 import 'package:yneko/src/infrastructure/bridge/yneko_backend.dart';
 
 import 'support/fake_yneko_backend.dart';
@@ -13,7 +14,10 @@ void main() {
 
     final container = ProviderContainer(
       overrides: [
-        ynekoBackendProvider.overrideWithValue(const FakeYnekoBackend()),
+        ynekoBackendProvider.overrideWithValue(FakeYnekoBackend()),
+        watchPlayerAdapterFactoryProvider.overrideWithValue(
+          (_) => FakePlayerAdapter(),
+        ),
       ],
     );
     addTearDown(container.dispose);

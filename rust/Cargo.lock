@@ -2444,6 +2444,7 @@ name = "yneko-api"
 version = "0.1.0"
 dependencies = [
  "flutter_rust_bridge",
+ "reqwest",
  "serde",
  "tokio",
  "yneko-core",
@@ -2492,7 +2493,9 @@ name = "yneko-storage"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
  "sqlx",
+ "tokio",
  "yneko-core",
 ]
 
