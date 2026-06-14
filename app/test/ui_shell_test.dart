@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:yneko/src/features/episode_playback/index.dart';
 import 'package:yneko/src/features/shell/index.dart';
 import 'package:yneko/src/infrastructure/bridge/yneko_backend.dart';
 import 'package:yneko/src/shared/assets/index.dart';
@@ -292,6 +291,13 @@ void main() {
     expect(find.byKey(const ValueKey('search-mode-toggle')), findsOneWidget);
     expect(find.byKey(const ValueKey('search-grid')), findsOneWidget);
     expect(find.text('已经到底了'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('search-result-card-1001')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('watch-page')), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.byKey(const ValueKey('rail-back-button')), findsNothing);
   });
 
   testWidgets('theme toggle keeps sun halo attached to the clipped sun orb', (
@@ -415,7 +421,7 @@ void main() {
     expect(find.text('更多筛选'), findsOneWidget);
   });
 
-  testWidgets('home poster card click opens subject detail route', (
+  testWidgets('home poster card click opens full-window watch route', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
@@ -427,22 +433,32 @@ void main() {
     await tester.tap(find.text('mono女孩').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('番剧详情'), findsOneWidget);
+    expect(find.byKey(const ValueKey('watch-page')), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.byKey(const ValueKey('rail-back-button')), findsNothing);
+    expect(find.text('等待播放源'), findsOneWidget);
+    expect(find.text('剧集'), findsOneWidget);
+    expect(find.text('系列'), findsOneWidget);
+    expect(find.text('规则源'), findsOneWidget);
+    expect(find.byKey(const ValueKey('episode-list-panel')), findsOneWidget);
+
+    final route = ProviderScope.containerOf(
+      tester.element(find.byKey(const ValueKey('watch-page'))),
+    ).read(shellRouteProvider);
+    expect(route, isA<WatchRoute>());
   });
 
   testWidgets(
-    'episode playback page has full detail player and right panel tabs',
+    'watch page switches panels and uses original player svg assets',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1280, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: EpisodePlaybackPage(subjectId: 1001, episodeId: 100101),
-          ),
-        ),
-      );
+      await tester.pumpWidget(_appWithBackend());
+      ProviderScope.containerOf(tester.element(find.byType(YnekoApp)))
+          .read(shellRouteProvider.notifier)
+          .openWatch(subjectId: FakeYnekoBackend.subject.id);
+      await tester.pumpAndSettle();
 
       expect(find.text('等待播放源'), findsOneWidget);
       expect(find.text('剧集'), findsOneWidget);
@@ -458,6 +474,30 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('导出矩阵'), findsOneWidget);
       expect(find.text('默认规则组'), findsWidgets);
+
+      final svgPictures = tester.widgetList<SvgPicture>(
+        find.byType(SvgPicture),
+      );
+      for (final asset in [
+        YnekoAssets.playerPlay,
+        YnekoAssets.playerEpisodePrevious,
+        YnekoAssets.playerEpisodeNext,
+        YnekoAssets.playerDanmakuOn,
+        YnekoAssets.playerSettings,
+        YnekoAssets.playerVolume,
+      ]) {
+        expect(
+          svgPictures.any(
+            (picture) => picture.bytesLoader.toString().contains(asset),
+          ),
+          isTrue,
+          reason: '$asset should be visible in the watch control bar',
+        );
+      }
+
+      await tester.tap(find.byKey(const ValueKey('watch-back-button')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('home-anime-grid')), findsOneWidget);
     },
   );
 

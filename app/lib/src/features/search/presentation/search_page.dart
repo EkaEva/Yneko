@@ -271,7 +271,7 @@ class _SearchGrid extends ConsumerWidget {
               highlight: highlight,
               onTap: () => ref
                   .read(shellRouteProvider.notifier)
-                  .openSubjectDetail(item.id),
+                  .openWatch(subjectId: item.id),
             );
           },
         );
@@ -303,6 +303,7 @@ class _SearchResultCardState extends State<_SearchResultCard> {
     final tokens = YnekoThemeTokens.of(context);
     final type = YnekoTypography.of(context);
     return MouseRegion(
+      key: ValueKey('search-result-card-${widget.item.id}'),
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(

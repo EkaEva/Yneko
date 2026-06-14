@@ -2,7 +2,8 @@
 
 ## Responsibilities
 
-- App route state, top-level navigation, and app theme composition.
+- App route state, top-level navigation, watch route composition, and app theme
+  composition.
 
 ## Public Contracts
 
@@ -15,6 +16,7 @@
 ## Forbidden
 
 - Feature algorithms, source parsing, and playback runtime control.
+- Wrapping WatchRoute in the normal shell chrome.
 - Generated bridge calls from widgets.
 - Cross-feature deep imports; consume another feature through its index.dart.
 

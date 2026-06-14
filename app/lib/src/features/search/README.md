@@ -2,7 +2,8 @@
 
 ## Responsibilities
 
-- Search query state and Bangumi-first result presentation.
+- Search query state, Bangumi-first result presentation, and direct watch-page
+  entry from result cards.
 
 ## Public Contracts
 

@@ -3,6 +3,7 @@
 ## Responsibilities
 
 - Home layout and main navigation entry composition.
+- Direct watch-page entry from anime cards.
 - Home-only Bangumi recommendation, calendar, ranking provider state.
 - Mapping Bangumi subject summaries into home poster view models.
 
@@ -18,7 +19,7 @@
 
 ## Forbidden
 
-- Owning search, detail, or player state.
+- Owning search or player state.
 - Generated bridge calls from widgets.
 - Direct Bangumi HTTP calls from Dart.
 - Cross-feature deep imports; consume another feature through its index.dart.

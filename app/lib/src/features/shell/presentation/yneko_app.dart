@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../episode_playback/index.dart';
 import '../../home/index.dart';
 import '../../mine/index.dart';
 import '../../search/index.dart';
 import '../../settings/index.dart';
-import '../../subject_detail/index.dart';
-import '../../../shared/assets/index.dart';
+import '../../watch/index.dart';
 import '../../../infrastructure/platform/window_chrome/index.dart';
+import '../../../shared/assets/index.dart';
 import '../../../shared/theme/index.dart';
 import '../../../shared/ui/index.dart';
+import 'window_controls.dart';
 
 class YnekoApp extends ConsumerWidget {
   const YnekoApp({super.key});
@@ -27,20 +27,22 @@ class YnekoApp extends ConsumerWidget {
       theme: ynekoTheme(Brightness.light),
       darkTheme: ynekoTheme(Brightness.dark),
       themeMode: themeMode,
-      home: YnekoShell(
-        route: route,
-        child: switch (route) {
-          HomeRoute() => const HomePage(),
-          MineRoute() => const MinePage(),
-          SearchRoute() => const SearchPage(),
-          SubjectDetailRoute(:final subjectId) => SubjectDetailPage(
-            subjectId: subjectId,
-          ),
-          EpisodePlaybackRoute(:final subjectId, :final episodeId) =>
-            EpisodePlaybackPage(subjectId: subjectId, episodeId: episodeId),
-          SettingsRoute() => const SettingsPage(),
-        },
-      ),
+      home: switch (route) {
+        WatchRoute(:final subjectId, :final episodeId) => WatchPage(
+          subjectId: subjectId,
+          initialEpisodeId: episodeId,
+        ),
+        _ => YnekoShell(
+          route: route,
+          child: switch (route) {
+            HomeRoute() => const HomePage(),
+            MineRoute() => const MinePage(),
+            SearchRoute() => const SearchPage(),
+            SettingsRoute() => const SettingsPage(),
+            WatchRoute() => const SizedBox.shrink(),
+          },
+        ),
+      },
     );
   }
 }
@@ -127,9 +129,8 @@ class _YnekoShellState extends ConsumerState<YnekoShell> {
       HomeRoute() => 'home',
       MineRoute() => 'mine',
       SearchRoute() => 'search',
-      SubjectDetailRoute(:final subjectId) => 'detail-$subjectId',
-      EpisodePlaybackRoute(:final subjectId, :final episodeId) =>
-        'play-$subjectId-$episodeId',
+      WatchRoute(:final subjectId, :final episodeId) =>
+        'watch-$subjectId-${episodeId ?? 'first'}',
       SettingsRoute() => 'settings',
     };
   }
@@ -154,9 +155,7 @@ class _SideRail extends ConsumerWidget {
         children: [
           _RailBackButton(
             onTap: () {
-              if (route case EpisodePlaybackRoute(:final subjectId)) {
-                controller.openSubjectDetail(subjectId);
-              } else if (route is SettingsRoute &&
+              if (route is SettingsRoute &&
                   settingsPanel != SettingsPanel.root) {
                 ref.read(settingsPanelProvider.notifier).openRoot();
               } else {
@@ -546,7 +545,7 @@ class _TopBar extends ConsumerWidget {
                 const SizedBox(width: 12),
                 const _TopActionDivider(),
                 const SizedBox(width: 12),
-                const _WindowButtons(),
+                const YnekoWindowControls(),
               ],
             ),
           ),
@@ -560,8 +559,7 @@ class _TopBar extends ConsumerWidget {
       HomeRoute() => '首页',
       MineRoute() => '我的',
       SearchRoute() => '搜索',
-      SubjectDetailRoute() => '番剧详情',
-      EpisodePlaybackRoute() => '播放详情',
+      WatchRoute() => '播放',
       SettingsRoute() => '设置',
     };
   }
@@ -1297,166 +1295,6 @@ class _TopActionDivider extends StatelessWidget {
   }
 }
 
-class _WindowButtons extends StatelessWidget {
-  const _WindowButtons();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        _WindowButton(
-          icon: _WindowControlGlyph.minimize,
-          tooltip: '最小化',
-          onTap: WindowChromeService.minimize,
-        ),
-        _MaximizeWindowButton(),
-        _WindowButton(
-          icon: _WindowControlGlyph.close,
-          tooltip: '关闭',
-          close: true,
-          onTap: WindowChromeService.close,
-        ),
-      ],
-    );
-  }
-}
-
-class _MaximizeWindowButton extends StatefulWidget {
-  const _MaximizeWindowButton();
-
-  @override
-  State<_MaximizeWindowButton> createState() => _MaximizeWindowButtonState();
-}
-
-class _MaximizeWindowButtonState extends State<_MaximizeWindowButton> {
-  bool _maximized = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return _WindowButton(
-      key: const ValueKey('window-maximize-button'),
-      icon: _maximized
-          ? _WindowControlGlyph.restore
-          : _WindowControlGlyph.maximize,
-      tooltip: _maximized ? '还原' : '最大化',
-      onTap: () async {
-        if (mounted) {
-          setState(() => _maximized = !_maximized);
-        }
-        await WindowChromeService.toggleMaximize();
-      },
-    );
-  }
-}
-
-class _WindowButton extends StatefulWidget {
-  const _WindowButton({
-    super.key,
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-    this.close = false,
-  });
-
-  final _WindowControlGlyph icon;
-  final String tooltip;
-  final Future<void> Function() onTap;
-  final bool close;
-
-  @override
-  State<_WindowButton> createState() => _WindowButtonState();
-}
-
-class _WindowButtonState extends State<_WindowButton> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = YnekoThemeTokens.of(context);
-    final motion = _motionDuration(context, const Duration(milliseconds: 160));
-    final closeHover = widget.close && _hovered;
-    return Tooltip(
-      message: widget.tooltip,
-      waitDuration: const Duration(milliseconds: 700),
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: GestureDetector(
-          onTap: () => widget.onTap(),
-          child: AnimatedContainer(
-            key: ValueKey('window-button-${widget.tooltip}'),
-            duration: motion,
-            width: 44,
-            height: 38,
-            decoration: BoxDecoration(
-              color: closeHover
-                  ? const Color(0xFFFF5C7A)
-                  : _hovered
-                  ? const Color(0xFFE3E5E7).withValues(alpha: 0.56)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: _WindowControlSvgIcon(
-              key: ValueKey('window-icon-${widget.icon.name}'),
-              glyph: widget.icon,
-              color: closeHover ? Colors.white : tokens.muted,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-enum _WindowControlGlyph { minimize, maximize, restore, close }
-
-class _WindowControlSvgIcon extends StatelessWidget {
-  const _WindowControlSvgIcon({
-    super.key,
-    required this.glyph,
-    required this.color,
-  });
-
-  final _WindowControlGlyph glyph;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SvgPicture.string(
-        _svg,
-        width: 16,
-        height: 16,
-        allowDrawingOutsideViewBox: false,
-      ),
-    );
-  }
-
-  String get _svg {
-    final stroke = _svgColor(color);
-    final body = switch (glyph) {
-      _WindowControlGlyph.minimize => '<path d="M5 12h14"/>',
-      _WindowControlGlyph.maximize =>
-        '<rect width="18" height="18" x="3" y="3" rx="2"/>',
-      _WindowControlGlyph.restore =>
-        '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>'
-            '<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
-      _WindowControlGlyph.close =>
-        '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
-    };
-    return '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="$stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  $body
-</svg>
-''';
-  }
-}
-
-String _svgColor(Color color) {
-  final value = color.toARGB32() & 0xFFFFFFFF;
-  return '#${value.toRadixString(16).padLeft(8, '0').substring(2)}';
-}
-
 Duration _motionDuration(BuildContext context, Duration duration) {
   return MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration;
 }
@@ -1481,20 +1319,11 @@ class SettingsRoute extends ShellRoute {
   const SettingsRoute();
 }
 
-class SubjectDetailRoute extends ShellRoute {
-  const SubjectDetailRoute({required this.subjectId});
+class WatchRoute extends ShellRoute {
+  const WatchRoute({required this.subjectId, this.episodeId});
 
   final int subjectId;
-}
-
-class EpisodePlaybackRoute extends ShellRoute {
-  const EpisodePlaybackRoute({
-    required this.subjectId,
-    required this.episodeId,
-  });
-
-  final int subjectId;
-  final int episodeId;
+  final int? episodeId;
 }
 
 class ShellRouteController extends Notifier<ShellRoute> {
@@ -1513,17 +1342,13 @@ class ShellRouteController extends Notifier<ShellRoute> {
     state = const MineRoute();
   }
 
-  void openSubjectDetail(int subjectId) {
-    state = SubjectDetailRoute(subjectId: subjectId);
-  }
-
   void openSettings() {
     ref.read(settingsPanelProvider.notifier).openRoot();
     state = const SettingsRoute();
   }
 
-  void openEpisodePlayback({required int subjectId, required int episodeId}) {
-    state = EpisodePlaybackRoute(subjectId: subjectId, episodeId: episodeId);
+  void openWatch({required int subjectId, int? episodeId}) {
+    state = WatchRoute(subjectId: subjectId, episodeId: episodeId);
   }
 }
 

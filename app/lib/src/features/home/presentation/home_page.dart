@@ -24,9 +24,15 @@ class HomePage extends ConsumerWidget {
         padding: YnekoThemeTokens.pagePadding,
         children: [
           switch (tabIndex) {
-            1 => _ScheduleWorkbench(onOpen: controller.openSubjectDetail),
-            2 => _RankingWorkbench(onOpen: controller.openSubjectDetail),
-            _ => _RecommendWorkbench(onOpen: controller.openSubjectDetail),
+            1 => _ScheduleWorkbench(
+              onOpen: (subjectId) => controller.openWatch(subjectId: subjectId),
+            ),
+            2 => _RankingWorkbench(
+              onOpen: (subjectId) => controller.openWatch(subjectId: subjectId),
+            ),
+            _ => _RecommendWorkbench(
+              onOpen: (subjectId) => controller.openWatch(subjectId: subjectId),
+            ),
           },
         ],
       ),

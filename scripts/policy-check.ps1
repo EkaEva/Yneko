@@ -69,12 +69,11 @@ $requiredFeatures = @(
   'shell',
   'home',
   'search',
-  'subject_detail',
-  'episode_playback',
-  'player',
+  'watch',
   'sources',
   'library',
   'history',
+  'mine',
   'settings',
   'danmaku'
 )
