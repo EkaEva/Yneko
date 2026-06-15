@@ -31,6 +31,13 @@ void main() {
           ),
         ],
         isFavorite: true,
+        progress: frb.PlaybackProgress(
+          subjectId: 400602,
+          episodeId: 1,
+          positionMs: 42,
+          durationMs: 1440,
+          updatedAtMs: 2,
+        ),
       ),
     );
 
@@ -39,6 +46,7 @@ void main() {
     expect(detail.subject.tags, ['漫画改', '奇幻']);
     expect(detail.episodes.single.displayTitle, '冒险的结束');
     expect(detail.isFavorite, isTrue);
+    expect(detail.progress?.positionMs, 42);
   });
 
   test('preserves nullable subject fields from generated bridge models', () {
@@ -148,5 +156,60 @@ void main() {
       ),
     );
     expect(playback.headers, {'Referer': 'https://example.test'});
+  });
+
+  test('maps favorites, progress, history, and collection status', () {
+    final subject = const frb.SubjectSummary(
+      id: 400602,
+      name: 'Sousou no Frieren',
+      nameCn: '葬送的芙莉莲',
+      aliases: [],
+      coverUrl: null,
+      summary: null,
+      airDate: null,
+      ratingScore: null,
+      ratingRank: null,
+      tags: [],
+      totalEpisodes: 28,
+    );
+    final episode = const frb.Episode(
+      id: 40060201,
+      subjectId: 400602,
+      sort: 1,
+      title: 'The Journey Ends',
+      titleCn: '冒险的结束',
+      airDate: null,
+    );
+    final progress = const frb.PlaybackProgress(
+      subjectId: 400602,
+      episodeId: 40060201,
+      positionMs: 1234,
+      durationMs: 1440000,
+      updatedAtMs: 9,
+    );
+
+    final favorite = favoriteItemFromFrb(
+      frb.FavoriteItem(
+        subject: subject,
+        status: frb.CollectionStatus.watched,
+        updatedAtMs: 9,
+      ),
+    );
+    expect(favorite.subject.displayTitle, '葬送的芙莉莲');
+    expect(favorite.status, CollectionStatus.watched);
+
+    final history = watchHistoryItemFromFrb(
+      frb.WatchHistoryItem(
+        subject: subject,
+        episode: episode,
+        progress: progress,
+      ),
+    );
+    expect(history.episode.displayTitle, '冒险的结束');
+    expect(history.progress.durationMs, 1440000);
+    expect(
+      collectionStatusToFrb(CollectionStatus.paused),
+      frb.CollectionStatus.paused,
+    );
   });
 }

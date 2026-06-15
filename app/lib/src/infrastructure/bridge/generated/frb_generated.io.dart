@@ -10,999 +10,578 @@ import 'dart:ffi' as ffi;
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
 
-abstract class YnekoRustLibApiImplPlatform
-    extends BaseApiImpl<YnekoRustLibWire> {
-  YnekoRustLibApiImplPlatform({
-    required super.handler,
-    required super.wire,
-    required super.generalizedFrbRustBinding,
-    required super.portManager,
-  });
 
-  @protected
-  int dco_decode_CastedPrimitive_i_64(dynamic raw);
 
-  @protected
-  Map<String, String> dco_decode_Map_String_String_None(dynamic raw);
 
-  @protected
-  String dco_decode_String(dynamic raw);
+                abstract class YnekoRustLibApiImplPlatform extends BaseApiImpl<YnekoRustLibWire> {
+                  YnekoRustLibApiImplPlatform({
+                    required super.handler,
+                    required super.wire,
+                    required super.generalizedFrbRustBinding,
+                    required super.portManager,
+                  });
 
-  @protected
-  AnimeRankingApplied dco_decode_anime_ranking_applied(dynamic raw);
+                  
 
-  @protected
-  AnimeRankingRequest dco_decode_anime_ranking_request(dynamic raw);
+                  @protected int dco_decode_CastedPrimitive_i_64(dynamic raw);
 
-  @protected
-  AnimeRankingResponse dco_decode_anime_ranking_response(dynamic raw);
+@protected Map<String, String> dco_decode_Map_String_String_None(dynamic raw);
 
-  @protected
-  AnimeRankingSort dco_decode_anime_ranking_sort(dynamic raw);
+@protected String dco_decode_String(dynamic raw);
 
-  @protected
-  AnimeSeason dco_decode_anime_season(dynamic raw);
+@protected AnimeRankingApplied dco_decode_anime_ranking_applied(dynamic raw);
 
-  @protected
-  BangumiBrowseRequest dco_decode_bangumi_browse_request(dynamic raw);
+@protected AnimeRankingRequest dco_decode_anime_ranking_request(dynamic raw);
 
-  @protected
-  BangumiBrowseSort dco_decode_bangumi_browse_sort(dynamic raw);
+@protected AnimeRankingResponse dco_decode_anime_ranking_response(dynamic raw);
 
-  @protected
-  BangumiCalendarDay dco_decode_bangumi_calendar_day(dynamic raw);
+@protected AnimeRankingSort dco_decode_anime_ranking_sort(dynamic raw);
 
-  @protected
-  bool dco_decode_bool(dynamic raw);
+@protected AnimeSeason dco_decode_anime_season(dynamic raw);
 
-  @protected
-  AnimeRankingRequest dco_decode_box_autoadd_anime_ranking_request(dynamic raw);
+@protected BangumiBrowseRequest dco_decode_bangumi_browse_request(dynamic raw);
 
-  @protected
-  AnimeSeason dco_decode_box_autoadd_anime_season(dynamic raw);
+@protected BangumiBrowseSort dco_decode_bangumi_browse_sort(dynamic raw);
 
-  @protected
-  BangumiBrowseRequest dco_decode_box_autoadd_bangumi_browse_request(
-    dynamic raw,
-  );
+@protected BangumiCalendarDay dco_decode_bangumi_calendar_day(dynamic raw);
 
-  @protected
-  EpisodeSourceBinding dco_decode_box_autoadd_episode_source_binding(
-    dynamic raw,
-  );
+@protected bool dco_decode_bool(dynamic raw);
 
-  @protected
-  double dco_decode_box_autoadd_f_32(dynamic raw);
+@protected AnimeRankingRequest dco_decode_box_autoadd_anime_ranking_request(dynamic raw);
 
-  @protected
-  RuleGroupSummary dco_decode_box_autoadd_rule_group_summary(dynamic raw);
+@protected AnimeSeason dco_decode_box_autoadd_anime_season(dynamic raw);
 
-  @protected
-  RuleRepositoryIndexEntry dco_decode_box_autoadd_rule_repository_index_entry(
-    dynamic raw,
-  );
+@protected BangumiBrowseRequest dco_decode_box_autoadd_bangumi_browse_request(dynamic raw);
 
-  @protected
-  RuleRepositorySubscription
-  dco_decode_box_autoadd_rule_repository_subscription(dynamic raw);
+@protected CollectionStatus dco_decode_box_autoadd_collection_status(dynamic raw);
 
-  @protected
-  SourceCandidate dco_decode_box_autoadd_source_candidate(dynamic raw);
+@protected Episode dco_decode_box_autoadd_episode(dynamic raw);
 
-  @protected
-  SourcePackageText dco_decode_box_autoadd_source_package_text(dynamic raw);
+@protected EpisodeSourceBinding dco_decode_box_autoadd_episode_source_binding(dynamic raw);
 
-  @protected
-  int dco_decode_box_autoadd_u_16(dynamic raw);
+@protected double dco_decode_box_autoadd_f_32(dynamic raw);
 
-  @protected
-  int dco_decode_box_autoadd_u_32(dynamic raw);
+@protected PlaybackProgress dco_decode_box_autoadd_playback_progress(dynamic raw);
 
-  @protected
-  int dco_decode_box_autoadd_u_8(dynamic raw);
+@protected RuleGroupSummary dco_decode_box_autoadd_rule_group_summary(dynamic raw);
 
-  @protected
-  Episode dco_decode_episode(dynamic raw);
+@protected RuleRepositoryIndexEntry dco_decode_box_autoadd_rule_repository_index_entry(dynamic raw);
 
-  @protected
-  EpisodeBindingResolveResult dco_decode_episode_binding_resolve_result(
-    dynamic raw,
-  );
+@protected RuleRepositorySubscription dco_decode_box_autoadd_rule_repository_subscription(dynamic raw);
 
-  @protected
-  EpisodeSourceBinding dco_decode_episode_source_binding(dynamic raw);
+@protected SourceCandidate dco_decode_box_autoadd_source_candidate(dynamic raw);
 
-  @protected
-  EpisodeStreamResolveResult dco_decode_episode_stream_resolve_result(
-    dynamic raw,
-  );
+@protected SourcePackageText dco_decode_box_autoadd_source_package_text(dynamic raw);
 
-  @protected
-  double dco_decode_f_32(dynamic raw);
+@protected SubjectSummary dco_decode_box_autoadd_subject_summary(dynamic raw);
 
-  @protected
-  int dco_decode_i_32(dynamic raw);
+@protected int dco_decode_box_autoadd_u_16(dynamic raw);
 
-  @protected
-  PlatformInt64 dco_decode_i_64(dynamic raw);
+@protected int dco_decode_box_autoadd_u_32(dynamic raw);
 
-  @protected
-  List<String> dco_decode_list_String(dynamic raw);
+@protected int dco_decode_box_autoadd_u_8(dynamic raw);
 
-  @protected
-  List<BangumiCalendarDay> dco_decode_list_bangumi_calendar_day(dynamic raw);
+@protected CollectionStatus dco_decode_collection_status(dynamic raw);
 
-  @protected
-  List<Episode> dco_decode_list_episode(dynamic raw);
+@protected Episode dco_decode_episode(dynamic raw);
 
-  @protected
-  List<EpisodeSourceBinding> dco_decode_list_episode_source_binding(
-    dynamic raw,
-  );
+@protected EpisodeBindingResolveResult dco_decode_episode_binding_resolve_result(dynamic raw);
 
-  @protected
-  List<PlayStream> dco_decode_list_play_stream(dynamic raw);
+@protected EpisodeSourceBinding dco_decode_episode_source_binding(dynamic raw);
 
-  @protected
-  List<PlaybackCandidate> dco_decode_list_playback_candidate(dynamic raw);
+@protected EpisodeStreamResolveResult dco_decode_episode_stream_resolve_result(dynamic raw);
 
-  @protected
-  List<PlaybackHeader> dco_decode_list_playback_header(dynamic raw);
+@protected double dco_decode_f_32(dynamic raw);
 
-  @protected
-  Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
+@protected FavoriteItem dco_decode_favorite_item(dynamic raw);
 
-  @protected
-  List<(String, String)> dco_decode_list_record_string_string(dynamic raw);
+@protected int dco_decode_i_32(dynamic raw);
 
-  @protected
-  List<RuleGroupSummary> dco_decode_list_rule_group_summary(dynamic raw);
+@protected PlatformInt64 dco_decode_i_64(dynamic raw);
 
-  @protected
-  List<RuleRepositoryIndexEntry> dco_decode_list_rule_repository_index_entry(
-    dynamic raw,
-  );
+@protected List<String> dco_decode_list_String(dynamic raw);
 
-  @protected
-  List<RuleRepositorySubscription> dco_decode_list_rule_repository_subscription(
-    dynamic raw,
-  );
+@protected List<BangumiCalendarDay> dco_decode_list_bangumi_calendar_day(dynamic raw);
 
-  @protected
-  List<RuleResolveAttempt> dco_decode_list_rule_resolve_attempt(dynamic raw);
+@protected List<Episode> dco_decode_list_episode(dynamic raw);
 
-  @protected
-  List<RuleSourceSearchResult> dco_decode_list_rule_source_search_result(
-    dynamic raw,
-  );
+@protected List<EpisodeSourceBinding> dco_decode_list_episode_source_binding(dynamic raw);
 
-  @protected
-  List<SourceCandidate> dco_decode_list_source_candidate(dynamic raw);
+@protected List<FavoriteItem> dco_decode_list_favorite_item(dynamic raw);
 
-  @protected
-  List<SourcePackageSummary> dco_decode_list_source_package_summary(
-    dynamic raw,
-  );
+@protected List<PlayStream> dco_decode_list_play_stream(dynamic raw);
 
-  @protected
-  List<SubjectSummary> dco_decode_list_subject_summary(dynamic raw);
+@protected List<PlaybackCandidate> dco_decode_list_playback_candidate(dynamic raw);
 
-  @protected
-  int? dco_decode_opt_CastedPrimitive_i_64(dynamic raw);
+@protected List<PlaybackHeader> dco_decode_list_playback_header(dynamic raw);
 
-  @protected
-  String? dco_decode_opt_String(dynamic raw);
+@protected Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
-  @protected
-  AnimeSeason? dco_decode_opt_box_autoadd_anime_season(dynamic raw);
+@protected List<(String,String)> dco_decode_list_record_string_string(dynamic raw);
 
-  @protected
-  EpisodeSourceBinding? dco_decode_opt_box_autoadd_episode_source_binding(
-    dynamic raw,
-  );
+@protected List<RuleGroupSummary> dco_decode_list_rule_group_summary(dynamic raw);
 
-  @protected
-  double? dco_decode_opt_box_autoadd_f_32(dynamic raw);
+@protected List<RuleRepositoryIndexEntry> dco_decode_list_rule_repository_index_entry(dynamic raw);
 
-  @protected
-  SourceCandidate? dco_decode_opt_box_autoadd_source_candidate(dynamic raw);
+@protected List<RuleRepositorySubscription> dco_decode_list_rule_repository_subscription(dynamic raw);
 
-  @protected
-  SourcePackageText? dco_decode_opt_box_autoadd_source_package_text(
-    dynamic raw,
-  );
+@protected List<RuleResolveAttempt> dco_decode_list_rule_resolve_attempt(dynamic raw);
 
-  @protected
-  int? dco_decode_opt_box_autoadd_u_16(dynamic raw);
+@protected List<RuleSourceSearchResult> dco_decode_list_rule_source_search_result(dynamic raw);
 
-  @protected
-  int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
+@protected List<SourceCandidate> dco_decode_list_source_candidate(dynamic raw);
 
-  @protected
-  int? dco_decode_opt_box_autoadd_u_8(dynamic raw);
+@protected List<SourcePackageSummary> dco_decode_list_source_package_summary(dynamic raw);
 
-  @protected
-  PlayStream dco_decode_play_stream(dynamic raw);
+@protected List<SubjectSummary> dco_decode_list_subject_summary(dynamic raw);
 
-  @protected
-  PlaybackCandidate dco_decode_playback_candidate(dynamic raw);
+@protected List<WatchHistoryItem> dco_decode_list_watch_history_item(dynamic raw);
 
-  @protected
-  PlaybackHeader dco_decode_playback_header(dynamic raw);
+@protected int? dco_decode_opt_CastedPrimitive_i_64(dynamic raw);
 
-  @protected
-  (String, String) dco_decode_record_string_string(dynamic raw);
+@protected String? dco_decode_opt_String(dynamic raw);
 
-  @protected
-  RuleGroupSummary dco_decode_rule_group_summary(dynamic raw);
+@protected AnimeSeason? dco_decode_opt_box_autoadd_anime_season(dynamic raw);
 
-  @protected
-  RuleRepositoryIndexEntry dco_decode_rule_repository_index_entry(dynamic raw);
+@protected CollectionStatus? dco_decode_opt_box_autoadd_collection_status(dynamic raw);
 
-  @protected
-  RuleRepositorySubscription dco_decode_rule_repository_subscription(
-    dynamic raw,
-  );
+@protected EpisodeSourceBinding? dco_decode_opt_box_autoadd_episode_source_binding(dynamic raw);
 
-  @protected
-  RuleResolveAttempt dco_decode_rule_resolve_attempt(dynamic raw);
+@protected double? dco_decode_opt_box_autoadd_f_32(dynamic raw);
 
-  @protected
-  RuleSourceSearchResult dco_decode_rule_source_search_result(dynamic raw);
+@protected PlaybackProgress? dco_decode_opt_box_autoadd_playback_progress(dynamic raw);
 
-  @protected
-  SourceCandidate dco_decode_source_candidate(dynamic raw);
+@protected SourceCandidate? dco_decode_opt_box_autoadd_source_candidate(dynamic raw);
 
-  @protected
-  SourceImportResult dco_decode_source_import_result(dynamic raw);
+@protected SourcePackageText? dco_decode_opt_box_autoadd_source_package_text(dynamic raw);
 
-  @protected
-  SourcePackageSummary dco_decode_source_package_summary(dynamic raw);
+@protected int? dco_decode_opt_box_autoadd_u_16(dynamic raw);
 
-  @protected
-  SourcePackageText dco_decode_source_package_text(dynamic raw);
+@protected int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
 
-  @protected
-  SubjectDetail dco_decode_subject_detail(dynamic raw);
+@protected int? dco_decode_opt_box_autoadd_u_8(dynamic raw);
 
-  @protected
-  SubjectSummary dco_decode_subject_summary(dynamic raw);
+@protected PlayStream dco_decode_play_stream(dynamic raw);
 
-  @protected
-  int dco_decode_u_16(dynamic raw);
+@protected PlaybackCandidate dco_decode_playback_candidate(dynamic raw);
 
-  @protected
-  int dco_decode_u_32(dynamic raw);
+@protected PlaybackHeader dco_decode_playback_header(dynamic raw);
 
-  @protected
-  int dco_decode_u_8(dynamic raw);
+@protected PlaybackProgress dco_decode_playback_progress(dynamic raw);
 
-  @protected
-  void dco_decode_unit(dynamic raw);
+@protected (String,String) dco_decode_record_string_string(dynamic raw);
 
-  @protected
-  int sse_decode_CastedPrimitive_i_64(SseDeserializer deserializer);
+@protected RuleGroupSummary dco_decode_rule_group_summary(dynamic raw);
 
-  @protected
-  Map<String, String> sse_decode_Map_String_String_None(
-    SseDeserializer deserializer,
-  );
+@protected RuleRepositoryIndexEntry dco_decode_rule_repository_index_entry(dynamic raw);
 
-  @protected
-  String sse_decode_String(SseDeserializer deserializer);
+@protected RuleRepositorySubscription dco_decode_rule_repository_subscription(dynamic raw);
 
-  @protected
-  AnimeRankingApplied sse_decode_anime_ranking_applied(
-    SseDeserializer deserializer,
-  );
+@protected RuleResolveAttempt dco_decode_rule_resolve_attempt(dynamic raw);
 
-  @protected
-  AnimeRankingRequest sse_decode_anime_ranking_request(
-    SseDeserializer deserializer,
-  );
+@protected RuleSourceSearchResult dco_decode_rule_source_search_result(dynamic raw);
 
-  @protected
-  AnimeRankingResponse sse_decode_anime_ranking_response(
-    SseDeserializer deserializer,
-  );
+@protected SourceCandidate dco_decode_source_candidate(dynamic raw);
 
-  @protected
-  AnimeRankingSort sse_decode_anime_ranking_sort(SseDeserializer deserializer);
+@protected SourceImportResult dco_decode_source_import_result(dynamic raw);
 
-  @protected
-  AnimeSeason sse_decode_anime_season(SseDeserializer deserializer);
+@protected SourcePackageSummary dco_decode_source_package_summary(dynamic raw);
 
-  @protected
-  BangumiBrowseRequest sse_decode_bangumi_browse_request(
-    SseDeserializer deserializer,
-  );
+@protected SourcePackageText dco_decode_source_package_text(dynamic raw);
 
-  @protected
-  BangumiBrowseSort sse_decode_bangumi_browse_sort(
-    SseDeserializer deserializer,
-  );
+@protected SubjectDetail dco_decode_subject_detail(dynamic raw);
 
-  @protected
-  BangumiCalendarDay sse_decode_bangumi_calendar_day(
-    SseDeserializer deserializer,
-  );
+@protected SubjectSummary dco_decode_subject_summary(dynamic raw);
 
-  @protected
-  bool sse_decode_bool(SseDeserializer deserializer);
+@protected int dco_decode_u_16(dynamic raw);
 
-  @protected
-  AnimeRankingRequest sse_decode_box_autoadd_anime_ranking_request(
-    SseDeserializer deserializer,
-  );
+@protected int dco_decode_u_32(dynamic raw);
 
-  @protected
-  AnimeSeason sse_decode_box_autoadd_anime_season(SseDeserializer deserializer);
+@protected int dco_decode_u_8(dynamic raw);
 
-  @protected
-  BangumiBrowseRequest sse_decode_box_autoadd_bangumi_browse_request(
-    SseDeserializer deserializer,
-  );
+@protected void dco_decode_unit(dynamic raw);
 
-  @protected
-  EpisodeSourceBinding sse_decode_box_autoadd_episode_source_binding(
-    SseDeserializer deserializer,
-  );
+@protected WatchHistoryItem dco_decode_watch_history_item(dynamic raw);
 
-  @protected
-  double sse_decode_box_autoadd_f_32(SseDeserializer deserializer);
+@protected int sse_decode_CastedPrimitive_i_64(SseDeserializer deserializer);
 
-  @protected
-  RuleGroupSummary sse_decode_box_autoadd_rule_group_summary(
-    SseDeserializer deserializer,
-  );
+@protected Map<String, String> sse_decode_Map_String_String_None(SseDeserializer deserializer);
 
-  @protected
-  RuleRepositoryIndexEntry sse_decode_box_autoadd_rule_repository_index_entry(
-    SseDeserializer deserializer,
-  );
+@protected String sse_decode_String(SseDeserializer deserializer);
 
-  @protected
-  RuleRepositorySubscription
-  sse_decode_box_autoadd_rule_repository_subscription(
-    SseDeserializer deserializer,
-  );
+@protected AnimeRankingApplied sse_decode_anime_ranking_applied(SseDeserializer deserializer);
 
-  @protected
-  SourceCandidate sse_decode_box_autoadd_source_candidate(
-    SseDeserializer deserializer,
-  );
+@protected AnimeRankingRequest sse_decode_anime_ranking_request(SseDeserializer deserializer);
 
-  @protected
-  SourcePackageText sse_decode_box_autoadd_source_package_text(
-    SseDeserializer deserializer,
-  );
+@protected AnimeRankingResponse sse_decode_anime_ranking_response(SseDeserializer deserializer);
 
-  @protected
-  int sse_decode_box_autoadd_u_16(SseDeserializer deserializer);
+@protected AnimeRankingSort sse_decode_anime_ranking_sort(SseDeserializer deserializer);
 
-  @protected
-  int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
+@protected AnimeSeason sse_decode_anime_season(SseDeserializer deserializer);
 
-  @protected
-  int sse_decode_box_autoadd_u_8(SseDeserializer deserializer);
+@protected BangumiBrowseRequest sse_decode_bangumi_browse_request(SseDeserializer deserializer);
 
-  @protected
-  Episode sse_decode_episode(SseDeserializer deserializer);
+@protected BangumiBrowseSort sse_decode_bangumi_browse_sort(SseDeserializer deserializer);
 
-  @protected
-  EpisodeBindingResolveResult sse_decode_episode_binding_resolve_result(
-    SseDeserializer deserializer,
-  );
+@protected BangumiCalendarDay sse_decode_bangumi_calendar_day(SseDeserializer deserializer);
 
-  @protected
-  EpisodeSourceBinding sse_decode_episode_source_binding(
-    SseDeserializer deserializer,
-  );
+@protected bool sse_decode_bool(SseDeserializer deserializer);
 
-  @protected
-  EpisodeStreamResolveResult sse_decode_episode_stream_resolve_result(
-    SseDeserializer deserializer,
-  );
+@protected AnimeRankingRequest sse_decode_box_autoadd_anime_ranking_request(SseDeserializer deserializer);
 
-  @protected
-  double sse_decode_f_32(SseDeserializer deserializer);
+@protected AnimeSeason sse_decode_box_autoadd_anime_season(SseDeserializer deserializer);
 
-  @protected
-  int sse_decode_i_32(SseDeserializer deserializer);
+@protected BangumiBrowseRequest sse_decode_box_autoadd_bangumi_browse_request(SseDeserializer deserializer);
 
-  @protected
-  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
+@protected CollectionStatus sse_decode_box_autoadd_collection_status(SseDeserializer deserializer);
 
-  @protected
-  List<String> sse_decode_list_String(SseDeserializer deserializer);
+@protected Episode sse_decode_box_autoadd_episode(SseDeserializer deserializer);
 
-  @protected
-  List<BangumiCalendarDay> sse_decode_list_bangumi_calendar_day(
-    SseDeserializer deserializer,
-  );
+@protected EpisodeSourceBinding sse_decode_box_autoadd_episode_source_binding(SseDeserializer deserializer);
 
-  @protected
-  List<Episode> sse_decode_list_episode(SseDeserializer deserializer);
+@protected double sse_decode_box_autoadd_f_32(SseDeserializer deserializer);
 
-  @protected
-  List<EpisodeSourceBinding> sse_decode_list_episode_source_binding(
-    SseDeserializer deserializer,
-  );
+@protected PlaybackProgress sse_decode_box_autoadd_playback_progress(SseDeserializer deserializer);
 
-  @protected
-  List<PlayStream> sse_decode_list_play_stream(SseDeserializer deserializer);
+@protected RuleGroupSummary sse_decode_box_autoadd_rule_group_summary(SseDeserializer deserializer);
 
-  @protected
-  List<PlaybackCandidate> sse_decode_list_playback_candidate(
-    SseDeserializer deserializer,
-  );
+@protected RuleRepositoryIndexEntry sse_decode_box_autoadd_rule_repository_index_entry(SseDeserializer deserializer);
 
-  @protected
-  List<PlaybackHeader> sse_decode_list_playback_header(
-    SseDeserializer deserializer,
-  );
+@protected RuleRepositorySubscription sse_decode_box_autoadd_rule_repository_subscription(SseDeserializer deserializer);
 
-  @protected
-  Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+@protected SourceCandidate sse_decode_box_autoadd_source_candidate(SseDeserializer deserializer);
 
-  @protected
-  List<(String, String)> sse_decode_list_record_string_string(
-    SseDeserializer deserializer,
-  );
+@protected SourcePackageText sse_decode_box_autoadd_source_package_text(SseDeserializer deserializer);
 
-  @protected
-  List<RuleGroupSummary> sse_decode_list_rule_group_summary(
-    SseDeserializer deserializer,
-  );
+@protected SubjectSummary sse_decode_box_autoadd_subject_summary(SseDeserializer deserializer);
 
-  @protected
-  List<RuleRepositoryIndexEntry> sse_decode_list_rule_repository_index_entry(
-    SseDeserializer deserializer,
-  );
+@protected int sse_decode_box_autoadd_u_16(SseDeserializer deserializer);
 
-  @protected
-  List<RuleRepositorySubscription> sse_decode_list_rule_repository_subscription(
-    SseDeserializer deserializer,
-  );
+@protected int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
 
-  @protected
-  List<RuleResolveAttempt> sse_decode_list_rule_resolve_attempt(
-    SseDeserializer deserializer,
-  );
+@protected int sse_decode_box_autoadd_u_8(SseDeserializer deserializer);
 
-  @protected
-  List<RuleSourceSearchResult> sse_decode_list_rule_source_search_result(
-    SseDeserializer deserializer,
-  );
+@protected CollectionStatus sse_decode_collection_status(SseDeserializer deserializer);
 
-  @protected
-  List<SourceCandidate> sse_decode_list_source_candidate(
-    SseDeserializer deserializer,
-  );
+@protected Episode sse_decode_episode(SseDeserializer deserializer);
 
-  @protected
-  List<SourcePackageSummary> sse_decode_list_source_package_summary(
-    SseDeserializer deserializer,
-  );
+@protected EpisodeBindingResolveResult sse_decode_episode_binding_resolve_result(SseDeserializer deserializer);
 
-  @protected
-  List<SubjectSummary> sse_decode_list_subject_summary(
-    SseDeserializer deserializer,
-  );
+@protected EpisodeSourceBinding sse_decode_episode_source_binding(SseDeserializer deserializer);
 
-  @protected
-  int? sse_decode_opt_CastedPrimitive_i_64(SseDeserializer deserializer);
+@protected EpisodeStreamResolveResult sse_decode_episode_stream_resolve_result(SseDeserializer deserializer);
 
-  @protected
-  String? sse_decode_opt_String(SseDeserializer deserializer);
+@protected double sse_decode_f_32(SseDeserializer deserializer);
 
-  @protected
-  AnimeSeason? sse_decode_opt_box_autoadd_anime_season(
-    SseDeserializer deserializer,
-  );
+@protected FavoriteItem sse_decode_favorite_item(SseDeserializer deserializer);
 
-  @protected
-  EpisodeSourceBinding? sse_decode_opt_box_autoadd_episode_source_binding(
-    SseDeserializer deserializer,
-  );
+@protected int sse_decode_i_32(SseDeserializer deserializer);
 
-  @protected
-  double? sse_decode_opt_box_autoadd_f_32(SseDeserializer deserializer);
+@protected PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
-  @protected
-  SourceCandidate? sse_decode_opt_box_autoadd_source_candidate(
-    SseDeserializer deserializer,
-  );
+@protected List<String> sse_decode_list_String(SseDeserializer deserializer);
 
-  @protected
-  SourcePackageText? sse_decode_opt_box_autoadd_source_package_text(
-    SseDeserializer deserializer,
-  );
+@protected List<BangumiCalendarDay> sse_decode_list_bangumi_calendar_day(SseDeserializer deserializer);
 
-  @protected
-  int? sse_decode_opt_box_autoadd_u_16(SseDeserializer deserializer);
+@protected List<Episode> sse_decode_list_episode(SseDeserializer deserializer);
 
-  @protected
-  int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer);
+@protected List<EpisodeSourceBinding> sse_decode_list_episode_source_binding(SseDeserializer deserializer);
 
-  @protected
-  int? sse_decode_opt_box_autoadd_u_8(SseDeserializer deserializer);
+@protected List<FavoriteItem> sse_decode_list_favorite_item(SseDeserializer deserializer);
 
-  @protected
-  PlayStream sse_decode_play_stream(SseDeserializer deserializer);
+@protected List<PlayStream> sse_decode_list_play_stream(SseDeserializer deserializer);
 
-  @protected
-  PlaybackCandidate sse_decode_playback_candidate(SseDeserializer deserializer);
+@protected List<PlaybackCandidate> sse_decode_list_playback_candidate(SseDeserializer deserializer);
 
-  @protected
-  PlaybackHeader sse_decode_playback_header(SseDeserializer deserializer);
+@protected List<PlaybackHeader> sse_decode_list_playback_header(SseDeserializer deserializer);
 
-  @protected
-  (String, String) sse_decode_record_string_string(
-    SseDeserializer deserializer,
-  );
+@protected Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
-  @protected
-  RuleGroupSummary sse_decode_rule_group_summary(SseDeserializer deserializer);
+@protected List<(String,String)> sse_decode_list_record_string_string(SseDeserializer deserializer);
 
-  @protected
-  RuleRepositoryIndexEntry sse_decode_rule_repository_index_entry(
-    SseDeserializer deserializer,
-  );
+@protected List<RuleGroupSummary> sse_decode_list_rule_group_summary(SseDeserializer deserializer);
 
-  @protected
-  RuleRepositorySubscription sse_decode_rule_repository_subscription(
-    SseDeserializer deserializer,
-  );
+@protected List<RuleRepositoryIndexEntry> sse_decode_list_rule_repository_index_entry(SseDeserializer deserializer);
 
-  @protected
-  RuleResolveAttempt sse_decode_rule_resolve_attempt(
-    SseDeserializer deserializer,
-  );
+@protected List<RuleRepositorySubscription> sse_decode_list_rule_repository_subscription(SseDeserializer deserializer);
 
-  @protected
-  RuleSourceSearchResult sse_decode_rule_source_search_result(
-    SseDeserializer deserializer,
-  );
+@protected List<RuleResolveAttempt> sse_decode_list_rule_resolve_attempt(SseDeserializer deserializer);
 
-  @protected
-  SourceCandidate sse_decode_source_candidate(SseDeserializer deserializer);
+@protected List<RuleSourceSearchResult> sse_decode_list_rule_source_search_result(SseDeserializer deserializer);
 
-  @protected
-  SourceImportResult sse_decode_source_import_result(
-    SseDeserializer deserializer,
-  );
+@protected List<SourceCandidate> sse_decode_list_source_candidate(SseDeserializer deserializer);
 
-  @protected
-  SourcePackageSummary sse_decode_source_package_summary(
-    SseDeserializer deserializer,
-  );
+@protected List<SourcePackageSummary> sse_decode_list_source_package_summary(SseDeserializer deserializer);
 
-  @protected
-  SourcePackageText sse_decode_source_package_text(
-    SseDeserializer deserializer,
-  );
+@protected List<SubjectSummary> sse_decode_list_subject_summary(SseDeserializer deserializer);
 
-  @protected
-  SubjectDetail sse_decode_subject_detail(SseDeserializer deserializer);
+@protected List<WatchHistoryItem> sse_decode_list_watch_history_item(SseDeserializer deserializer);
 
-  @protected
-  SubjectSummary sse_decode_subject_summary(SseDeserializer deserializer);
+@protected int? sse_decode_opt_CastedPrimitive_i_64(SseDeserializer deserializer);
 
-  @protected
-  int sse_decode_u_16(SseDeserializer deserializer);
+@protected String? sse_decode_opt_String(SseDeserializer deserializer);
 
-  @protected
-  int sse_decode_u_32(SseDeserializer deserializer);
+@protected AnimeSeason? sse_decode_opt_box_autoadd_anime_season(SseDeserializer deserializer);
 
-  @protected
-  int sse_decode_u_8(SseDeserializer deserializer);
+@protected CollectionStatus? sse_decode_opt_box_autoadd_collection_status(SseDeserializer deserializer);
 
-  @protected
-  void sse_decode_unit(SseDeserializer deserializer);
+@protected EpisodeSourceBinding? sse_decode_opt_box_autoadd_episode_source_binding(SseDeserializer deserializer);
 
-  @protected
-  void sse_encode_CastedPrimitive_i_64(int self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_Map_String_String_None(
-    Map<String, String> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_String(String self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_anime_ranking_applied(
-    AnimeRankingApplied self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_anime_ranking_request(
-    AnimeRankingRequest self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_anime_ranking_response(
-    AnimeRankingResponse self,
-    SseSerializer serializer,
-  );
+@protected double? sse_decode_opt_box_autoadd_f_32(SseDeserializer deserializer);
 
-  @protected
-  void sse_encode_anime_ranking_sort(
-    AnimeRankingSort self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_anime_season(AnimeSeason self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_bangumi_browse_request(
-    BangumiBrowseRequest self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_bangumi_browse_sort(
-    BangumiBrowseSort self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_bangumi_calendar_day(
-    BangumiCalendarDay self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_bool(bool self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_box_autoadd_anime_ranking_request(
-    AnimeRankingRequest self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_anime_season(
-    AnimeSeason self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_bangumi_browse_request(
-    BangumiBrowseRequest self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_episode_source_binding(
-    EpisodeSourceBinding self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_f_32(double self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_box_autoadd_rule_group_summary(
-    RuleGroupSummary self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_rule_repository_index_entry(
-    RuleRepositoryIndexEntry self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_rule_repository_subscription(
-    RuleRepositorySubscription self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_source_candidate(
-    SourceCandidate self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_source_package_text(
-    SourcePackageText self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_u_16(int self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_box_autoadd_u_8(int self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_episode(Episode self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_episode_binding_resolve_result(
-    EpisodeBindingResolveResult self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_episode_source_binding(
-    EpisodeSourceBinding self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_episode_stream_resolve_result(
-    EpisodeStreamResolveResult self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_f_32(double self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_i_32(int self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_list_String(List<String> self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_list_bangumi_calendar_day(
-    List<BangumiCalendarDay> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_episode(List<Episode> self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_list_episode_source_binding(
-    List<EpisodeSourceBinding> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_play_stream(
-    List<PlayStream> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_playback_candidate(
-    List<PlaybackCandidate> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_playback_header(
-    List<PlaybackHeader> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_prim_u_8_strict(
-    Uint8List self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_record_string_string(
-    List<(String, String)> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_rule_group_summary(
-    List<RuleGroupSummary> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_rule_repository_index_entry(
-    List<RuleRepositoryIndexEntry> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_rule_repository_subscription(
-    List<RuleRepositorySubscription> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_rule_resolve_attempt(
-    List<RuleResolveAttempt> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_rule_source_search_result(
-    List<RuleSourceSearchResult> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_source_candidate(
-    List<SourceCandidate> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_source_package_summary(
-    List<SourcePackageSummary> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_subject_summary(
-    List<SubjectSummary> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_CastedPrimitive_i_64(int? self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_opt_String(String? self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_opt_box_autoadd_anime_season(
-    AnimeSeason? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_box_autoadd_episode_source_binding(
-    EpisodeSourceBinding? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_box_autoadd_f_32(double? self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_opt_box_autoadd_source_candidate(
-    SourceCandidate? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_box_autoadd_source_package_text(
-    SourcePackageText? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_box_autoadd_u_16(int? self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_opt_box_autoadd_u_8(int? self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_play_stream(PlayStream self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_playback_candidate(
-    PlaybackCandidate self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_playback_header(
-    PlaybackHeader self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_record_string_string(
-    (String, String) self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_rule_group_summary(
-    RuleGroupSummary self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_rule_repository_index_entry(
-    RuleRepositoryIndexEntry self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_rule_repository_subscription(
-    RuleRepositorySubscription self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_rule_resolve_attempt(
-    RuleResolveAttempt self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_rule_source_search_result(
-    RuleSourceSearchResult self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_source_candidate(
-    SourceCandidate self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_source_import_result(
-    SourceImportResult self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_source_package_summary(
-    SourcePackageSummary self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_source_package_text(
-    SourcePackageText self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_subject_detail(SubjectDetail self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_subject_summary(
-    SubjectSummary self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_u_16(int self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_u_32(int self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_u_8(int self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_unit(void self, SseSerializer serializer);
-}
+@protected PlaybackProgress? sse_decode_opt_box_autoadd_playback_progress(SseDeserializer deserializer);
+
+@protected SourceCandidate? sse_decode_opt_box_autoadd_source_candidate(SseDeserializer deserializer);
+
+@protected SourcePackageText? sse_decode_opt_box_autoadd_source_package_text(SseDeserializer deserializer);
+
+@protected int? sse_decode_opt_box_autoadd_u_16(SseDeserializer deserializer);
+
+@protected int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer);
+
+@protected int? sse_decode_opt_box_autoadd_u_8(SseDeserializer deserializer);
+
+@protected PlayStream sse_decode_play_stream(SseDeserializer deserializer);
+
+@protected PlaybackCandidate sse_decode_playback_candidate(SseDeserializer deserializer);
+
+@protected PlaybackHeader sse_decode_playback_header(SseDeserializer deserializer);
+
+@protected PlaybackProgress sse_decode_playback_progress(SseDeserializer deserializer);
+
+@protected (String,String) sse_decode_record_string_string(SseDeserializer deserializer);
+
+@protected RuleGroupSummary sse_decode_rule_group_summary(SseDeserializer deserializer);
+
+@protected RuleRepositoryIndexEntry sse_decode_rule_repository_index_entry(SseDeserializer deserializer);
+
+@protected RuleRepositorySubscription sse_decode_rule_repository_subscription(SseDeserializer deserializer);
+
+@protected RuleResolveAttempt sse_decode_rule_resolve_attempt(SseDeserializer deserializer);
+
+@protected RuleSourceSearchResult sse_decode_rule_source_search_result(SseDeserializer deserializer);
+
+@protected SourceCandidate sse_decode_source_candidate(SseDeserializer deserializer);
+
+@protected SourceImportResult sse_decode_source_import_result(SseDeserializer deserializer);
+
+@protected SourcePackageSummary sse_decode_source_package_summary(SseDeserializer deserializer);
+
+@protected SourcePackageText sse_decode_source_package_text(SseDeserializer deserializer);
+
+@protected SubjectDetail sse_decode_subject_detail(SseDeserializer deserializer);
+
+@protected SubjectSummary sse_decode_subject_summary(SseDeserializer deserializer);
+
+@protected int sse_decode_u_16(SseDeserializer deserializer);
+
+@protected int sse_decode_u_32(SseDeserializer deserializer);
+
+@protected int sse_decode_u_8(SseDeserializer deserializer);
+
+@protected void sse_decode_unit(SseDeserializer deserializer);
+
+@protected WatchHistoryItem sse_decode_watch_history_item(SseDeserializer deserializer);
+
+@protected void sse_encode_CastedPrimitive_i_64(int self, SseSerializer serializer);
+
+@protected void sse_encode_Map_String_String_None(Map<String, String> self, SseSerializer serializer);
+
+@protected void sse_encode_String(String self, SseSerializer serializer);
+
+@protected void sse_encode_anime_ranking_applied(AnimeRankingApplied self, SseSerializer serializer);
+
+@protected void sse_encode_anime_ranking_request(AnimeRankingRequest self, SseSerializer serializer);
+
+@protected void sse_encode_anime_ranking_response(AnimeRankingResponse self, SseSerializer serializer);
+
+@protected void sse_encode_anime_ranking_sort(AnimeRankingSort self, SseSerializer serializer);
+
+@protected void sse_encode_anime_season(AnimeSeason self, SseSerializer serializer);
+
+@protected void sse_encode_bangumi_browse_request(BangumiBrowseRequest self, SseSerializer serializer);
+
+@protected void sse_encode_bangumi_browse_sort(BangumiBrowseSort self, SseSerializer serializer);
+
+@protected void sse_encode_bangumi_calendar_day(BangumiCalendarDay self, SseSerializer serializer);
+
+@protected void sse_encode_bool(bool self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_anime_ranking_request(AnimeRankingRequest self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_anime_season(AnimeSeason self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_bangumi_browse_request(BangumiBrowseRequest self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_collection_status(CollectionStatus self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_episode(Episode self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_episode_source_binding(EpisodeSourceBinding self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_f_32(double self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_playback_progress(PlaybackProgress self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_rule_group_summary(RuleGroupSummary self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_rule_repository_index_entry(RuleRepositoryIndexEntry self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_rule_repository_subscription(RuleRepositorySubscription self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_source_candidate(SourceCandidate self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_source_package_text(SourcePackageText self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_subject_summary(SubjectSummary self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_u_16(int self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_u_8(int self, SseSerializer serializer);
+
+@protected void sse_encode_collection_status(CollectionStatus self, SseSerializer serializer);
+
+@protected void sse_encode_episode(Episode self, SseSerializer serializer);
+
+@protected void sse_encode_episode_binding_resolve_result(EpisodeBindingResolveResult self, SseSerializer serializer);
+
+@protected void sse_encode_episode_source_binding(EpisodeSourceBinding self, SseSerializer serializer);
+
+@protected void sse_encode_episode_stream_resolve_result(EpisodeStreamResolveResult self, SseSerializer serializer);
+
+@protected void sse_encode_f_32(double self, SseSerializer serializer);
+
+@protected void sse_encode_favorite_item(FavoriteItem self, SseSerializer serializer);
+
+@protected void sse_encode_i_32(int self, SseSerializer serializer);
+
+@protected void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
+
+@protected void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+@protected void sse_encode_list_bangumi_calendar_day(List<BangumiCalendarDay> self, SseSerializer serializer);
+
+@protected void sse_encode_list_episode(List<Episode> self, SseSerializer serializer);
+
+@protected void sse_encode_list_episode_source_binding(List<EpisodeSourceBinding> self, SseSerializer serializer);
+
+@protected void sse_encode_list_favorite_item(List<FavoriteItem> self, SseSerializer serializer);
+
+@protected void sse_encode_list_play_stream(List<PlayStream> self, SseSerializer serializer);
+
+@protected void sse_encode_list_playback_candidate(List<PlaybackCandidate> self, SseSerializer serializer);
+
+@protected void sse_encode_list_playback_header(List<PlaybackHeader> self, SseSerializer serializer);
+
+@protected void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer);
+
+@protected void sse_encode_list_record_string_string(List<(String,String)> self, SseSerializer serializer);
+
+@protected void sse_encode_list_rule_group_summary(List<RuleGroupSummary> self, SseSerializer serializer);
+
+@protected void sse_encode_list_rule_repository_index_entry(List<RuleRepositoryIndexEntry> self, SseSerializer serializer);
+
+@protected void sse_encode_list_rule_repository_subscription(List<RuleRepositorySubscription> self, SseSerializer serializer);
+
+@protected void sse_encode_list_rule_resolve_attempt(List<RuleResolveAttempt> self, SseSerializer serializer);
+
+@protected void sse_encode_list_rule_source_search_result(List<RuleSourceSearchResult> self, SseSerializer serializer);
+
+@protected void sse_encode_list_source_candidate(List<SourceCandidate> self, SseSerializer serializer);
+
+@protected void sse_encode_list_source_package_summary(List<SourcePackageSummary> self, SseSerializer serializer);
+
+@protected void sse_encode_list_subject_summary(List<SubjectSummary> self, SseSerializer serializer);
+
+@protected void sse_encode_list_watch_history_item(List<WatchHistoryItem> self, SseSerializer serializer);
+
+@protected void sse_encode_opt_CastedPrimitive_i_64(int? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_anime_season(AnimeSeason? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_collection_status(CollectionStatus? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_episode_source_binding(EpisodeSourceBinding? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_f_32(double? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_playback_progress(PlaybackProgress? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_source_candidate(SourceCandidate? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_source_package_text(SourcePackageText? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_u_16(int? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_u_8(int? self, SseSerializer serializer);
+
+@protected void sse_encode_play_stream(PlayStream self, SseSerializer serializer);
+
+@protected void sse_encode_playback_candidate(PlaybackCandidate self, SseSerializer serializer);
+
+@protected void sse_encode_playback_header(PlaybackHeader self, SseSerializer serializer);
+
+@protected void sse_encode_playback_progress(PlaybackProgress self, SseSerializer serializer);
+
+@protected void sse_encode_record_string_string((String,String) self, SseSerializer serializer);
+
+@protected void sse_encode_rule_group_summary(RuleGroupSummary self, SseSerializer serializer);
+
+@protected void sse_encode_rule_repository_index_entry(RuleRepositoryIndexEntry self, SseSerializer serializer);
+
+@protected void sse_encode_rule_repository_subscription(RuleRepositorySubscription self, SseSerializer serializer);
+
+@protected void sse_encode_rule_resolve_attempt(RuleResolveAttempt self, SseSerializer serializer);
+
+@protected void sse_encode_rule_source_search_result(RuleSourceSearchResult self, SseSerializer serializer);
+
+@protected void sse_encode_source_candidate(SourceCandidate self, SseSerializer serializer);
+
+@protected void sse_encode_source_import_result(SourceImportResult self, SseSerializer serializer);
+
+@protected void sse_encode_source_package_summary(SourcePackageSummary self, SseSerializer serializer);
+
+@protected void sse_encode_source_package_text(SourcePackageText self, SseSerializer serializer);
+
+@protected void sse_encode_subject_detail(SubjectDetail self, SseSerializer serializer);
+
+@protected void sse_encode_subject_summary(SubjectSummary self, SseSerializer serializer);
+
+@protected void sse_encode_u_16(int self, SseSerializer serializer);
+
+@protected void sse_encode_u_32(int self, SseSerializer serializer);
+
+@protected void sse_encode_u_8(int self, SseSerializer serializer);
+
+@protected void sse_encode_unit(void self, SseSerializer serializer);
+
+@protected void sse_encode_watch_history_item(WatchHistoryItem self, SseSerializer serializer);
+                }
+                
+
 
 // Section: wire_class
 
-class YnekoRustLibWire implements BaseWire {
-  factory YnekoRustLibWire.fromExternalLibrary(ExternalLibrary lib) =>
-      YnekoRustLibWire(lib.ffiDynamicLibrary);
 
-  /// Holds the symbol lookup function.
-  final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-  _lookup;
+        class YnekoRustLibWire implements BaseWire {
 
-  /// The symbols are looked up in [dynamicLibrary].
-  YnekoRustLibWire(ffi.DynamicLibrary dynamicLibrary)
-    : _lookup = dynamicLibrary.lookup;
-}
+            factory YnekoRustLibWire.fromExternalLibrary(ExternalLibrary lib) =>
+              YnekoRustLibWire(lib.ffiDynamicLibrary);
+        
+            /// Holds the symbol lookup function.
+            final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
+                _lookup;
+  
+            /// The symbols are looked up in [dynamicLibrary].
+            YnekoRustLibWire(ffi.DynamicLibrary dynamicLibrary)
+                : _lookup = dynamicLibrary.lookup;
+
+            
+        }
+        

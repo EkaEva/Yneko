@@ -4,10 +4,11 @@ use std::time::Instant;
 
 use yneko_core::{
     self, AnimeRankingSort as CoreAnimeRankingSort, AnimeSeason as CoreAnimeSeason,
-    BangumiBrowseSort as CoreBangumiBrowseSort,
+    BangumiBrowseSort as CoreBangumiBrowseSort, CollectionStatus as CoreCollectionStatus,
     EpisodeBindingResolveResult as CoreEpisodeBindingResolveResult,
     EpisodeSourceBinding as CoreEpisodeSourceBinding,
-    EpisodeStreamResolveResult as CoreEpisodeStreamResolveResult, PlayStream as CorePlayStream,
+    EpisodeStreamResolveResult as CoreEpisodeStreamResolveResult, FavoriteItem as CoreFavoriteItem,
+    PlayStream as CorePlayStream, PlaybackProgress as CorePlaybackProgress,
     RuleGroupSummary as CoreRuleGroupSummary,
     RuleRepositoryIndexEntry as CoreRuleRepositoryIndexEntry,
     RuleRepositorySubscription as CoreRuleRepositorySubscription,
@@ -15,7 +16,8 @@ use yneko_core::{
     RuleSourceSearchResult as CoreRuleSourceSearchResult, SourceCandidate as CoreSourceCandidate,
     SourceImportResult as CoreSourceImportResult, SourcePackageRecord,
     SourcePackageSummary as CoreSourcePackageSummary, SourcePackageText as CoreSourcePackageText,
-    SubjectSourceBinding as CoreSubjectSourceBinding, YnekoError,
+    SubjectSourceBinding as CoreSubjectSourceBinding, WatchHistoryItem as CoreWatchHistoryItem,
+    YnekoError,
 };
 use yneko_source_rules::{
     PlaybackResolveContext, RuleEpisodeContext, RulePackageRecord, RuleSearchContext,
@@ -53,6 +55,16 @@ pub struct SubjectDetail {
     pub subject: SubjectSummary,
     pub episodes: Vec<Episode>,
     pub is_favorite: bool,
+    pub progress: Option<PlaybackProgress>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum CollectionStatus {
+    Wish,
+    Watching,
+    Watched,
+    Paused,
+    Dropped,
 }
 
 #[derive(Debug, Clone)]
@@ -155,6 +167,29 @@ pub struct PlayStream {
     pub referer_url: Option<String>,
     pub user_agent: Option<String>,
     pub headers: Vec<PlaybackHeader>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlaybackProgress {
+    pub subject_id: i64,
+    pub episode_id: i64,
+    pub position_ms: i64,
+    pub duration_ms: Option<i64>,
+    pub updated_at_ms: i64,
+}
+
+#[derive(Debug, Clone)]
+pub struct FavoriteItem {
+    pub subject: SubjectSummary,
+    pub status: CollectionStatus,
+    pub updated_at_ms: i64,
+}
+
+#[derive(Debug, Clone)]
+pub struct WatchHistoryItem {
+    pub subject: SubjectSummary,
+    pub episode: Episode,
+    pub progress: PlaybackProgress,
 }
 
 #[derive(Debug, Clone)]
@@ -292,11 +327,25 @@ pub async fn search_subjects(query: String, page: u32) -> Result<Vec<SubjectSumm
 }
 
 pub async fn get_subject_detail(subject_id: i64) -> Result<SubjectDetail, String> {
-    yneko_metadata::BangumiClient::default()
+    let detail = yneko_metadata::BangumiClient::default()
         .get_subject_detail(subject_id)
         .await
-        .map(Into::into)
-        .map_err(error_message)
+        .map_err(error_message)?;
+    let storage = storage_service().await.map_err(error_message)?;
+    let is_favorite = storage
+        .is_favorite(subject_id)
+        .await
+        .map_err(error_message)?;
+    let progress = storage
+        .latest_playback_progress_for_subject(subject_id)
+        .await
+        .map_err(error_message)?;
+    Ok(SubjectDetail {
+        subject: detail.subject.into(),
+        episodes: detail.episodes.into_iter().map(Into::into).collect(),
+        is_favorite,
+        progress: progress.map(Into::into),
+    })
 }
 
 pub async fn get_calendar() -> Result<Vec<BangumiCalendarDay>, String> {
@@ -659,6 +708,103 @@ pub async fn resolve_episode_streams(
     .map_err(error_message)
 }
 
+pub async fn list_favorites(status: Option<CollectionStatus>) -> Result<Vec<FavoriteItem>, String> {
+    let storage = storage_service().await.map_err(error_message)?;
+    storage
+        .list_favorites(status.map(Into::into))
+        .await
+        .map(|items| items.into_iter().map(Into::into).collect())
+        .map_err(error_message)
+}
+
+pub async fn save_favorite(
+    subject: SubjectSummary,
+    status: CollectionStatus,
+) -> Result<FavoriteItem, String> {
+    let storage = storage_service().await.map_err(error_message)?;
+    storage
+        .save_favorite(subject.into(), status.into())
+        .await
+        .map(Into::into)
+        .map_err(error_message)
+}
+
+pub async fn delete_favorite(subject_id: i64) -> Result<(), String> {
+    let storage = storage_service().await.map_err(error_message)?;
+    storage
+        .delete_favorite(subject_id)
+        .await
+        .map_err(error_message)
+}
+
+pub async fn save_playback_progress(
+    subject: SubjectSummary,
+    episode: Episode,
+    position_ms: i64,
+    duration_ms: Option<i64>,
+) -> Result<PlaybackProgress, String> {
+    if position_ms < 0 {
+        return Err("invalid input: position_ms must not be negative".to_string());
+    }
+    if duration_ms.is_some_and(|value| value < 0) {
+        return Err("invalid input: duration_ms must not be negative".to_string());
+    }
+    if subject.id != episode.subject_id {
+        return Err("invalid input: episode must belong to subject".to_string());
+    }
+    let progress = CorePlaybackProgress {
+        subject_id: subject.id,
+        episode_id: episode.id,
+        position_ms,
+        duration_ms,
+        updated_at_ms: yneko_storage::now_ms(),
+    };
+    let storage = storage_service().await.map_err(error_message)?;
+    storage
+        .save_playback_progress_with_snapshots(
+            progress.clone(),
+            Some(subject.into()),
+            Some(episode.into()),
+        )
+        .await
+        .map_err(error_message)?;
+    Ok(progress.into())
+}
+
+pub async fn get_playback_progress(
+    subject_id: i64,
+    episode_id: i64,
+) -> Result<Option<PlaybackProgress>, String> {
+    let storage = storage_service().await.map_err(error_message)?;
+    storage
+        .get_playback_progress(subject_id, episode_id)
+        .await
+        .map(|value| value.map(Into::into))
+        .map_err(error_message)
+}
+
+pub async fn list_watch_history(limit: Option<u32>) -> Result<Vec<WatchHistoryItem>, String> {
+    let storage = storage_service().await.map_err(error_message)?;
+    storage
+        .list_watch_history(limit)
+        .await
+        .map(|items| items.into_iter().map(Into::into).collect())
+        .map_err(error_message)
+}
+
+pub async fn delete_watch_history_item(subject_id: i64, episode_id: i64) -> Result<(), String> {
+    let storage = storage_service().await.map_err(error_message)?;
+    storage
+        .delete_watch_history_item(subject_id, episode_id)
+        .await
+        .map_err(error_message)
+}
+
+pub async fn clear_watch_history() -> Result<(), String> {
+    let storage = storage_service().await.map_err(error_message)?;
+    storage.clear_watch_history().await.map_err(error_message)
+}
+
 fn error_message(error: YnekoError) -> String {
     error.to_string()
 }
@@ -868,8 +1014,39 @@ impl From<yneko_core::SubjectSummary> for SubjectSummary {
     }
 }
 
+impl From<SubjectSummary> for yneko_core::SubjectSummary {
+    fn from(value: SubjectSummary) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            name_cn: value.name_cn,
+            aliases: value.aliases,
+            cover_url: value.cover_url,
+            summary: value.summary,
+            air_date: value.air_date,
+            rating_score: value.rating_score,
+            rating_rank: value.rating_rank,
+            tags: value.tags,
+            total_episodes: value.total_episodes,
+        }
+    }
+}
+
 impl From<yneko_core::Episode> for Episode {
     fn from(value: yneko_core::Episode) -> Self {
+        Self {
+            id: value.id,
+            subject_id: value.subject_id,
+            sort: value.sort,
+            title: value.title,
+            title_cn: value.title_cn,
+            air_date: value.air_date,
+        }
+    }
+}
+
+impl From<Episode> for yneko_core::Episode {
+    fn from(value: Episode) -> Self {
         Self {
             id: value.id,
             subject_id: value.subject_id,
@@ -887,6 +1064,31 @@ impl From<yneko_core::SubjectDetail> for SubjectDetail {
             subject: value.subject.into(),
             episodes: value.episodes.into_iter().map(Into::into).collect(),
             is_favorite: value.is_favorite,
+            progress: value.progress.map(Into::into),
+        }
+    }
+}
+
+impl From<CoreCollectionStatus> for CollectionStatus {
+    fn from(value: CoreCollectionStatus) -> Self {
+        match value {
+            CoreCollectionStatus::Wish => Self::Wish,
+            CoreCollectionStatus::Watching => Self::Watching,
+            CoreCollectionStatus::Watched => Self::Watched,
+            CoreCollectionStatus::Paused => Self::Paused,
+            CoreCollectionStatus::Dropped => Self::Dropped,
+        }
+    }
+}
+
+impl From<CollectionStatus> for CoreCollectionStatus {
+    fn from(value: CollectionStatus) -> Self {
+        match value {
+            CollectionStatus::Wish => Self::Wish,
+            CollectionStatus::Watching => Self::Watching,
+            CollectionStatus::Watched => Self::Watched,
+            CollectionStatus::Paused => Self::Paused,
+            CollectionStatus::Dropped => Self::Dropped,
         }
     }
 }
@@ -1265,6 +1467,38 @@ impl From<CoreEpisodeStreamResolveResult> for EpisodeStreamResolveResult {
         Self {
             streams: value.streams.into_iter().map(Into::into).collect(),
             attempts: value.attempts.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<CorePlaybackProgress> for PlaybackProgress {
+    fn from(value: CorePlaybackProgress) -> Self {
+        Self {
+            subject_id: value.subject_id,
+            episode_id: value.episode_id,
+            position_ms: value.position_ms,
+            duration_ms: value.duration_ms,
+            updated_at_ms: value.updated_at_ms,
+        }
+    }
+}
+
+impl From<CoreFavoriteItem> for FavoriteItem {
+    fn from(value: CoreFavoriteItem) -> Self {
+        Self {
+            subject: value.subject.into(),
+            status: value.status.into(),
+            updated_at_ms: value.updated_at_ms,
+        }
+    }
+}
+
+impl From<CoreWatchHistoryItem> for WatchHistoryItem {
+    fn from(value: CoreWatchHistoryItem) -> Self {
+        Self {
+            subject: value.subject.into(),
+            episode: value.episode.into(),
+            progress: value.progress.into(),
         }
     }
 }

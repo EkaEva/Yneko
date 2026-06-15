@@ -393,6 +393,24 @@ pub struct PlaybackProgress {
     pub updated_at_ms: i64,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CollectionStatus {
+    Wish,
+    #[default]
+    Watching,
+    Watched,
+    Paused,
+    Dropped,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FavoriteItem {
+    pub subject: SubjectSummary,
+    pub status: CollectionStatus,
+    pub updated_at_ms: i64,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct WatchHistoryItem {
     pub subject: SubjectSummary,

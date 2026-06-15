@@ -61,12 +61,16 @@ class SubjectDetail {
     required this.subject,
     required this.episodes,
     required this.isFavorite,
+    this.progress,
   });
 
   final AnimeSubject subject;
   final List<AnimeEpisode> episodes;
   final bool isFavorite;
+  final PlaybackProgress? progress;
 }
+
+enum CollectionStatus { wish, watching, watched, paused, dropped }
 
 enum AnimeRankingSort { rank, heat, collect, date, name }
 
@@ -184,6 +188,46 @@ class PlaybackContract {
   final String title;
   final String url;
   final Map<String, String> headers;
+}
+
+class PlaybackProgress {
+  const PlaybackProgress({
+    required this.subjectId,
+    required this.episodeId,
+    required this.positionMs,
+    this.durationMs,
+    required this.updatedAtMs,
+  });
+
+  final int subjectId;
+  final int episodeId;
+  final int positionMs;
+  final int? durationMs;
+  final int updatedAtMs;
+}
+
+class FavoriteItem {
+  const FavoriteItem({
+    required this.subject,
+    required this.status,
+    required this.updatedAtMs,
+  });
+
+  final AnimeSubject subject;
+  final CollectionStatus status;
+  final int updatedAtMs;
+}
+
+class WatchHistoryItem {
+  const WatchHistoryItem({
+    required this.subject,
+    required this.episode,
+    required this.progress,
+  });
+
+  final AnimeSubject subject;
+  final AnimeEpisode episode;
+  final PlaybackProgress progress;
 }
 
 class PlayStreamContract {

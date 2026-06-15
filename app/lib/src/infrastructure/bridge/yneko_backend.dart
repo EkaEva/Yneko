@@ -81,6 +81,36 @@ abstract interface class YnekoBackend {
     required List<String> fallbackPlayUrls,
     String? refererUrl,
   });
+
+  Future<List<FavoriteItem>> listFavorites({CollectionStatus? status});
+
+  Future<FavoriteItem> saveFavorite({
+    required AnimeSubject subject,
+    required CollectionStatus status,
+  });
+
+  Future<void> deleteFavorite(int subjectId);
+
+  Future<PlaybackProgress> savePlaybackProgress({
+    required AnimeSubject subject,
+    required AnimeEpisode episode,
+    required int positionMs,
+    int? durationMs,
+  });
+
+  Future<PlaybackProgress?> getPlaybackProgress({
+    required int subjectId,
+    required int episodeId,
+  });
+
+  Future<List<WatchHistoryItem>> listWatchHistory({int? limit});
+
+  Future<void> deleteWatchHistoryItem({
+    required int subjectId,
+    required int episodeId,
+  });
+
+  Future<void> clearWatchHistory();
 }
 
 class FrbYnekoBackend implements YnekoBackend {
@@ -312,5 +342,90 @@ class FrbYnekoBackend implements YnekoBackend {
         refererUrl: refererUrl,
       ),
     );
+  }
+
+  @override
+  Future<List<FavoriteItem>> listFavorites({CollectionStatus? status}) async {
+    await _ensureInitialized();
+    final items = await frb.listFavorites(
+      status: status == null ? null : collectionStatusToFrb(status),
+    );
+    return items.map(favoriteItemFromFrb).toList(growable: false);
+  }
+
+  @override
+  Future<FavoriteItem> saveFavorite({
+    required AnimeSubject subject,
+    required CollectionStatus status,
+  }) async {
+    await _ensureInitialized();
+    return favoriteItemFromFrb(
+      await frb.saveFavorite(
+        subject: subjectToFrb(subject),
+        status: collectionStatusToFrb(status),
+      ),
+    );
+  }
+
+  @override
+  Future<void> deleteFavorite(int subjectId) async {
+    await _ensureInitialized();
+    await frb.deleteFavorite(subjectId: subjectId);
+  }
+
+  @override
+  Future<PlaybackProgress> savePlaybackProgress({
+    required AnimeSubject subject,
+    required AnimeEpisode episode,
+    required int positionMs,
+    int? durationMs,
+  }) async {
+    await _ensureInitialized();
+    return playbackProgressFromFrb(
+      await frb.savePlaybackProgress(
+        subject: subjectToFrb(subject),
+        episode: episodeToFrb(episode),
+        positionMs: positionMs,
+        durationMs: durationMs,
+      ),
+    );
+  }
+
+  @override
+  Future<PlaybackProgress?> getPlaybackProgress({
+    required int subjectId,
+    required int episodeId,
+  }) async {
+    await _ensureInitialized();
+    final progress = await frb.getPlaybackProgress(
+      subjectId: subjectId,
+      episodeId: episodeId,
+    );
+    return progress == null ? null : playbackProgressFromFrb(progress);
+  }
+
+  @override
+  Future<List<WatchHistoryItem>> listWatchHistory({int? limit}) async {
+    await _ensureInitialized();
+    final items = await frb.listWatchHistory(limit: limit);
+    return items.map(watchHistoryItemFromFrb).toList(growable: false);
+  }
+
+  @override
+  Future<void> deleteWatchHistoryItem({
+    required int subjectId,
+    required int episodeId,
+  }) async {
+    await _ensureInitialized();
+    await frb.deleteWatchHistoryItem(
+      subjectId: subjectId,
+      episodeId: episodeId,
+    );
+  }
+
+  @override
+  Future<void> clearWatchHistory() async {
+    await _ensureInitialized();
+    await frb.clearWatchHistory();
   }
 }

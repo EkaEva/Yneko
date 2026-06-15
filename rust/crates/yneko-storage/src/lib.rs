@@ -6,8 +6,9 @@ use std::{
 
 use sqlx::{Row, SqlitePool, sqlite::SqlitePoolOptions};
 use yneko_core::{
-    EpisodeSourceBinding, PlaybackProgress, RuleGroupSummary, RuleRepositorySubscription,
-    SourcePackageRecord, SourcePackageSummary, SourcePackageText, SubjectSourceBinding, YnekoError,
+    CollectionStatus, Episode, EpisodeSourceBinding, FavoriteItem, PlaybackProgress,
+    RuleGroupSummary, RuleRepositorySubscription, SourcePackageRecord, SourcePackageSummary,
+    SourcePackageText, SubjectSourceBinding, SubjectSummary, WatchHistoryItem, YnekoError,
     YnekoResult,
 };
 
@@ -18,7 +19,17 @@ CREATE TABLE IF NOT EXISTS playback_progress (
   position_ms INTEGER NOT NULL,
   duration_ms INTEGER,
   updated_at_ms INTEGER NOT NULL,
+  subject_json TEXT,
+  episode_json TEXT,
   PRIMARY KEY (subject_id, episode_id)
+);
+
+CREATE TABLE IF NOT EXISTS favorite_subjects (
+  subject_id INTEGER NOT NULL PRIMARY KEY,
+  subject_json TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at_ms INTEGER NOT NULL,
+  updated_at_ms INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS source_packages (
@@ -174,6 +185,18 @@ impl StorageService {
             "source_packages",
             "raw_text",
             "ALTER TABLE source_packages ADD COLUMN raw_text TEXT NOT NULL DEFAULT ''",
+        )
+        .await?;
+        self.ensure_column(
+            "playback_progress",
+            "subject_json",
+            "ALTER TABLE playback_progress ADD COLUMN subject_json TEXT",
+        )
+        .await?;
+        self.ensure_column(
+            "playback_progress",
+            "episode_json",
+            "ALTER TABLE playback_progress ADD COLUMN episode_json TEXT",
         )
         .await?;
         Ok(())
@@ -676,21 +699,138 @@ ORDER BY episode_order ASC
         rows.into_iter().map(episode_binding_from_row).collect()
     }
 
+    pub async fn list_favorites(
+        &self,
+        status: Option<CollectionStatus>,
+    ) -> YnekoResult<Vec<FavoriteItem>> {
+        let mut query = String::from(
+            r#"
+SELECT subject_json, status, updated_at_ms
+FROM favorite_subjects
+"#,
+        );
+        if status.is_some() {
+            query.push_str("WHERE status = ?1\n");
+        }
+        query.push_str("ORDER BY updated_at_ms DESC");
+        let mut query = sqlx::query(&query);
+        if let Some(status) = status {
+            query = query.bind(collection_status_to_str(status));
+        }
+        let rows = query.fetch_all(&self.pool).await.map_err(storage_error)?;
+        rows.into_iter().map(favorite_from_row).collect()
+    }
+
+    pub async fn is_favorite(&self, subject_id: i64) -> YnekoResult<bool> {
+        let count: i64 =
+            sqlx::query("SELECT COUNT(*) AS count FROM favorite_subjects WHERE subject_id = ?1")
+                .bind(subject_id)
+                .fetch_one(&self.pool)
+                .await
+                .map_err(storage_error)?
+                .try_get("count")
+                .map_err(storage_error)?;
+        Ok(count > 0)
+    }
+
+    pub async fn save_favorite(
+        &self,
+        subject: SubjectSummary,
+        status: CollectionStatus,
+    ) -> YnekoResult<FavoriteItem> {
+        if subject.id <= 0 {
+            return Err(YnekoError::InvalidInput(
+                "subject_id must be positive".to_string(),
+            ));
+        }
+        let now = now_ms();
+        let subject_json = serde_json::to_string(&subject).map_err(storage_error)?;
+        sqlx::query(
+            r#"
+INSERT INTO favorite_subjects (
+  subject_id, subject_json, status, created_at_ms, updated_at_ms
+) VALUES (?1, ?2, ?3, ?4, ?4)
+ON CONFLICT(subject_id) DO UPDATE SET
+  subject_json = excluded.subject_json,
+  status = excluded.status,
+  updated_at_ms = excluded.updated_at_ms
+"#,
+        )
+        .bind(subject.id)
+        .bind(subject_json)
+        .bind(collection_status_to_str(status))
+        .bind(now)
+        .execute(&self.pool)
+        .await
+        .map_err(storage_error)?;
+        Ok(FavoriteItem {
+            subject,
+            status,
+            updated_at_ms: now,
+        })
+    }
+
+    pub async fn delete_favorite(&self, subject_id: i64) -> YnekoResult<()> {
+        sqlx::query("DELETE FROM favorite_subjects WHERE subject_id = ?1")
+            .bind(subject_id)
+            .execute(&self.pool)
+            .await
+            .map_err(storage_error)?;
+        Ok(())
+    }
+
     pub async fn save_playback_progress(&self, progress: PlaybackProgress) -> YnekoResult<()> {
+        self.save_playback_progress_with_snapshots(progress, None, None)
+            .await
+    }
+
+    pub async fn save_playback_progress_with_snapshots(
+        &self,
+        progress: PlaybackProgress,
+        subject: Option<SubjectSummary>,
+        episode: Option<Episode>,
+    ) -> YnekoResult<()> {
         if progress.subject_id <= 0 || progress.episode_id <= 0 {
             return Err(YnekoError::InvalidInput(
                 "subject_id and episode_id must be positive".to_string(),
             ));
         }
+        if let Some(subject) = &subject
+            && subject.id != progress.subject_id
+        {
+            return Err(YnekoError::InvalidInput(
+                "subject snapshot must match progress subject_id".to_string(),
+            ));
+        }
+        if let Some(episode) = &episode
+            && (episode.id != progress.episode_id || episode.subject_id != progress.subject_id)
+        {
+            return Err(YnekoError::InvalidInput(
+                "episode snapshot must match progress ids".to_string(),
+            ));
+        }
+        let subject_json = subject
+            .as_ref()
+            .map(serde_json::to_string)
+            .transpose()
+            .map_err(storage_error)?;
+        let episode_json = episode
+            .as_ref()
+            .map(serde_json::to_string)
+            .transpose()
+            .map_err(storage_error)?;
         sqlx::query(
             r#"
 INSERT INTO playback_progress (
-  subject_id, episode_id, position_ms, duration_ms, updated_at_ms
-) VALUES (?1, ?2, ?3, ?4, ?5)
+  subject_id, episode_id, position_ms, duration_ms, updated_at_ms,
+  subject_json, episode_json
+) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
 ON CONFLICT(subject_id, episode_id) DO UPDATE SET
   position_ms = excluded.position_ms,
   duration_ms = excluded.duration_ms,
-  updated_at_ms = excluded.updated_at_ms
+  updated_at_ms = excluded.updated_at_ms,
+  subject_json = COALESCE(excluded.subject_json, playback_progress.subject_json),
+  episode_json = COALESCE(excluded.episode_json, playback_progress.episode_json)
 "#,
         )
         .bind(progress.subject_id)
@@ -698,9 +838,97 @@ ON CONFLICT(subject_id, episode_id) DO UPDATE SET
         .bind(progress.position_ms)
         .bind(progress.duration_ms)
         .bind(progress.updated_at_ms)
+        .bind(subject_json)
+        .bind(episode_json)
         .execute(&self.pool)
         .await
         .map_err(storage_error)?;
+        Ok(())
+    }
+
+    pub async fn get_playback_progress(
+        &self,
+        subject_id: i64,
+        episode_id: i64,
+    ) -> YnekoResult<Option<PlaybackProgress>> {
+        sqlx::query(
+            r#"
+SELECT subject_id, episode_id, position_ms, duration_ms, updated_at_ms
+FROM playback_progress
+WHERE subject_id = ?1 AND episode_id = ?2
+"#,
+        )
+        .bind(subject_id)
+        .bind(episode_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(storage_error)?
+        .map(progress_from_row)
+        .transpose()
+    }
+
+    pub async fn latest_playback_progress_for_subject(
+        &self,
+        subject_id: i64,
+    ) -> YnekoResult<Option<PlaybackProgress>> {
+        sqlx::query(
+            r#"
+SELECT subject_id, episode_id, position_ms, duration_ms, updated_at_ms
+FROM playback_progress
+WHERE subject_id = ?1
+ORDER BY updated_at_ms DESC
+LIMIT 1
+"#,
+        )
+        .bind(subject_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(storage_error)?
+        .map(progress_from_row)
+        .transpose()
+    }
+
+    pub async fn list_watch_history(
+        &self,
+        limit: Option<u32>,
+    ) -> YnekoResult<Vec<WatchHistoryItem>> {
+        let limit = limit.unwrap_or(100).clamp(1, 500);
+        let rows = sqlx::query(
+            r#"
+SELECT subject_json, episode_json, subject_id, episode_id, position_ms,
+       duration_ms, updated_at_ms
+FROM playback_progress
+WHERE subject_json IS NOT NULL AND episode_json IS NOT NULL
+ORDER BY updated_at_ms DESC
+LIMIT ?1
+"#,
+        )
+        .bind(i64::from(limit))
+        .fetch_all(&self.pool)
+        .await
+        .map_err(storage_error)?;
+        rows.into_iter().map(history_item_from_row).collect()
+    }
+
+    pub async fn delete_watch_history_item(
+        &self,
+        subject_id: i64,
+        episode_id: i64,
+    ) -> YnekoResult<()> {
+        sqlx::query("DELETE FROM playback_progress WHERE subject_id = ?1 AND episode_id = ?2")
+            .bind(subject_id)
+            .bind(episode_id)
+            .execute(&self.pool)
+            .await
+            .map_err(storage_error)?;
+        Ok(())
+    }
+
+    pub async fn clear_watch_history(&self) -> YnekoResult<()> {
+        sqlx::query("DELETE FROM playback_progress")
+            .execute(&self.pool)
+            .await
+            .map_err(storage_error)?;
         Ok(())
     }
 }
@@ -791,6 +1019,16 @@ fn repository_subscription_from_row(
     })
 }
 
+fn favorite_from_row(row: sqlx::sqlite::SqliteRow) -> YnekoResult<FavoriteItem> {
+    let subject_json: String = row.try_get("subject_json").map_err(storage_error)?;
+    let status: String = row.try_get("status").map_err(storage_error)?;
+    Ok(FavoriteItem {
+        subject: serde_json::from_str(&subject_json).map_err(storage_error)?,
+        status: collection_status_from_str(&status)?,
+        updated_at_ms: row.try_get("updated_at_ms").map_err(storage_error)?,
+    })
+}
+
 fn subject_binding_from_row(row: sqlx::sqlite::SqliteRow) -> YnekoResult<SubjectSourceBinding> {
     Ok(SubjectSourceBinding {
         subject_id: row.try_get("subject_id").map_err(storage_error)?,
@@ -817,6 +1055,49 @@ fn episode_binding_from_row(row: sqlx::sqlite::SqliteRow) -> YnekoResult<Episode
         referer_url: row.try_get("referer_url").map_err(storage_error)?,
         confidence: row.try_get("confidence").map_err(storage_error)?,
     })
+}
+
+fn progress_from_row(row: sqlx::sqlite::SqliteRow) -> YnekoResult<PlaybackProgress> {
+    Ok(PlaybackProgress {
+        subject_id: row.try_get("subject_id").map_err(storage_error)?,
+        episode_id: row.try_get("episode_id").map_err(storage_error)?,
+        position_ms: row.try_get("position_ms").map_err(storage_error)?,
+        duration_ms: row.try_get("duration_ms").map_err(storage_error)?,
+        updated_at_ms: row.try_get("updated_at_ms").map_err(storage_error)?,
+    })
+}
+
+fn history_item_from_row(row: sqlx::sqlite::SqliteRow) -> YnekoResult<WatchHistoryItem> {
+    let subject_json: String = row.try_get("subject_json").map_err(storage_error)?;
+    let episode_json: String = row.try_get("episode_json").map_err(storage_error)?;
+    Ok(WatchHistoryItem {
+        subject: serde_json::from_str(&subject_json).map_err(storage_error)?,
+        episode: serde_json::from_str(&episode_json).map_err(storage_error)?,
+        progress: progress_from_row(row)?,
+    })
+}
+
+fn collection_status_to_str(status: CollectionStatus) -> &'static str {
+    match status {
+        CollectionStatus::Wish => "wish",
+        CollectionStatus::Watching => "watching",
+        CollectionStatus::Watched => "watched",
+        CollectionStatus::Paused => "paused",
+        CollectionStatus::Dropped => "dropped",
+    }
+}
+
+fn collection_status_from_str(value: &str) -> YnekoResult<CollectionStatus> {
+    match value {
+        "wish" => Ok(CollectionStatus::Wish),
+        "watching" => Ok(CollectionStatus::Watching),
+        "watched" => Ok(CollectionStatus::Watched),
+        "paused" => Ok(CollectionStatus::Paused),
+        "dropped" => Ok(CollectionStatus::Dropped),
+        other => Err(YnekoError::Storage(format!(
+            "invalid collection status `{other}`"
+        ))),
+    }
 }
 
 fn validate_id(id: &str) -> YnekoResult<()> {
@@ -859,9 +1140,47 @@ mod tests {
         }
     }
 
+    fn subject(id: i64) -> SubjectSummary {
+        SubjectSummary {
+            id,
+            name: "Sousou no Frieren".to_string(),
+            name_cn: Some("葬送的芙莉莲".to_string()),
+            aliases: vec!["Frieren".to_string()],
+            cover_url: Some("https://example.test/frieren.jpg".to_string()),
+            summary: Some("旅途之后的故事。".to_string()),
+            air_date: Some("2023-09-29".to_string()),
+            rating_score: Some(8.8),
+            rating_rank: Some(18),
+            tags: vec!["漫画改".to_string(), "奇幻".to_string()],
+            total_episodes: 28,
+        }
+    }
+
+    fn episode(subject_id: i64, id: i64, sort: i32) -> Episode {
+        Episode {
+            id,
+            subject_id,
+            sort,
+            title: "The Journey Ends".to_string(),
+            title_cn: Some("冒险的结束".to_string()),
+            air_date: Some("2023-09-29".to_string()),
+        }
+    }
+
+    fn progress(subject_id: i64, episode_id: i64, position_ms: i64) -> PlaybackProgress {
+        PlaybackProgress {
+            subject_id,
+            episode_id,
+            position_ms,
+            duration_ms: Some(1_440_000),
+            updated_at_ms: position_ms,
+        }
+    }
+
     #[test]
     fn schema_contains_progress_and_source_tables() {
         assert!(INITIAL_SCHEMA.contains("playback_progress"));
+        assert!(INITIAL_SCHEMA.contains("favorite_subjects"));
         assert!(INITIAL_SCHEMA.contains("source_packages"));
     }
 
@@ -975,6 +1294,186 @@ INSERT INTO source_packages (
         assert_eq!(packages.len(), 1);
         assert_eq!(packages[0].id, "legacy");
         assert_eq!(packages[0].format, "yaml");
+
+        let _ = fs::remove_file(path);
+    }
+
+    #[tokio::test]
+    async fn stores_updates_filters_and_deletes_favorites() {
+        let storage = StorageService::open_memory().await.expect("storage");
+        let saved = storage
+            .save_favorite(subject(400602), CollectionStatus::Watching)
+            .await
+            .expect("save favorite");
+        assert_eq!(saved.status, CollectionStatus::Watching);
+        assert!(storage.is_favorite(400602).await.expect("favorite flag"));
+
+        storage
+            .save_favorite(subject(400602), CollectionStatus::Watched)
+            .await
+            .expect("update favorite");
+        assert_eq!(
+            storage
+                .list_favorites(Some(CollectionStatus::Watching))
+                .await
+                .expect("watching")
+                .len(),
+            0
+        );
+        let watched = storage
+            .list_favorites(Some(CollectionStatus::Watched))
+            .await
+            .expect("watched");
+        assert_eq!(watched.len(), 1);
+        assert_eq!(watched[0].subject.id, 400602);
+
+        storage
+            .delete_favorite(400602)
+            .await
+            .expect("delete favorite");
+        assert!(!storage.is_favorite(400602).await.expect("favorite flag"));
+        assert!(
+            storage
+                .list_favorites(None)
+                .await
+                .expect("favorites")
+                .is_empty()
+        );
+    }
+
+    #[tokio::test]
+    async fn stores_reads_and_lists_playback_history() {
+        let storage = StorageService::open_memory().await.expect("storage");
+        storage
+            .save_playback_progress_with_snapshots(
+                progress(400602, 40060201, 42),
+                Some(subject(400602)),
+                Some(episode(400602, 40060201, 1)),
+            )
+            .await
+            .expect("save first progress");
+        storage
+            .save_playback_progress_with_snapshots(
+                progress(400602, 40060202, 84),
+                Some(subject(400602)),
+                Some(episode(400602, 40060202, 2)),
+            )
+            .await
+            .expect("save second progress");
+
+        let migrated_progress = storage
+            .get_playback_progress(400602, 40060201)
+            .await
+            .expect("progress")
+            .expect("progress row");
+        assert_eq!(migrated_progress.position_ms, 42);
+
+        let latest = storage
+            .latest_playback_progress_for_subject(400602)
+            .await
+            .expect("latest")
+            .expect("latest progress");
+        assert_eq!(latest.episode_id, 40060202);
+
+        let history = storage.list_watch_history(Some(1)).await.expect("history");
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0].episode.id, 40060202);
+
+        storage
+            .delete_watch_history_item(400602, 40060202)
+            .await
+            .expect("delete history item");
+        let history = storage.list_watch_history(None).await.expect("history");
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0].episode.id, 40060201);
+
+        storage.clear_watch_history().await.expect("clear history");
+        assert!(
+            storage
+                .list_watch_history(None)
+                .await
+                .expect("history")
+                .is_empty()
+        );
+        assert!(
+            storage
+                .get_playback_progress(400602, 40060201)
+                .await
+                .expect("progress")
+                .is_none()
+        );
+    }
+
+    #[tokio::test]
+    async fn legacy_progress_rows_migrate_without_history_snapshots() {
+        let path = std::env::temp_dir().join(format!("yneko-legacy-progress-{}.sqlite", now_ms()));
+        let url = format!(
+            "sqlite://{}?mode=rwc",
+            path.to_string_lossy().replace('\\', "/")
+        );
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect(&url)
+            .await
+            .expect("legacy pool");
+        sqlx::query(
+            r#"
+CREATE TABLE playback_progress (
+  subject_id INTEGER NOT NULL,
+  episode_id INTEGER NOT NULL,
+  position_ms INTEGER NOT NULL,
+  duration_ms INTEGER,
+  updated_at_ms INTEGER NOT NULL,
+  PRIMARY KEY (subject_id, episode_id)
+)
+"#,
+        )
+        .execute(&pool)
+        .await
+        .expect("legacy schema");
+        sqlx::query(
+            r#"
+INSERT INTO playback_progress (
+  subject_id, episode_id, position_ms, duration_ms, updated_at_ms
+) VALUES (400602, 40060201, 42, 1440, 1)
+"#,
+        )
+        .execute(&pool)
+        .await
+        .expect("legacy row");
+        pool.close().await;
+
+        let storage = StorageService::open(&path).await.expect("migrate");
+        let legacy_progress = storage
+            .get_playback_progress(400602, 40060201)
+            .await
+            .expect("progress")
+            .expect("progress row");
+        assert_eq!(legacy_progress.position_ms, 42);
+        assert!(
+            storage
+                .list_watch_history(None)
+                .await
+                .expect("history")
+                .is_empty()
+        );
+
+        storage
+            .save_playback_progress_with_snapshots(
+                progress(400602, 40060201, 84),
+                Some(subject(400602)),
+                Some(episode(400602, 40060201, 1)),
+            )
+            .await
+            .expect("save snapshot progress");
+        assert_eq!(
+            storage
+                .list_watch_history(None)
+                .await
+                .expect("history")
+                .len(),
+            1
+        );
 
         let _ = fs::remove_file(path);
     }

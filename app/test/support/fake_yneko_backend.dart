@@ -85,6 +85,8 @@ class FakeYnekoBackend implements YnekoBackend {
     defaultRuleRepositorySubscription,
   ];
   final List<PlaybackContract> _playbackContracts;
+  final List<FavoriteItem> _favorites = [];
+  final List<WatchHistoryItem> _history = [];
 
   @override
   Future<List<AnimeSubject>> searchSubjects(String query, int page) async {
@@ -109,6 +111,10 @@ class FakeYnekoBackend implements YnekoBackend {
           airDate: '2023-09-29',
         ),
       ],
+      progress: _history
+          .where((item) => item.subject.id == detailSubject.id)
+          .firstOrNull
+          ?.progress,
     );
   }
 
@@ -401,6 +407,87 @@ class FakeYnekoBackend implements YnekoBackend {
         ),
       ],
     );
+  }
+
+  @override
+  Future<List<FavoriteItem>> listFavorites({CollectionStatus? status}) async {
+    return _favorites
+        .where((item) => status == null || item.status == status)
+        .toList(growable: false);
+  }
+
+  @override
+  Future<FavoriteItem> saveFavorite({
+    required AnimeSubject subject,
+    required CollectionStatus status,
+  }) async {
+    final item = FavoriteItem(subject: subject, status: status, updatedAtMs: 1);
+    _favorites.removeWhere((favorite) => favorite.subject.id == subject.id);
+    _favorites.insert(0, item);
+    return item;
+  }
+
+  @override
+  Future<void> deleteFavorite(int subjectId) async {
+    _favorites.removeWhere((item) => item.subject.id == subjectId);
+  }
+
+  @override
+  Future<PlaybackProgress> savePlaybackProgress({
+    required AnimeSubject subject,
+    required AnimeEpisode episode,
+    required int positionMs,
+    int? durationMs,
+  }) async {
+    final progress = PlaybackProgress(
+      subjectId: subject.id,
+      episodeId: episode.id,
+      positionMs: positionMs,
+      durationMs: durationMs,
+      updatedAtMs: positionMs,
+    );
+    _history.removeWhere(
+      (item) => item.subject.id == subject.id && item.episode.id == episode.id,
+    );
+    _history.insert(
+      0,
+      WatchHistoryItem(subject: subject, episode: episode, progress: progress),
+    );
+    return progress;
+  }
+
+  @override
+  Future<PlaybackProgress?> getPlaybackProgress({
+    required int subjectId,
+    required int episodeId,
+  }) async {
+    return _history
+        .where(
+          (item) =>
+              item.subject.id == subjectId && item.episode.id == episodeId,
+        )
+        .firstOrNull
+        ?.progress;
+  }
+
+  @override
+  Future<List<WatchHistoryItem>> listWatchHistory({int? limit}) async {
+    return _history.take(limit ?? _history.length).toList(growable: false);
+  }
+
+  @override
+  Future<void> deleteWatchHistoryItem({
+    required int subjectId,
+    required int episodeId,
+  }) async {
+    _history.removeWhere(
+      (item) => item.subject.id == subjectId && item.episode.id == episodeId,
+    );
+  }
+
+  @override
+  Future<void> clearWatchHistory() async {
+    _history.clear();
   }
 }
 

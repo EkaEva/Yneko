@@ -33,6 +33,36 @@ SubjectDetail subjectDetailFromFrb(frb.SubjectDetail detail) {
     subject: subjectFromFrb(detail.subject),
     episodes: detail.episodes.map(episodeFromFrb).toList(growable: false),
     isFavorite: detail.isFavorite,
+    progress: detail.progress == null
+        ? null
+        : playbackProgressFromFrb(detail.progress!),
+  );
+}
+
+frb.SubjectSummary subjectToFrb(AnimeSubject subject) {
+  return frb.SubjectSummary(
+    id: subject.id,
+    name: subject.name,
+    nameCn: subject.nameCn,
+    aliases: subject.aliases,
+    coverUrl: subject.coverUrl,
+    summary: subject.summary,
+    airDate: subject.airDate,
+    ratingScore: subject.ratingScore,
+    ratingRank: subject.ratingRank,
+    tags: subject.tags,
+    totalEpisodes: subject.totalEpisodes,
+  );
+}
+
+frb.Episode episodeToFrb(AnimeEpisode episode) {
+  return frb.Episode(
+    id: episode.id,
+    subjectId: episode.subjectId,
+    sort: episode.sort,
+    title: episode.title,
+    titleCn: episode.titleCn,
+    airDate: episode.airDate,
   );
 }
 
@@ -122,6 +152,52 @@ PlaybackContract playbackFromFrb(frb.PlaybackCandidate candidate) {
       for (final header in candidate.headers) header.name: header.value,
     },
   );
+}
+
+PlaybackProgress playbackProgressFromFrb(frb.PlaybackProgress progress) {
+  return PlaybackProgress(
+    subjectId: progress.subjectId,
+    episodeId: progress.episodeId,
+    positionMs: progress.positionMs,
+    durationMs: progress.durationMs,
+    updatedAtMs: progress.updatedAtMs,
+  );
+}
+
+FavoriteItem favoriteItemFromFrb(frb.FavoriteItem favorite) {
+  return FavoriteItem(
+    subject: subjectFromFrb(favorite.subject),
+    status: collectionStatusFromFrb(favorite.status),
+    updatedAtMs: favorite.updatedAtMs,
+  );
+}
+
+WatchHistoryItem watchHistoryItemFromFrb(frb.WatchHistoryItem item) {
+  return WatchHistoryItem(
+    subject: subjectFromFrb(item.subject),
+    episode: episodeFromFrb(item.episode),
+    progress: playbackProgressFromFrb(item.progress),
+  );
+}
+
+CollectionStatus collectionStatusFromFrb(frb.CollectionStatus status) {
+  return switch (status) {
+    frb.CollectionStatus.wish => CollectionStatus.wish,
+    frb.CollectionStatus.watching => CollectionStatus.watching,
+    frb.CollectionStatus.watched => CollectionStatus.watched,
+    frb.CollectionStatus.paused => CollectionStatus.paused,
+    frb.CollectionStatus.dropped => CollectionStatus.dropped,
+  };
+}
+
+frb.CollectionStatus collectionStatusToFrb(CollectionStatus status) {
+  return switch (status) {
+    CollectionStatus.wish => frb.CollectionStatus.wish,
+    CollectionStatus.watching => frb.CollectionStatus.watching,
+    CollectionStatus.watched => frb.CollectionStatus.watched,
+    CollectionStatus.paused => frb.CollectionStatus.paused,
+    CollectionStatus.dropped => frb.CollectionStatus.dropped,
+  };
 }
 
 PlayStreamContract playStreamFromFrb(frb.PlayStream stream) {
