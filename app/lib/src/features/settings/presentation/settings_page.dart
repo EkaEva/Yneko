@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 
+import '../application/appearance_settings_controller.dart';
 import '../application/settings_navigation_controller.dart';
-import '../../shell/index.dart';
 import '../../sources/index.dart';
+import '../../../infrastructure/platform/directory_picker/index.dart';
+import '../../../shared/domain/index.dart';
 import '../../../shared/theme/index.dart';
 import '../../../shared/ui/index.dart';
 
@@ -15,11 +18,12 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
-  String _colorScheme = 'Yneko 粉';
   String _startupPage = '首页';
   String _downloadPath = 'D:\\Yneko\\Downloads';
   int _downloadConcurrency = 3;
   String _downloadStrategy = '自动';
+  String _downloadNameTemplate = 'folderEpisode';
+  String _downloadCustomTemplate = _downloadCustomTemplateDefault;
   String _playerEngine = '自动';
   String _superResolution = '关闭';
   String _aspectRatio = '自动';
@@ -32,9 +36,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final panel = ref.watch(settingsPanelProvider);
+    final appearance =
+        ref.watch(appearanceSettingsProvider).value ??
+        AppearanceSettings.defaults;
     if (panel == SettingsPanel.root) {
       return _SettingsRootPage(
-        colorScheme: _colorScheme,
+        colorScheme: appearance.colorScheme,
         onPanel: (panel) =>
             ref.read(settingsPanelProvider.notifier).open(panel),
       );
@@ -46,10 +53,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget _panelContent(SettingsPanel panel) {
     return switch (panel) {
       SettingsPanel.appearance => _AppearancePanel(
-        colorScheme: _colorScheme,
         startupPage: _startupPage,
         useSystemFont: _useSystemFont,
-        onColorScheme: (value) => setState(() => _colorScheme = value),
         onStartupPage: (value) => setState(() => _startupPage = value),
         onSystemFont: () => setState(() => _useSystemFont = !_useSystemFont),
       ),
@@ -57,10 +62,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         path: _downloadPath,
         concurrency: _downloadConcurrency,
         strategy: _downloadStrategy,
+        nameTemplate: _downloadNameTemplate,
+        customTemplate: _downloadCustomTemplate,
         onPath: (value) => setState(() => _downloadPath = value),
         onConcurrency: (value) =>
-            setState(() => _downloadConcurrency = value.clamp(1, 8)),
+            setState(() => _downloadConcurrency = value.clamp(1, 5)),
         onStrategy: (value) => setState(() => _downloadStrategy = value),
+        onNameTemplate: (value) =>
+            setState(() => _downloadNameTemplate = value),
+        onCustomTemplate: (value) =>
+            setState(() => _downloadCustomTemplate = value),
       ),
       SettingsPanel.rules => const _RulesPanel(),
       SettingsPanel.player => _PlayerPanel(
@@ -92,7 +103,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 class _SettingsRootPage extends StatelessWidget {
   const _SettingsRootPage({required this.colorScheme, required this.onPanel});
 
-  final String colorScheme;
+  final YnekoColorScheme colorScheme;
   final ValueChanged<SettingsPanel> onPanel;
 
   @override
@@ -109,7 +120,7 @@ class _SettingsRootPage extends StatelessWidget {
             _SettingsEntry(
               icon: Icons.palette_outlined,
               title: '外观',
-              description: '主题配色、字体与启动页，当前配色方案 $colorScheme。',
+              description: '主题配色、字体与启动页，当前配色方案 ${colorScheme.label}。',
               onTap: () => onPanel(SettingsPanel.appearance),
             ),
             _SettingsEntry(
@@ -244,11 +255,11 @@ class _SettingsEntryList extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
     final radius = BorderRadius.circular(20);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tokens.surface,
+    return Container(
+      decoration: BoxDecoration(color: tokens.surface, borderRadius: radius),
+      foregroundDecoration: BoxDecoration(
         borderRadius: radius,
-        border: Border.all(color: tokens.outline.withValues(alpha: 0.54)),
+        border: Border.all(color: tokens.outline.withValues(alpha: 0.58)),
       ),
       child: ClipRRect(
         borderRadius: radius,
@@ -297,7 +308,9 @@ class _SettingsEntry extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 25),
           decoration: BoxDecoration(
             color: hovered || pressed ? hoverBackground : tokens.surface,
-            border: Border(bottom: BorderSide(color: tokens.dividerFaint)),
+            border: Border(
+              bottom: BorderSide(color: tokens.outline.withValues(alpha: 0.34)),
+            ),
           ),
           child: Row(
             children: [
@@ -407,57 +420,32 @@ class _SettingsDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showContentTitle = panel != SettingsPanel.rules;
     return ListView(
       key: ValueKey('settings-detail-${panel.name}'),
-      padding: EdgeInsets.fromLTRB(28, showContentTitle ? 24 : 28, 28, 48),
-      children: [
-        if (showContentTitle) ...[
-          Text(
-            _panelTitle(panel),
-            style: YnekoTypography.of(context).pageTitle,
-          ),
-          const SizedBox(height: 20),
-        ],
-        child,
-      ],
+      padding: const EdgeInsets.fromLTRB(28, 28, 28, 48),
+      children: [child],
     );
-  }
-
-  String _panelTitle(SettingsPanel panel) {
-    return switch (panel) {
-      SettingsPanel.appearance => '外观',
-      SettingsPanel.download => '下载设置',
-      SettingsPanel.rules => '规则管理',
-      SettingsPanel.player => '播放器设置',
-      SettingsPanel.danmaku => '弹幕实验室',
-      SettingsPanel.backup => '本地备份',
-      SettingsPanel.cache => '缓存清理',
-      SettingsPanel.root => '设置',
-    };
   }
 }
 
 class _AppearancePanel extends ConsumerWidget {
   const _AppearancePanel({
-    required this.colorScheme,
     required this.startupPage,
     required this.useSystemFont,
-    required this.onColorScheme,
     required this.onStartupPage,
     required this.onSystemFont,
   });
 
-  final String colorScheme;
   final String startupPage;
   final bool useSystemFont;
-  final ValueChanged<String> onColorScheme;
   final ValueChanged<String> onStartupPage;
   final VoidCallback onSystemFont;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(shellThemeModeProvider);
+    final appearance =
+        ref.watch(appearanceSettingsProvider).value ??
+        AppearanceSettings.defaults;
     return Column(
       children: [
         _SettingsDetailGroup(
@@ -468,20 +456,24 @@ class _AppearancePanel extends ConsumerWidget {
               title: '默认模式',
               trailing: _SegmentedControl(
                 options: const ['浅色', '深色'],
-                value: themeMode == ThemeMode.dark ? '深色' : '浅色',
+                value: appearance.themeMode == ThemeMode.dark ? '深色' : '浅色',
                 onChanged: (value) => ref
-                    .read(shellThemeModeProvider.notifier)
-                    .setMode(value == '深色' ? ThemeMode.dark : ThemeMode.light),
+                    .read(appearanceSettingsProvider.notifier)
+                    .setThemeMode(
+                      value == '深色' ? ThemeMode.dark : ThemeMode.light,
+                    ),
               ),
             ),
             _SettingsControlRow(
               icon: Icons.auto_awesome_rounded,
               title: '配色方案',
-              description: colorScheme,
+              description: appearance.colorScheme.label,
               onTap: () => _showColorSchemeDialog(
                 context,
-                value: colorScheme,
-                onChanged: onColorScheme,
+                value: appearance.colorScheme,
+                onChanged: (scheme) => ref
+                    .read(appearanceSettingsProvider.notifier)
+                    .setColorScheme(scheme),
               ),
             ),
           ],
@@ -520,80 +512,92 @@ class _AppearancePanel extends ConsumerWidget {
   }
 }
 
-class _DownloadPanel extends StatelessWidget {
+class _DownloadPanel extends ConsumerWidget {
   const _DownloadPanel({
     required this.path,
     required this.concurrency,
     required this.strategy,
+    required this.nameTemplate,
+    required this.customTemplate,
     required this.onPath,
     required this.onConcurrency,
     required this.onStrategy,
+    required this.onNameTemplate,
+    required this.onCustomTemplate,
   });
 
   final String path;
   final int concurrency;
   final String strategy;
+  final String nameTemplate;
+  final String customTemplate;
   final ValueChanged<String> onPath;
   final ValueChanged<int> onConcurrency;
   final ValueChanged<String> onStrategy;
+  final ValueChanged<String> onNameTemplate;
+  final ValueChanged<String> onCustomTemplate;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final directoryPicker = ref.watch(directoryPickerProvider);
     return Column(
       children: [
         _SettingsDetailGroup(
-          title: '下载位置',
+          title: '保存位置',
           children: [
             _SettingsControlRow(
-              icon: Icons.folder_open_rounded,
+              icon: Icons.storage_rounded,
               title: '下载路径',
               description: path,
-              trailing: _RuleActionButtonShell(
-                label: '修改',
-                onPressed: () => _showTextSettingDialog(
-                  context,
-                  title: '下载路径',
-                  initialValue: path,
-                  onSubmitted: onPath,
-                ),
+              onTap: () => _showDownloadPathDialog(
+                context,
+                value: path,
+                onSave: onPath,
+                directoryPicker: directoryPicker,
               ),
             ),
           ],
         ),
         _SettingsDetailGroup(
-          title: '下载任务',
+          title: '任务设置',
           children: [
             _SettingsControlRow(
-              icon: Icons.format_list_numbered_rounded,
+              icon: Icons.playlist_play_rounded,
               title: '并发任务',
-              description: '限制同时下载的任务数量。',
+              description: '同时下载的任务数量',
               trailing: _Stepper(value: concurrency, onChanged: onConcurrency),
             ),
             _SettingsControlRow(
-              icon: Icons.rule_rounded,
+              icon: Icons.shuffle_rounded,
               title: '下载策略',
-              description: strategy,
-              trailing: _ChoicePill(label: strategy),
-              onTap: () => _showChoiceDialog(
-                context,
-                title: '下载策略',
+              trailing: _SegmentedControl(
+                options: const ['自动', '仅 Wi-Fi', '手动确认'],
                 value: strategy,
-                options: const [
-                  _SettingsChoice('自动', '按当前网络和片源状态自动选择。'),
-                  _SettingsChoice('仅 Wi-Fi', '预留移动端网络策略。'),
-                  _SettingsChoice('手动确认', '每次下载前显示确认提示。'),
-                ],
                 onChanged: onStrategy,
               ),
             ),
-            const _SettingsControlRow(
-              icon: Icons.text_snippet_outlined,
-              title: '命名模板',
-              description: '{title}/S01E{episode} - {episodeTitle}',
+          ],
+        ),
+        _SettingsDetailGroup(
+          title: '文件命名',
+          children: [
+            _SettingsControlRow(
+              icon: Icons.title_rounded,
+              title: '命名规范',
+              description: _downloadTemplatePreview(
+                nameTemplate,
+                customTemplate,
+              ),
+              onTap: () => _showNamingTemplateDialog(
+                context,
+                value: nameTemplate,
+                customTemplate: customTemplate,
+                onSave: onNameTemplate,
+                onSaveCustomTemplate: onCustomTemplate,
+              ),
             ),
           ],
         ),
-        const _HintPanel(text: '下载与离线缓存不在 V1 范围内，本页先保留完整设置入口。'),
       ],
     );
   }
@@ -607,7 +611,7 @@ class _RulesPanel extends ConsumerWidget {
     final library = ref.watch(sourceLibraryControllerProvider);
     return library.when(
       loading: () => const YnekoPanel(
-        child: SizedBox(height: 180, child: Center(child: YnekoRingLoader())),
+        child: YnekoLoadingState(title: '正在读取规则源', size: 64, minHeight: 180),
       ),
       error: (error, stackTrace) => Column(
         children: [
@@ -1023,55 +1027,10 @@ class _SettingsSwitch extends StatelessWidget {
   }
 }
 
-class _ColorSchemeOption {
-  const _ColorSchemeOption(this.label, this.colors);
-
-  final String label;
-  final List<Color> colors;
-}
-
-const _colorSchemeOptions = [
-  _ColorSchemeOption('Yneko 粉', [
-    Color(0xFFFF6699),
-    Color(0xFF00A1D6),
-    Color(0xFFFFF0F5),
-  ]),
-  _ColorSchemeOption('清爽蓝', [
-    Color(0xFF2F8AF5),
-    Color(0xFFEDF6FF),
-    Color(0xFFF8FBFF),
-  ]),
-  _ColorSchemeOption('经典灰', [
-    Color(0xFF6C727A),
-    Color(0xFFEDEFF2),
-    Color(0xFFFBFBFC),
-  ]),
-  _ColorSchemeOption('薄荷绿', [
-    Color(0xFF16A085),
-    Color(0xFFEDF9F5),
-    Color(0xFFFBFFFD),
-  ]),
-  _ColorSchemeOption('云杉青', [
-    Color(0xFF0F8B8D),
-    Color(0xFFEDF8F8),
-    Color(0xFFF9FDFD),
-  ]),
-  _ColorSchemeOption('晨雾紫', [
-    Color(0xFF7C6BD8),
-    Color(0xFFF2F0FF),
-    Color(0xFFFCFBFF),
-  ]),
-  _ColorSchemeOption('暖杏白', [
-    Color(0xFFD9824B),
-    Color(0xFFFFF4EB),
-    Color(0xFFFFFDF9),
-  ]),
-];
-
 Future<void> _showColorSchemeDialog(
   BuildContext context, {
-  required String value,
-  required ValueChanged<String> onChanged,
+  required YnekoColorScheme value,
+  required ValueChanged<YnekoColorScheme> onChanged,
 }) {
   return showDialog<void>(
     context: context,
@@ -1089,8 +1048,8 @@ Future<void> _showColorSchemeDialog(
 class _ColorSchemeDialog extends StatelessWidget {
   const _ColorSchemeDialog({required this.value, required this.onChanged});
 
-  final String value;
-  final ValueChanged<String> onChanged;
+  final YnekoColorScheme value;
+  final ValueChanged<YnekoColorScheme> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -1100,7 +1059,7 @@ class _ColorSchemeDialog extends StatelessWidget {
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(32),
       child: Container(
-        width: 820,
+        width: 920,
         padding: const EdgeInsets.fromLTRB(34, 30, 34, 34),
         decoration: BoxDecoration(
           color: tokens.surface,
@@ -1130,14 +1089,21 @@ class _ColorSchemeDialog extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 28),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            GridView.count(
+              crossAxisCount: 8,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 22,
+              crossAxisSpacing: 18,
+              childAspectRatio: 0.84,
               children: [
-                for (final option in _colorSchemeOptions)
-                  _ColorSchemeOptionTile(
-                    option: option,
-                    active: option.label == value,
-                    onTap: () => onChanged(option.label),
+                for (final option in YnekoColorScheme.values)
+                  Center(
+                    child: _ColorSchemeOptionTile(
+                      option: option,
+                      active: option == value,
+                      onTap: () => onChanged(option),
+                    ),
                   ),
               ],
             ),
@@ -1155,7 +1121,7 @@ class _ColorSchemeOptionTile extends StatelessWidget {
     required this.onTap,
   });
 
-  final _ColorSchemeOption option;
+  final YnekoColorScheme option;
   final bool active;
   final VoidCallback onTap;
 
@@ -1167,100 +1133,82 @@ class _ColorSchemeOptionTile extends StatelessWidget {
       borderRadius: 18,
       scaleOnPress: false,
       builder: (context, hovered, pressed) {
-        return AnimatedScale(
+        final labelColor = hovered || pressed
+            ? option.previewColors.first
+            : tokens.ink;
+        return AnimatedContainer(
           key: ValueKey('settings-color-scheme-option-${option.label}'),
           duration: YnekoThemeTokens.fastMotion,
           curve: Curves.easeOutCubic,
-          scale: pressed
-              ? 0.97
-              : hovered
-              ? 1.03
-              : 1,
-          child: SizedBox(
-            width: 86,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 58,
-                  height: 58,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      DecoratedBox(
+          width: 86,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 58,
+                height: 58,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: CustomPaint(
+                        size: const Size.square(58),
+                        painter: _ColorSchemePreviewPainter(
+                          primary: option.previewColors[0],
+                          secondary: option.previewColors[1],
+                          soft: option.previewColors[2],
+                          surface: tokens.surface,
+                          ring: tokens.surface.withValues(alpha: 0.78),
+                        ),
+                      ),
+                    ),
+                    if (active)
+                      Container(
+                        width: 34,
+                        height: 34,
+                        alignment: Alignment.center,
                         decoration: BoxDecoration(
+                          color: Color.lerp(tokens.primary, Colors.black, 0.28),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             ),
-                            if (active || hovered)
-                              BoxShadow(
-                                color: option.colors.first.withValues(
-                                  alpha: 0.18,
-                                ),
-                                blurRadius: 18,
-                                offset: const Offset(0, 8),
-                              ),
                           ],
                         ),
-                        child: CustomPaint(
-                          size: const Size.square(58),
-                          painter: _ColorSchemePreviewPainter(
-                            primary: option.colors[0],
-                            secondary: option.colors[1],
-                            soft: option.colors[2],
-                            ring: Color.lerp(
-                              tokens.surface,
-                              Colors.transparent,
-                              0.22,
-                            )!,
-                          ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 22,
                         ),
                       ),
-                      if (active)
-                        Container(
-                          width: 34,
-                          height: 34,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Color.lerp(
-                              option.colors.first,
-                              Colors.black,
-                              0.28,
-                            ),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.12),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.check_rounded,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                    ],
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  option.label,
-                  textAlign: TextAlign.center,
-                  style: YnekoTypography.of(context).label.copyWith(
-                    color: tokens.ink,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                  ),
+              ),
+              const SizedBox(height: 10),
+              AnimatedDefaultTextStyle(
+                duration: YnekoThemeTokens.fastMotion,
+                curve: Curves.easeOut,
+                style: YnekoTypography.of(context).label.copyWith(
+                  color: labelColor,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
                 ),
-              ],
-            ),
+                child: Text(option.label, textAlign: TextAlign.center),
+              ),
+            ],
           ),
         );
       },
@@ -1273,42 +1221,84 @@ class _ColorSchemePreviewPainter extends CustomPainter {
     required this.primary,
     required this.secondary,
     required this.soft,
+    required this.surface,
     required this.ring,
   });
 
   final Color primary;
   final Color secondary;
   final Color soft;
+  final Color surface;
   final Color ring;
 
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
     final circle = Path()..addOval(rect);
+    final innerRect = rect.deflate(8);
+    final innerCircle = Path()..addOval(innerRect);
+    final outerSliceWidth = size.width / 4;
+    final leftColor = Color.lerp(primary, soft, 0.42)!;
+    final rightColor = Color.lerp(secondary, primary, 0.22)!;
+    final leftLightColor = Color.lerp(primary, soft, 0.72)!;
+    final rightLightColor = Color.lerp(secondary, soft, 0.72)!;
+    final innerTopColor = Color.lerp(soft, surface, 0.18)!;
+
     canvas.save();
     canvas.clipPath(circle);
-
-    final left = Rect.fromLTWH(0, 0, size.width / 2, size.height);
-    final right = Rect.fromLTWH(size.width / 2, 0, size.width / 2, size.height);
-    canvas.drawRect(left, Paint()..color = Color.lerp(primary, soft, 0.42)!);
     canvas.drawRect(
-      right,
-      Paint()..color = Color.lerp(secondary, primary, 0.22)!,
+      Rect.fromLTWH(0, 0, outerSliceWidth, size.height),
+      Paint()..color = leftColor,
     );
     canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height / 2),
-      Paint()..color = Color.lerp(soft, Colors.white, 0.18)!,
+      Rect.fromLTWH(outerSliceWidth, 0, outerSliceWidth, size.height),
+      Paint()..color = leftLightColor,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(outerSliceWidth * 2, 0, outerSliceWidth, size.height),
+      Paint()..color = rightLightColor,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(outerSliceWidth * 3, 0, outerSliceWidth, size.height),
+      Paint()..color = rightColor,
+    );
+    canvas.drawCircle(
+      rect.center,
+      size.width / 2,
+      Paint()..color = ring.withValues(alpha: 0.34),
     );
     canvas.restore();
 
-    canvas.drawCircle(
-      rect.center,
-      size.width / 2 - 4,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 8
-        ..color = ring,
+    canvas.save();
+    canvas.clipPath(innerCircle);
+    canvas.drawRect(
+      Rect.fromLTWH(
+        innerRect.left,
+        innerRect.top,
+        innerRect.width / 2,
+        innerRect.height,
+      ),
+      Paint()..color = leftColor,
     );
+    canvas.drawRect(
+      Rect.fromLTWH(
+        innerRect.left + innerRect.width / 2,
+        innerRect.top,
+        innerRect.width / 2,
+        innerRect.height,
+      ),
+      Paint()..color = rightColor,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(
+        innerRect.left,
+        innerRect.top,
+        innerRect.width,
+        innerRect.height / 2,
+      ),
+      Paint()..color = innerTopColor,
+    );
+    canvas.restore();
   }
 
   @override
@@ -1316,6 +1306,7 @@ class _ColorSchemePreviewPainter extends CustomPainter {
     return primary != oldDelegate.primary ||
         secondary != oldDelegate.secondary ||
         soft != oldDelegate.soft ||
+        surface != oldDelegate.surface ||
         ring != oldDelegate.ring;
   }
 }
@@ -1520,92 +1511,656 @@ class _SettingsChoiceTile extends StatelessWidget {
   }
 }
 
-Future<void> _showTextSettingDialog(
+const _downloadDefaultPath = '~/Downloads/Yneko';
+const _downloadCustomTemplateDefault = '{title}/S{season}E{episode}';
+const _downloadTemplateOptions = [
+  _DownloadTemplateOption(
+    label: '番剧名/集数',
+    value: 'folderEpisode',
+    template: '{title}/S{season}E{episode}',
+  ),
+  _DownloadTemplateOption(
+    label: '番剧名 - S01E01',
+    value: 'sxe',
+    template: '{title} - S{season}E{episode}',
+  ),
+  _DownloadTemplateOption(
+    label: '番剧名/季度/集数',
+    value: 'seasonFolder',
+    template: '{title}/S{season}/E{episode}',
+  ),
+  _DownloadTemplateOption(
+    label: '自定义模板',
+    value: 'custom',
+    template: _downloadCustomTemplateDefault,
+  ),
+];
+
+class _DownloadTemplateOption {
+  const _DownloadTemplateOption({
+    required this.label,
+    required this.value,
+    required this.template,
+  });
+
+  final String label;
+  final String value;
+  final String template;
+}
+
+String _downloadTemplatePreview(String value, String customTemplate) {
+  final option = _downloadTemplateOptions.firstWhere(
+    (option) => option.value == value,
+    orElse: () => _downloadTemplateOptions.first,
+  );
+  final rawTemplate = value == 'custom'
+      ? (customTemplate.trim().isEmpty
+            ? _downloadCustomTemplateDefault
+            : customTemplate)
+      : option.template;
+  final preview = rawTemplate
+      .trim()
+      .replaceAll('{title}', '葬送的芙莉莲')
+      .replaceAll('{season}', '01')
+      .replaceAll('{episode}', '01');
+  final fallback = _downloadCustomTemplateDefault
+      .replaceAll('{title}', '葬送的芙莉莲')
+      .replaceAll('{season}', '01')
+      .replaceAll('{episode}', '01');
+  final normalized = preview.isEmpty ? fallback : preview;
+  return normalized.endsWith('.mp4') ? normalized : '$normalized.mp4';
+}
+
+Future<void> _showDownloadPathDialog(
   BuildContext context, {
-  required String title,
-  required String initialValue,
-  required ValueChanged<String> onSubmitted,
+  required String value,
+  required ValueChanged<String> onSave,
+  required DirectoryPickerService directoryPicker,
 }) {
-  final controller = TextEditingController(text: initialValue);
   return showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.28),
-    builder: (context) => Dialog(
+    builder: (context) => _DownloadPathDialog(
+      value: value,
+      onSave: onSave,
+      directoryPicker: directoryPicker,
+    ),
+  );
+}
+
+class _DownloadPathDialog extends StatefulWidget {
+  const _DownloadPathDialog({
+    required this.value,
+    required this.onSave,
+    required this.directoryPicker,
+  });
+
+  final String value;
+  final ValueChanged<String> onSave;
+  final DirectoryPickerService directoryPicker;
+
+  @override
+  State<_DownloadPathDialog> createState() => _DownloadPathDialogState();
+}
+
+class _DownloadPathDialogState extends State<_DownloadPathDialog> {
+  late final TextEditingController _controller;
+  final _inputFocusNode = FocusNode();
+  String _pickerMessage = '';
+  bool _selectingDirectory = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _inputFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final path = _controller.text.trim();
+    widget.onSave(path.isEmpty ? _downloadDefaultPath : path);
+    Navigator.of(context).pop();
+  }
+
+  Future<void> _chooseCustomPath() async {
+    setState(() {
+      _pickerMessage = '';
+      _selectingDirectory = true;
+    });
+    try {
+      final selected = await widget.directoryPicker.pickDirectory(
+        initialDirectory: _defaultPathForPicker(_controller.text),
+      );
+      if (!mounted) return;
+      if (selected != null) {
+        _controller.text = selected;
+      } else {
+        _inputFocusNode.requestFocus();
+      }
+    } on MissingPluginException {
+      if (!mounted) return;
+      setState(() {
+        _pickerMessage = '桌面端会打开文件夹选择器，当前预览环境可手动输入路径。';
+      });
+      _inputFocusNode.requestFocus();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _pickerMessage = '未能打开文件夹选择器，可先手动输入路径。';
+      });
+      _inputFocusNode.requestFocus();
+    } finally {
+      if (mounted) {
+        setState(() => _selectingDirectory = false);
+      }
+    }
+  }
+
+  String? _defaultPathForPicker(String path) {
+    final trimmed = path.trim();
+    if (trimmed.isEmpty || trimmed.startsWith('~')) return null;
+    return trimmed;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(32),
       child: Container(
-        width: 540,
-        padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+        width: 560,
+        padding: const EdgeInsets.fromLTRB(28, 26, 28, 28),
         decoration: BoxDecoration(
-          color: YnekoThemeTokens.of(context).surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: YnekoThemeTokens.of(context).outline.withValues(alpha: 0.52),
-          ),
-          boxShadow: YnekoThemeTokens.of(context).shadowStrong,
+          color: tokens.surface,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: tokens.outline.withValues(alpha: 0.52)),
+          boxShadow: tokens.shadowStrong,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: YnekoTypography.of(context).sectionTitle),
-            const SizedBox(height: 18),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              decoration: InputDecoration(hintText: title),
-              onSubmitted: (value) {
-                onSubmitted(value);
-                Navigator.of(context).pop();
-              },
+            const _DialogHeader(title: '下载路径'),
+            const SizedBox(height: 28),
+            Row(
+              children: [
+                Expanded(
+                  child: _DialogOptionCard(
+                    title: '系统下载目录',
+                    description: '使用系统常用下载位置',
+                    minHeight: 72,
+                    onTap: () {
+                      setState(() => _pickerMessage = '');
+                      _controller.text = '~/Downloads';
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _DialogOptionCard(
+                    title: 'Yneko 默认目录',
+                    description: '按应用独立归档',
+                    minHeight: 72,
+                    onTap: () {
+                      setState(() => _pickerMessage = '');
+                      _controller.text = _downloadDefaultPath;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _DialogOptionCard(
+                    title: _selectingDirectory ? '正在打开...' : '自定义路径',
+                    description: '在下方输入保存位置',
+                    minHeight: 72,
+                    onTap: _chooseCustomPath,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 20),
+            _DialogTextField(
+              label: '保存位置',
+              controller: _controller,
+              focusNode: _inputFocusNode,
+              autofocus: true,
+              hintText: _downloadDefaultPath,
+              onChanged: () {
+                if (_pickerMessage.isNotEmpty) {
+                  setState(() => _pickerMessage = '');
+                }
+              },
+              onSubmitted: _save,
+            ),
+            if (_pickerMessage.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                _pickerMessage,
+                style: type.label.copyWith(
+                  color: tokens.muted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
             const SizedBox(height: 18),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                _RuleActionButtonShell(
+                _DialogActionButton(
                   label: '取消',
                   onPressed: () => Navigator.of(context).pop(),
-                  ghost: true,
                 ),
                 const SizedBox(width: 10),
-                _RuleActionButtonShell(
+                _DialogActionButton(
                   label: '保存',
-                  onPressed: () {
-                    onSubmitted(controller.text);
-                    Navigator.of(context).pop();
-                  },
+                  primary: true,
+                  onPressed: _save,
                 ),
               ],
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+Future<void> _showNamingTemplateDialog(
+  BuildContext context, {
+  required String value,
+  required String customTemplate,
+  required ValueChanged<String> onSave,
+  required ValueChanged<String> onSaveCustomTemplate,
+}) {
+  return showDialog<void>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.28),
+    builder: (context) => _NamingTemplateDialog(
+      value: value,
+      customTemplate: customTemplate,
+      onSave: onSave,
+      onSaveCustomTemplate: onSaveCustomTemplate,
     ),
   );
 }
 
-class _RuleActionButtonShell extends StatelessWidget {
-  const _RuleActionButtonShell({
+class _NamingTemplateDialog extends StatefulWidget {
+  const _NamingTemplateDialog({
+    required this.value,
+    required this.customTemplate,
+    required this.onSave,
+    required this.onSaveCustomTemplate,
+  });
+
+  final String value;
+  final String customTemplate;
+  final ValueChanged<String> onSave;
+  final ValueChanged<String> onSaveCustomTemplate;
+
+  @override
+  State<_NamingTemplateDialog> createState() => _NamingTemplateDialogState();
+}
+
+class _NamingTemplateDialogState extends State<_NamingTemplateDialog> {
+  late String _draftTemplate;
+  late final TextEditingController _customController;
+
+  @override
+  void initState() {
+    super.initState();
+    _draftTemplate = widget.value;
+    _customController = TextEditingController(text: widget.customTemplate);
+  }
+
+  @override
+  void dispose() {
+    _customController.dispose();
+    super.dispose();
+  }
+
+  void _saveCustomTemplate() {
+    final custom = _customController.text.trim().isEmpty
+        ? _downloadCustomTemplateDefault
+        : _customController.text;
+    widget.onSave('custom');
+    widget.onSaveCustomTemplate(custom);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final preview = _downloadTemplatePreview(
+      _draftTemplate,
+      _customController.text,
+    );
+    final showingCustom = _draftTemplate == 'custom';
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(32),
+      child: Container(
+        width: 680,
+        padding: const EdgeInsets.fromLTRB(28, 26, 28, 28),
+        decoration: BoxDecoration(
+          color: tokens.surface,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: tokens.outline.withValues(alpha: 0.52)),
+          boxShadow: tokens.shadowStrong,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _DialogHeader(title: '命名规范'),
+            const SizedBox(height: 28),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 4.5,
+              children: [
+                for (final option in _downloadTemplateOptions)
+                  _DialogOptionCard(
+                    title: option.label,
+                    description: _downloadTemplatePreview(
+                      option.value,
+                      _customController.text,
+                    ),
+                    active: option.value == _draftTemplate,
+                    minHeight: 76,
+                    onTap: () {
+                      if (option.value == 'custom') {
+                        setState(() => _draftTemplate = 'custom');
+                      } else {
+                        widget.onSave(option.value);
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+              ],
+            ),
+            if (showingCustom) ...[
+              const SizedBox(height: 18),
+              _DialogTextField(
+                label: '自定义模板',
+                controller: _customController,
+                hintText: _downloadCustomTemplateDefault,
+                onSubmitted: _saveCustomTemplate,
+                onChanged: () => setState(() {}),
+              ),
+            ],
+            const SizedBox(height: 18),
+            _PreviewStrip(preview: preview),
+            if (showingCustom) ...[
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _DialogActionButton(
+                    label: '取消',
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const SizedBox(width: 10),
+                  _DialogActionButton(
+                    label: '保存',
+                    primary: true,
+                    onPressed: _saveCustomTemplate,
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DialogHeader extends StatelessWidget {
+  const _DialogHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: YnekoTypography.of(
+              context,
+            ).sectionTitle.copyWith(fontSize: 24, fontWeight: FontWeight.w900),
+          ),
+        ),
+        YnekoIconActionButton(
+          tooltip: '关闭$title',
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close_rounded),
+          transparent: true,
+          size: 34,
+        ),
+      ],
+    );
+  }
+}
+
+class _DialogOptionCard extends StatelessWidget {
+  const _DialogOptionCard({
+    required this.title,
+    required this.description,
+    required this.onTap,
+    this.active = false,
+    this.minHeight = 72,
+  });
+
+  final String title;
+  final String description;
+  final VoidCallback onTap;
+  final bool active;
+  final double minHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return YnekoPressable(
+      onTap: onTap,
+      borderRadius: 8,
+      scaleOnPress: false,
+      builder: (context, hovered, pressed) {
+        final highlighted = active || hovered || pressed;
+        return AnimatedContainer(
+          duration: YnekoThemeTokens.fastMotion,
+          constraints: BoxConstraints(minHeight: minHeight),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: active
+                ? Color.lerp(tokens.primaryContainer, tokens.surface, 0.38)
+                : Color.lerp(tokens.surfaceLow, tokens.surface, 0.22),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: active
+                  ? tokens.primary.withValues(alpha: 0.48)
+                  : highlighted
+                  ? Color.lerp(tokens.outline, tokens.primary, 0.32)!
+                  : tokens.outline.withValues(alpha: 0.62),
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                overflow: TextOverflow.ellipsis,
+                style: YnekoTypography.of(context).controlTitle.copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                description,
+                overflow: TextOverflow.ellipsis,
+                style: YnekoTypography.of(context).label.copyWith(
+                  color: tokens.muted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DialogTextField extends StatelessWidget {
+  const _DialogTextField({
+    required this.label,
+    required this.controller,
+    required this.hintText,
+    required this.onSubmitted,
+    required this.onChanged,
+    this.focusNode,
+    this.autofocus = false,
+  });
+
+  final String label;
+  final TextEditingController controller;
+  final String hintText;
+  final VoidCallback onSubmitted;
+  final VoidCallback onChanged;
+  final FocusNode? focusNode;
+  final bool autofocus;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: YnekoTypography.of(
+            context,
+          ).label.copyWith(color: tokens.muted, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 40,
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            autofocus: autofocus,
+            decoration: InputDecoration(hintText: hintText),
+            style: YnekoTypography.of(
+              context,
+            ).body.copyWith(fontSize: 13, fontWeight: FontWeight.w600),
+            onChanged: (_) => onChanged(),
+            onSubmitted: (_) => onSubmitted(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PreviewStrip extends StatelessWidget {
+  const _PreviewStrip({required this.preview});
+
+  final String preview;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
+      decoration: BoxDecoration(
+        color: Color.lerp(tokens.surfaceLow, tokens.surface, 0.22),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '预览',
+            style: YnekoTypography.of(
+              context,
+            ).label.copyWith(color: tokens.muted, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            preview,
+            overflow: TextOverflow.ellipsis,
+            style: YnekoTypography.of(
+              context,
+            ).controlTitle.copyWith(fontSize: 13, fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DialogActionButton extends StatelessWidget {
+  const _DialogActionButton({
     required this.label,
     required this.onPressed,
-    this.ghost = false,
+    this.primary = false,
   });
 
   final String label;
   final VoidCallback onPressed;
-  final bool ghost;
+  final bool primary;
 
   @override
   Widget build(BuildContext context) {
-    return YnekoActionButton(
-      label: label,
-      onPressed: onPressed,
-      tone: ghost ? YnekoActionButtonTone.ghost : YnekoActionButtonTone.outline,
-      height: 34,
-      minWidth: 64,
+    final tokens = YnekoThemeTokens.of(context);
+    return YnekoPressable(
+      onTap: onPressed,
       borderRadius: 8,
-      horizontalPadding: 12,
+      scaleOnPress: false,
+      builder: (context, hovered, pressed) {
+        return AnimatedContainer(
+          duration: YnekoThemeTokens.fastMotion,
+          height: 34,
+          constraints: const BoxConstraints(minWidth: 72),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          decoration: BoxDecoration(
+            color: primary
+                ? tokens.primary
+                : (hovered || pressed ? tokens.surfaceHigh : tokens.surface),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: primary
+                  ? tokens.primary
+                  : tokens.outline.withValues(alpha: 0.72),
+            ),
+          ),
+          child: Text(
+            label,
+            style: YnekoTypography.of(context).label.copyWith(
+              color: primary ? Colors.white : tokens.ink,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1660,27 +2215,6 @@ class _Stepper extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _HintPanel extends StatelessWidget {
-  const _HintPanel({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = YnekoThemeTokens.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: tokens.surfaceLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: tokens.outline.withValues(alpha: 0.52)),
-      ),
-      child: Text(text, style: YnekoTypography.of(context).meta),
     );
   }
 }

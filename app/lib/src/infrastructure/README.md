@@ -12,6 +12,8 @@
   detail, calendar, browse, ranking, and playback resolution calls.
 - `bridge/frb_mappers.dart` maps generated FRB DTOs into `shared/domain`
   models; feature code must continue to depend on `YnekoBackend`.
+- `platform/directory_picker` exposes a small directory picker port backed by
+  the Windows runner platform channel.
 - `player/player_adapter.dart` exposes the media player adapter port.
 
 ## Public Index Export List

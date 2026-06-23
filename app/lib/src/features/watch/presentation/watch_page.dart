@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -141,7 +144,7 @@ class _WatchLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
+    return const YnekoLoadingState(title: '正在打开播放页', minHeight: 520);
   }
 }
 
@@ -1335,7 +1338,7 @@ class _OverviewCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const _FollowMenu(),
+              _FollowMenu(subject: subject),
             ],
           ),
           const SizedBox(height: 14),
@@ -1390,30 +1393,107 @@ class _OverviewCard extends StatelessWidget {
   }
 }
 
-enum _FollowStatus { watching, planned, completed, paused, dropped }
+const _followStatusOptions = [
+  CollectionStatus.watching,
+  CollectionStatus.wish,
+  CollectionStatus.watched,
+  CollectionStatus.paused,
+  CollectionStatus.dropped,
+];
 
-class _FollowMenu extends StatefulWidget {
-  const _FollowMenu();
+class _FollowMenu extends ConsumerStatefulWidget {
+  const _FollowMenu({required this.subject});
+
+  final AnimeSubject subject;
 
   @override
-  State<_FollowMenu> createState() => _FollowMenuState();
+  ConsumerState<_FollowMenu> createState() => _FollowMenuState();
 }
 
-class _FollowMenuState extends State<_FollowMenu> {
+class _FollowMenuState extends ConsumerState<_FollowMenu> {
   final Object _tapRegionGroup = Object();
   final _overlayController = OverlayPortalController();
   final _layerLink = LayerLink();
-  _FollowStatus? _status;
+  final _buttonBoundsKey = GlobalKey();
+  final _panelBoundsKey = GlobalKey();
+  Timer? _closeTimer;
   bool _open = false;
   bool _hovered = false;
+  bool _outsidePointerRouteActive = false;
+
+  @override
+  void dispose() {
+    _stopOutsidePointerRoute();
+    _closeTimer?.cancel();
+    super.dispose();
+  }
+
+  void _clearCloseTimer() {
+    _closeTimer?.cancel();
+    _closeTimer = null;
+  }
 
   void _setOpen(bool open) {
+    _clearCloseTimer();
     setState(() => _open = open);
     if (open) {
       _overlayController.show();
+      _startOutsidePointerRoute();
     } else {
       _overlayController.hide();
+      _stopOutsidePointerRoute();
     }
+  }
+
+  void _queueClose() {
+    _clearCloseTimer();
+    _closeTimer = Timer(const Duration(milliseconds: 120), () {
+      if (!mounted) return;
+      _setOpen(false);
+      _closeTimer = null;
+    });
+  }
+
+  Future<void> _setStatus(CollectionStatus status) {
+    return ref
+        .read(watchFavoriteProvider(widget.subject.id).notifier)
+        .setStatus(widget.subject, status);
+  }
+
+  Future<void> _cancelFollow() {
+    return ref.read(watchFavoriteProvider(widget.subject.id).notifier).cancel();
+  }
+
+  bool _containsGlobalPoint(GlobalKey key, Offset point) {
+    final renderObject = key.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.hasSize) return false;
+    final topLeft = renderObject.localToGlobal(Offset.zero);
+    return (topLeft & renderObject.size).contains(point);
+  }
+
+  void _startOutsidePointerRoute() {
+    if (_outsidePointerRouteActive) return;
+    GestureBinding.instance.pointerRouter.addGlobalRoute(
+      _handleGlobalPointerEvent,
+    );
+    _outsidePointerRouteActive = true;
+  }
+
+  void _stopOutsidePointerRoute() {
+    if (!_outsidePointerRouteActive) return;
+    GestureBinding.instance.pointerRouter.removeGlobalRoute(
+      _handleGlobalPointerEvent,
+    );
+    _outsidePointerRouteActive = false;
+  }
+
+  void _handleGlobalPointerEvent(PointerEvent event) {
+    if (event is! PointerDownEvent) return;
+    if (!_open) return;
+    final position = event.position;
+    if (_containsGlobalPoint(_panelBoundsKey, position)) return;
+    if (_containsGlobalPoint(_buttonBoundsKey, position)) return;
+    _setOpen(false);
   }
 
   @override
@@ -1423,8 +1503,13 @@ class _FollowMenuState extends State<_FollowMenu> {
     final motion = MediaQuery.disableAnimationsOf(context)
         ? Duration.zero
         : YnekoThemeTokens.fastMotion;
-    final marked = _status != null;
-    final label = marked ? _followStatusLabel(_status!) : '追番';
+    final favorite = ref.watch(watchFavoriteProvider(widget.subject.id));
+    final status = favorite.maybeWhen(
+      data: (item) => item?.status,
+      orElse: () => null,
+    );
+    final marked = status != null;
+    final label = marked ? collectionStatusLabel(status) : '追番';
     return TapRegion(
       groupId: _tapRegionGroup,
       onTapOutside: (_) {
@@ -1432,55 +1517,70 @@ class _FollowMenuState extends State<_FollowMenu> {
       },
       child: MouseRegion(
         onEnter: (_) => setState(() {
+          _clearCloseTimer();
           _hovered = true;
           if (marked) {
             _open = true;
             _overlayController.show();
           }
         }),
-        onExit: (_) => setState(() => _hovered = false),
+        onExit: (_) {
+          setState(() => _hovered = false);
+          if (marked) _queueClose();
+        },
         child: OverlayPortal(
           controller: _overlayController,
           overlayChildBuilder: (context) => TapRegion(
             groupId: _tapRegionGroup,
-            child: CompositedTransformFollower(
-              link: _layerLink,
-              targetAnchor: Alignment.bottomRight,
-              followerAnchor: Alignment.topRight,
-              offset: const Offset(0, 8),
-              child: AnimatedOpacity(
-                duration: motion,
-                opacity: _open ? 1 : 0,
-                child: AnimatedSlide(
-                  duration: motion,
-                  curve: Curves.easeOut,
-                  offset: _open ? Offset.zero : const Offset(0, -0.08),
-                  child: _FollowMenuPanel(
-                    status: _status,
-                    onStatus: (status) {
-                      setState(() => _status = status);
-                      _setOpen(false);
-                    },
-                    onCancel: () {
-                      setState(() => _status = null);
-                      _setOpen(false);
-                    },
+            child: MouseRegion(
+              onEnter: (_) => _clearCloseTimer(),
+              onExit: (_) => _queueClose(),
+              child: CompositedTransformFollower(
+                link: _layerLink,
+                targetAnchor: Alignment.bottomRight,
+                followerAnchor: Alignment.topRight,
+                offset: const Offset(0, 8),
+                showWhenUnlinked: false,
+                child: UnconstrainedBox(
+                  alignment: Alignment.topRight,
+                  child: AnimatedOpacity(
+                    duration: motion,
+                    opacity: _open ? 1 : 0,
+                    child: AnimatedSlide(
+                      duration: motion,
+                      curve: Curves.easeOut,
+                      offset: _open ? Offset.zero : const Offset(0, -0.16),
+                      child: KeyedSubtree(
+                        key: _panelBoundsKey,
+                        child: _FollowMenuPanel(
+                          status: status,
+                          onStatus: (nextStatus) {
+                            _setStatus(nextStatus);
+                            _setOpen(false);
+                          },
+                          onCancel: () {
+                            _cancelFollow();
+                            _setOpen(false);
+                          },
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
           child: SizedBox(
-            width: 116,
+            key: _buttonBoundsKey,
+            width: 82,
             height: 34,
             child: CompositedTransformTarget(
               link: _layerLink,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
-                  if (_status == null) {
-                    setState(() => _status = _FollowStatus.watching);
-                    _setOpen(true);
+                  if (!marked) {
+                    _setStatus(CollectionStatus.watching);
                   } else {
                     _setOpen(!_open);
                   }
@@ -1488,47 +1588,74 @@ class _FollowMenuState extends State<_FollowMenu> {
                 child: AnimatedSlide(
                   duration: motion,
                   curve: Curves.easeOut,
-                  offset: _hovered ? const Offset(0, -0.04) : Offset.zero,
+                  offset:
+                      (_hovered || _open) &&
+                          !MediaQuery.disableAnimationsOf(context)
+                      ? const Offset(0, -0.03)
+                      : Offset.zero,
                   child: AnimatedContainer(
                     key: const ValueKey('watch-follow-button'),
                     duration: motion,
+                    curve: Curves.easeOut,
                     height: 34,
-                    padding: const EdgeInsets.symmetric(horizontal: 13),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
                     decoration: BoxDecoration(
-                      color: _hovered || _open
-                          ? tokens.primaryContainer
-                          : Color.lerp(
-                              tokens.surfaceHigh,
-                              Colors.transparent,
-                              0.24,
-                            ),
+                      color: marked
+                          ? (_hovered || _open
+                                ? Color.lerp(
+                                    tokens.ink,
+                                    tokens.surfaceHigh,
+                                    0.86,
+                                  )
+                                : Color.lerp(
+                                    tokens.ink,
+                                    tokens.surfaceHigh,
+                                    0.91,
+                                  ))
+                          : (_hovered || _open
+                                ? Color.lerp(tokens.primary, Colors.white, 0.16)
+                                : tokens.primary),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Color.lerp(
-                          tokens.outline,
-                          Colors.transparent,
-                          0.44,
-                        )!,
+                        color: marked
+                            ? tokens.outline.withValues(alpha: 0.50)
+                            : Colors.transparent,
                       ),
+                      boxShadow: marked
+                          ? null
+                          : (_hovered || _open)
+                          ? [
+                              BoxShadow(
+                                color: tokens.primary.withValues(alpha: 0.14),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           marked
                               ? Icons.favorite_rounded
                               : Icons.favorite_border_rounded,
-                          size: 17,
-                          color: tokens.primaryStrong,
+                          size: 16,
+                          color: marked
+                              ? (_hovered || _open ? tokens.ink : tokens.muted)
+                              : Colors.white,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Flexible(
                           child: Text(
                             label,
                             overflow: TextOverflow.ellipsis,
                             style: type.label.copyWith(
-                              color: tokens.primaryStrong,
+                              color: marked
+                                  ? (_hovered || _open
+                                        ? tokens.ink
+                                        : tokens.muted)
+                                  : Colors.white,
                               fontSize: 13,
                               fontWeight: FontWeight.w900,
                               height: 1,
@@ -1555,45 +1682,51 @@ class _FollowMenuPanel extends StatelessWidget {
     required this.onCancel,
   });
 
-  final _FollowStatus? status;
-  final ValueChanged<_FollowStatus> onStatus;
+  final CollectionStatus? status;
+  final ValueChanged<CollectionStatus> onStatus;
   final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tokens.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: tokens.outline.withValues(alpha: 0.82)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 32,
-            offset: const Offset(0, 14),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final item in _FollowStatus.values)
-              _FollowMenuOption(
-                key: ValueKey('watch-follow-option-${item.name}'),
-                label: _followStatusLabel(item),
-                active: item == status,
-                onTap: () => onStatus(item),
-              ),
-            _FollowMenuOption(
-              key: const ValueKey('watch-follow-option-cancel'),
-              label: '取消追番',
-              danger: true,
-              onTap: onCancel,
+    return ConstrainedBox(
+      key: const ValueKey('watch-follow-panel'),
+      constraints: const BoxConstraints.tightFor(width: 82),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: tokens.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: tokens.outline.withValues(alpha: 0.82)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 32,
+              offset: const Offset(0, 14),
             ),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final item in _followStatusOptions)
+                _FollowMenuOption(
+                  key: ValueKey(
+                    'watch-follow-option-${_followStatusKey(item)}',
+                  ),
+                  label: collectionStatusLabel(item),
+                  active: item == status,
+                  onTap: () => onStatus(item),
+                ),
+              _FollowMenuOption(
+                key: const ValueKey('watch-follow-option-cancel'),
+                label: '取消标记',
+                danger: true,
+                onTap: onCancel,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1625,9 +1758,6 @@ class _FollowMenuOptionState extends State<_FollowMenuOption> {
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
     final type = YnekoTypography.of(context);
-    final motion = MediaQuery.disableAnimationsOf(context)
-        ? Duration.zero
-        : const Duration(milliseconds: 160);
     final dangerColor = const Color(0xFFBD2D3A);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -1637,10 +1767,10 @@ class _FollowMenuOptionState extends State<_FollowMenuOption> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: motion,
-          constraints: const BoxConstraints(minWidth: 122, minHeight: 40),
-          alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.symmetric(horizontal: 15),
+          duration: Duration.zero,
+          constraints: const BoxConstraints(minWidth: 82, minHeight: 38),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           color: _hovered ? tokens.primaryContainer : Colors.transparent,
           child: Text(
             widget.label,
@@ -1662,13 +1792,13 @@ class _FollowMenuOptionState extends State<_FollowMenuOption> {
   }
 }
 
-String _followStatusLabel(_FollowStatus status) {
+String _followStatusKey(CollectionStatus status) {
   return switch (status) {
-    _FollowStatus.watching => '在看',
-    _FollowStatus.planned => '想看',
-    _FollowStatus.completed => '看过',
-    _FollowStatus.paused => '搁置',
-    _FollowStatus.dropped => '抛弃',
+    CollectionStatus.watching => 'watching',
+    CollectionStatus.wish => 'planned',
+    CollectionStatus.watched => 'completed',
+    CollectionStatus.paused => 'paused',
+    CollectionStatus.dropped => 'dropped',
   };
 }
 

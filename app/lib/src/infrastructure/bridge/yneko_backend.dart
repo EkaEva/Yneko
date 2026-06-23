@@ -10,6 +10,12 @@ final ynekoBackendProvider = Provider<YnekoBackend>((ref) {
 });
 
 abstract interface class YnekoBackend {
+  Future<AppearanceSettings> getAppearanceSettings();
+
+  Future<AppearanceSettings> saveAppearanceSettings(
+    AppearanceSettings settings,
+  );
+
   Future<List<AnimeSubject>> searchSubjects(String query, int page);
 
   Future<SubjectDetail> getSubjectDetail(int subjectId);
@@ -120,6 +126,24 @@ class FrbYnekoBackend implements YnekoBackend {
 
   Future<void> _ensureInitialized() {
     return _initFuture ??= YnekoRustLib.init();
+  }
+
+  @override
+  Future<AppearanceSettings> getAppearanceSettings() async {
+    await _ensureInitialized();
+    return appearanceSettingsFromFrb(await frb.getAppearanceSettings());
+  }
+
+  @override
+  Future<AppearanceSettings> saveAppearanceSettings(
+    AppearanceSettings settings,
+  ) async {
+    await _ensureInitialized();
+    return appearanceSettingsFromFrb(
+      await frb.saveAppearanceSettings(
+        settings: appearanceSettingsToFrb(settings),
+      ),
+    );
   }
 
   @override

@@ -1334,6 +1334,52 @@ class YnekoEmptyState extends StatelessWidget {
   }
 }
 
+class YnekoLoadingState extends StatelessWidget {
+  const YnekoLoadingState({
+    super.key,
+    required this.title,
+    this.size = 96,
+    this.minHeight = 360,
+    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 34),
+  });
+
+  final String title;
+  final double size;
+  final double minHeight;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    return Semantics(
+      label: title,
+      liveRegion: true,
+      child: Container(
+        constraints: BoxConstraints(minHeight: minHeight),
+        padding: padding,
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            YnekoRingLoader(size: size),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: type.controlTitle.copyWith(
+                color: tokens.ink,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class SourceCandidateRow extends StatelessWidget {
   const SourceCandidateRow({
     super.key,
@@ -1422,7 +1468,7 @@ class _YnekoRingLoaderState extends State<YnekoRingLoader>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1450),
+      duration: const Duration(milliseconds: 2000),
     )..repeat();
   }
 
@@ -1434,19 +1480,30 @@ class _YnekoRingLoaderState extends State<YnekoRingLoader>
 
   @override
   Widget build(BuildContext context) {
-    final tokens = YnekoThemeTokens.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox.square(
       dimension: widget.size,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) => CustomPaint(
-          painter: _RingLoaderPainter(
+          painter: _YnekoRingLoaderPainter(
             progress: MediaQuery.disableAnimationsOf(context)
                 ? 0
                 : _controller.value,
-            primary: tokens.primary,
-            secondary: tokens.primaryStrong,
-            soft: tokens.primaryContainer,
+            reduceMotion: MediaQuery.disableAnimationsOf(context),
+            colors: dark
+                ? const [
+                    Color(0xFFE7E9EE),
+                    Color(0xFFA7ABB3),
+                    Color(0xFFC0C4CC),
+                    Color(0xFFE7E9EE),
+                  ]
+                : const [
+                    Color(0xFF000000),
+                    Color(0xFF7E7E7E),
+                    Color(0xFF686868),
+                    Color(0xFF000000),
+                  ],
           ),
         ),
       ),
@@ -1454,47 +1511,192 @@ class _YnekoRingLoaderState extends State<YnekoRingLoader>
   }
 }
 
-class _RingLoaderPainter extends CustomPainter {
-  const _RingLoaderPainter({
+class _YnekoRingLoaderPainter extends CustomPainter {
+  const _YnekoRingLoaderPainter({
     required this.progress,
-    required this.primary,
-    required this.secondary,
-    required this.soft,
+    required this.reduceMotion,
+    required this.colors,
   });
 
   final double progress;
-  final Color primary;
-  final Color secondary;
-  final Color soft;
+  final bool reduceMotion;
+  final List<Color> colors;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = size.center(Offset.zero);
-    final base = size.shortestSide / 2;
-    final colors = [primary, secondary, soft, primary.withValues(alpha: 0.62)];
-    for (var index = 0; index < 4; index++) {
-      final radius = base - 5 - index * 5;
-      final rect = Rect.fromCircle(center: center, radius: radius);
+    final scale = size.shortestSide / 240;
+    final translate = Offset(
+      (size.width - 240 * scale) / 2,
+      (size.height - 240 * scale) / 2,
+    );
+    const specs = [
+      _YnekoRingSpec(
+        center: Offset(120, 120),
+        radius: 105,
+        circumference: 660,
+        frames: _ringAFrames,
+      ),
+      _YnekoRingSpec(
+        center: Offset(120, 120),
+        radius: 35,
+        circumference: 220,
+        frames: _ringBFrames,
+      ),
+      _YnekoRingSpec(
+        center: Offset(85, 120),
+        radius: 70,
+        circumference: 440,
+        frames: _ringCFrames,
+      ),
+      _YnekoRingSpec(
+        center: Offset(155, 120),
+        radius: 70,
+        circumference: 440,
+        frames: _ringDFrames,
+      ),
+    ];
+
+    for (var index = 0; index < specs.length; index++) {
+      final spec = specs[index];
+      final state = reduceMotion
+          ? const _YnekoRingFrame(0, 1, 0, 20)
+          : _YnekoRingFrame.lerpFor(progress, spec.frames);
       final paint = Paint()
         ..color = colors[index]
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
+        ..strokeWidth = state.strokeWidth * scale
         ..strokeCap = StrokeCap.round;
-      final direction = index.isEven ? 1.0 : -1.0;
-      final start = (progress * direction * 6.28318) + index * 0.92;
-      final sweep = 1.18 + (index * 0.18);
+      final center = translate + spec.center * scale;
+      final radius = spec.radius * scale;
+
+      if (reduceMotion) {
+        canvas.drawCircle(center, radius, paint);
+        continue;
+      }
+
+      if (state.visibleLength <= 0.2) {
+        continue;
+      }
+
+      final visible = (state.visibleLength / spec.circumference).clamp(0, 1);
+      final sweep = visible * 2 * 3.141592653589793;
+      final start =
+          -3.141592653589793 / 2 -
+          (state.dashOffset / spec.circumference) * 2 * 3.141592653589793;
+      final rect = Rect.fromCircle(center: center, radius: radius);
       canvas.drawArc(rect, start, sweep, false, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _RingLoaderPainter oldDelegate) {
+  bool shouldRepaint(covariant _YnekoRingLoaderPainter oldDelegate) {
     return oldDelegate.progress != progress ||
-        oldDelegate.primary != primary ||
-        oldDelegate.secondary != secondary ||
-        oldDelegate.soft != soft;
+        oldDelegate.reduceMotion != reduceMotion ||
+        oldDelegate.colors != colors;
   }
 }
+
+class _YnekoRingSpec {
+  const _YnekoRingSpec({
+    required this.center,
+    required this.radius,
+    required this.circumference,
+    required this.frames,
+  });
+
+  final Offset center;
+  final double radius;
+  final double circumference;
+  final List<_YnekoRingFrame> frames;
+}
+
+class _YnekoRingFrame {
+  const _YnekoRingFrame(
+    this.stop,
+    this.visibleLength,
+    this.dashOffset,
+    this.strokeWidth,
+  );
+
+  final double stop;
+  final double visibleLength;
+  final double dashOffset;
+  final double strokeWidth;
+
+  static _YnekoRingFrame lerpFor(
+    double progress,
+    List<_YnekoRingFrame> frames,
+  ) {
+    for (var index = 1; index < frames.length; index++) {
+      final previous = frames[index - 1];
+      final next = frames[index];
+      if (progress <= next.stop) {
+        final span = next.stop - previous.stop;
+        final t = span <= 0 ? 0.0 : (progress - previous.stop) / span;
+        return _YnekoRingFrame(
+          progress,
+          _lerpDouble(previous.visibleLength, next.visibleLength, t),
+          _lerpDouble(previous.dashOffset, next.dashOffset, t),
+          _lerpDouble(previous.strokeWidth, next.strokeWidth, t),
+        );
+      }
+    }
+    return frames.last;
+  }
+}
+
+double _lerpDouble(double a, double b, double t) => a + (b - a) * t;
+
+const _ringAFrames = [
+  _YnekoRingFrame(0, 0, -330, 20),
+  _YnekoRingFrame(0.04, 0, -330, 20),
+  _YnekoRingFrame(0.12, 60, -335, 30),
+  _YnekoRingFrame(0.32, 60, -595, 30),
+  _YnekoRingFrame(0.40, 0, -660, 20),
+  _YnekoRingFrame(0.54, 0, -660, 20),
+  _YnekoRingFrame(0.62, 60, -665, 30),
+  _YnekoRingFrame(0.82, 60, -925, 30),
+  _YnekoRingFrame(0.90, 0, -990, 20),
+  _YnekoRingFrame(1, 0, -990, 20),
+];
+
+const _ringBFrames = [
+  _YnekoRingFrame(0, 0, -110, 20),
+  _YnekoRingFrame(0.12, 0, -110, 20),
+  _YnekoRingFrame(0.20, 20, -115, 30),
+  _YnekoRingFrame(0.40, 20, -195, 30),
+  _YnekoRingFrame(0.48, 0, -220, 20),
+  _YnekoRingFrame(0.62, 0, -220, 20),
+  _YnekoRingFrame(0.70, 20, -225, 30),
+  _YnekoRingFrame(0.90, 20, -305, 30),
+  _YnekoRingFrame(0.98, 0, -330, 20),
+  _YnekoRingFrame(1, 0, -330, 20),
+];
+
+const _ringCFrames = [
+  _YnekoRingFrame(0, 0, 0, 20),
+  _YnekoRingFrame(0.08, 40, -5, 30),
+  _YnekoRingFrame(0.28, 40, -175, 30),
+  _YnekoRingFrame(0.36, 0, -220, 20),
+  _YnekoRingFrame(0.58, 0, -220, 20),
+  _YnekoRingFrame(0.66, 40, -225, 30),
+  _YnekoRingFrame(0.86, 40, -395, 30),
+  _YnekoRingFrame(0.94, 0, -440, 20),
+  _YnekoRingFrame(1, 0, -440, 20),
+];
+
+const _ringDFrames = [
+  _YnekoRingFrame(0, 0, 0, 20),
+  _YnekoRingFrame(0.08, 0, 0, 20),
+  _YnekoRingFrame(0.16, 40, -5, 30),
+  _YnekoRingFrame(0.36, 40, -175, 30),
+  _YnekoRingFrame(0.44, 0, -220, 20),
+  _YnekoRingFrame(0.50, 0, -220, 20),
+  _YnekoRingFrame(0.58, 40, -225, 30),
+  _YnekoRingFrame(0.78, 40, -395, 30),
+  _YnekoRingFrame(0.86, 0, -440, 20),
+  _YnekoRingFrame(1, 0, -440, 20),
+];
 
 Duration _motionDuration(BuildContext context, Duration duration) {
   return MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration;

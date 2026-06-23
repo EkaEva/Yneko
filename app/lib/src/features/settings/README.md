@@ -10,6 +10,10 @@
 - Settings panel navigation state is exposed through the feature application
   controller so the shell back button can return from a settings detail panel
   to the settings root page.
+- Appearance settings state is exposed through the feature application
+  controller and persisted through the backend port. The color scheme setting
+  exposes 16 desktop-oriented schemes and stores the selected scheme key in
+  appearance settings.
 - Settings UI is exported through presentation/settings_page.dart.
 - Rule source import and package list state come from `features/sources`;
   settings does not own source persistence.
@@ -17,6 +21,7 @@
 ## Public Index Export List
 
 - application/settings_navigation_controller.dart
+- application/appearance_settings_controller.dart
 - presentation/settings_page.dart
 
 ## Forbidden

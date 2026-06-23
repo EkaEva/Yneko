@@ -369,9 +369,10 @@ class _RuleGroupDetailDialog extends ConsumerWidget {
         maxWidth: 720,
         maxHeight: 860,
         child: library.when(
-          loading: () => const SizedBox(
-            height: 360,
-            child: Center(child: YnekoRingLoader()),
+          loading: () => const YnekoLoadingState(
+            title: '正在读取规则组',
+            size: 72,
+            minHeight: 360,
           ),
           error: (error, stackTrace) => Padding(
             padding: const EdgeInsets.all(20),
@@ -1131,9 +1132,7 @@ class _RuleRepositoryImportDialogState
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
+                                  child: YnekoRingLoader(size: 16),
                                 )
                               : const Icon(Icons.refresh_rounded),
                           label: _loading ? '刷新中' : '刷新',
@@ -2020,14 +2019,17 @@ class _SettingsLikeGroup extends StatelessWidget {
           title,
           style: YnekoTypography.of(
             context,
-          ).controlTitle.copyWith(fontSize: 15),
+          ).controlTitle.copyWith(fontSize: 16, fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 12),
-        DecoratedBox(
+        Container(
           decoration: BoxDecoration(
             color: tokens.surface,
             borderRadius: radius,
-            border: Border.all(color: tokens.outline.withValues(alpha: 0.54)),
+          ),
+          foregroundDecoration: BoxDecoration(
+            borderRadius: radius,
+            border: Border.all(color: tokens.outline.withValues(alpha: 0.58)),
           ),
           child: ClipRRect(
             borderRadius: radius,
@@ -2141,19 +2143,17 @@ class _BaseRow extends StatelessWidget {
         return AnimatedContainer(
           key: ValueKey('source-row-$title'),
           duration: YnekoThemeTokens.fastMotion,
-          constraints: const BoxConstraints(minHeight: 70),
+          constraints: const BoxConstraints(minHeight: 68),
           padding: const EdgeInsets.symmetric(horizontal: 25),
           decoration: BoxDecoration(
             color: hovered || pressed ? hoverBackground : tokens.surface,
-            border: Border(bottom: BorderSide(color: tokens.dividerFaint)),
+            border: Border(
+              bottom: BorderSide(color: tokens.outline.withValues(alpha: 0.34)),
+            ),
           ),
           child: Row(
             children: [
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Icon(icon, size: 21, color: tokens.ink),
-              ),
+              Icon(icon, size: 21, color: tokens.ink),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -2164,6 +2164,7 @@ class _BaseRow extends StatelessWidget {
                       title,
                       overflow: TextOverflow.ellipsis,
                       style: type.controlTitle.copyWith(
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -2171,7 +2172,10 @@ class _BaseRow extends StatelessWidget {
                     Text(
                       description,
                       overflow: TextOverflow.ellipsis,
-                      style: type.label.copyWith(fontWeight: FontWeight.w600),
+                      style: type.label.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -2217,7 +2221,7 @@ class _SourceLoadingPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const YnekoPanel(
-      child: SizedBox(height: 180, child: Center(child: YnekoRingLoader())),
+      child: YnekoLoadingState(title: '正在读取规则源', size: 64, minHeight: 180),
     );
   }
 }

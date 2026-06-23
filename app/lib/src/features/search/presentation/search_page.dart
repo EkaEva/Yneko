@@ -107,9 +107,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         ),
         const SizedBox(height: 26),
         results.when(
-          loading: () => const SizedBox(
-            height: 260,
-            child: Center(child: CircularProgressIndicator()),
+          loading: () => const YnekoLoadingState(
+            title: '正在同步 Bangumi 搜索结果',
+            minHeight: 520,
           ),
           error: (error, stackTrace) => YnekoPanel(
             child: YnekoEmptyState(

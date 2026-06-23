@@ -86,6 +86,12 @@ CREATE TABLE IF NOT EXISTS episode_source_bindings (
   updated_at_ms INTEGER NOT NULL,
   PRIMARY KEY (subject_id, episode_id, rule_id)
 );
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT NOT NULL PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at_ms INTEGER NOT NULL
+);
 "#;
 
 pub const DEFAULT_RULE_GROUP_ID: &str = "default";
@@ -93,6 +99,16 @@ pub const DEFAULT_RULE_REPOSITORY_SUBSCRIPTION_ID: &str = "kazumi-rules";
 pub const DEFAULT_RULE_REPOSITORY_SUBSCRIPTION_NAME: &str = "KazumiRules";
 pub const DEFAULT_RULE_REPOSITORY_SUBSCRIPTION_URL: &str =
     "https://github.com/Predidit/KazumiRules";
+pub const APPEARANCE_THEME_MODE_KEY: &str = "appearance.theme_mode";
+pub const APPEARANCE_COLOR_SCHEME_KEY: &str = "appearance.color_scheme";
+pub const DEFAULT_APPEARANCE_THEME_MODE: &str = "light";
+pub const DEFAULT_APPEARANCE_COLOR_SCHEME: &str = "yneko";
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppearanceSettings {
+    pub theme_mode: String,
+    pub color_scheme: String,
+}
 
 #[derive(Debug, Clone)]
 pub struct StorageService {
@@ -147,6 +163,75 @@ impl StorageService {
         }
         self.migrate_legacy_schema().await?;
         self.ensure_default_rule_repository_subscription().await?;
+        Ok(())
+    }
+
+    pub async fn get_appearance_settings(&self) -> YnekoResult<AppearanceSettings> {
+        let theme_mode = self
+            .get_app_setting(APPEARANCE_THEME_MODE_KEY)
+            .await?
+            .filter(|value| is_valid_theme_mode(value))
+            .unwrap_or_else(|| DEFAULT_APPEARANCE_THEME_MODE.to_string());
+        let color_scheme = self
+            .get_app_setting(APPEARANCE_COLOR_SCHEME_KEY)
+            .await?
+            .filter(|value| is_valid_color_scheme(value))
+            .unwrap_or_else(|| DEFAULT_APPEARANCE_COLOR_SCHEME.to_string());
+        Ok(AppearanceSettings {
+            theme_mode,
+            color_scheme,
+        })
+    }
+
+    pub async fn save_appearance_settings(
+        &self,
+        settings: AppearanceSettings,
+    ) -> YnekoResult<AppearanceSettings> {
+        let normalized = AppearanceSettings {
+            theme_mode: if is_valid_theme_mode(&settings.theme_mode) {
+                settings.theme_mode
+            } else {
+                DEFAULT_APPEARANCE_THEME_MODE.to_string()
+            },
+            color_scheme: if is_valid_color_scheme(&settings.color_scheme) {
+                settings.color_scheme
+            } else {
+                DEFAULT_APPEARANCE_COLOR_SCHEME.to_string()
+            },
+        };
+        self.set_app_setting(APPEARANCE_THEME_MODE_KEY, &normalized.theme_mode)
+            .await?;
+        self.set_app_setting(APPEARANCE_COLOR_SCHEME_KEY, &normalized.color_scheme)
+            .await?;
+        Ok(normalized)
+    }
+
+    async fn get_app_setting(&self, key: &str) -> YnekoResult<Option<String>> {
+        let row = sqlx::query("SELECT value FROM app_settings WHERE key = ?1")
+            .bind(key)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(storage_error)?;
+        row.map(|row| row.try_get("value").map_err(storage_error))
+            .transpose()
+    }
+
+    async fn set_app_setting(&self, key: &str, value: &str) -> YnekoResult<()> {
+        sqlx::query(
+            r#"
+INSERT INTO app_settings (key, value, updated_at_ms)
+VALUES (?1, ?2, ?3)
+ON CONFLICT(key) DO UPDATE SET
+  value = excluded.value,
+  updated_at_ms = excluded.updated_at_ms
+"#,
+        )
+        .bind(key)
+        .bind(value)
+        .bind(now_ms())
+        .execute(&self.pool)
+        .await
+        .map_err(storage_error)?;
         Ok(())
     }
 
@@ -1121,6 +1206,32 @@ fn storage_error(error: impl ToString) -> YnekoError {
     YnekoError::Storage(error.to_string())
 }
 
+fn is_valid_theme_mode(value: &str) -> bool {
+    matches!(value, "light" | "dark")
+}
+
+fn is_valid_color_scheme(value: &str) -> bool {
+    matches!(
+        value,
+        "yneko"
+            | "blue"
+            | "gray"
+            | "mint"
+            | "spruce"
+            | "lavender"
+            | "apricot"
+            | "coral"
+            | "amber"
+            | "cyan"
+            | "rose"
+            | "peach"
+            | "lilac"
+            | "sage"
+            | "indigo"
+            | "cocoa"
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1182,6 +1293,50 @@ mod tests {
         assert!(INITIAL_SCHEMA.contains("playback_progress"));
         assert!(INITIAL_SCHEMA.contains("favorite_subjects"));
         assert!(INITIAL_SCHEMA.contains("source_packages"));
+        assert!(INITIAL_SCHEMA.contains("app_settings"));
+    }
+
+    #[tokio::test]
+    async fn appearance_settings_default_save_and_normalize_invalid_values() {
+        let storage = StorageService::open_memory().await.expect("storage");
+        let defaults = storage
+            .get_appearance_settings()
+            .await
+            .expect("default settings");
+        assert_eq!(
+            defaults,
+            AppearanceSettings {
+                theme_mode: "light".to_string(),
+                color_scheme: "yneko".to_string(),
+            }
+        );
+
+        let saved = storage
+            .save_appearance_settings(AppearanceSettings {
+                theme_mode: "dark".to_string(),
+                color_scheme: "cyan".to_string(),
+            })
+            .await
+            .expect("save settings");
+        assert_eq!(saved.theme_mode, "dark");
+        assert_eq!(saved.color_scheme, "cyan");
+        assert_eq!(
+            storage
+                .get_appearance_settings()
+                .await
+                .expect("read saved settings"),
+            saved
+        );
+
+        let normalized = storage
+            .save_appearance_settings(AppearanceSettings {
+                theme_mode: "system".to_string(),
+                color_scheme: "unknown".to_string(),
+            })
+            .await
+            .expect("normalize settings");
+        assert_eq!(normalized.theme_mode, "light");
+        assert_eq!(normalized.color_scheme, "yneko");
     }
 
     #[tokio::test]

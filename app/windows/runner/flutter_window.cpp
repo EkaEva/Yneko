@@ -1,8 +1,64 @@
 #include "flutter_window.h"
 
-#include <optional>
+#include <flutter/method_channel.h>
+#include <flutter/standard_method_codec.h>
+#include <windows.h>
 
+#include <optional>
+#include <string>
+
+#include "directory_picker.h"
 #include "flutter/generated_plugin_registrant.h"
+
+namespace {
+
+std::wstring Utf8ToWide(const std::string& value) {
+  if (value.empty()) {
+    return std::wstring();
+  }
+  int size = MultiByteToWideChar(CP_UTF8, 0, value.data(),
+                                 static_cast<int>(value.size()), nullptr, 0);
+  if (size <= 0) {
+    return std::wstring();
+  }
+  std::wstring wide(size, L'\0');
+  MultiByteToWideChar(CP_UTF8, 0, value.data(),
+                      static_cast<int>(value.size()), wide.data(), size);
+  return wide;
+}
+
+std::string WideToUtf8(const std::wstring& value) {
+  if (value.empty()) {
+    return std::string();
+  }
+  int size = WideCharToMultiByte(CP_UTF8, 0, value.data(),
+                                 static_cast<int>(value.size()), nullptr, 0,
+                                 nullptr, nullptr);
+  if (size <= 0) {
+    return std::string();
+  }
+  std::string utf8(size, '\0');
+  WideCharToMultiByte(CP_UTF8, 0, value.data(),
+                      static_cast<int>(value.size()), utf8.data(), size,
+                      nullptr, nullptr);
+  return utf8;
+}
+
+std::wstring InitialDirectoryFromArguments(
+    const flutter::EncodableValue* arguments) {
+  if (!arguments || !std::holds_alternative<flutter::EncodableMap>(*arguments)) {
+    return std::wstring();
+  }
+  const auto& map = std::get<flutter::EncodableMap>(*arguments);
+  auto iterator = map.find(flutter::EncodableValue("initialDirectory"));
+  if (iterator == map.end() ||
+      !std::holds_alternative<std::string>(iterator->second)) {
+    return std::wstring();
+  }
+  return Utf8ToWide(std::get<std::string>(iterator->second));
+}
+
+}  // namespace
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -25,6 +81,7 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  RegisterPlatformChannel();
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
@@ -68,4 +125,32 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
   }
 
   return Win32Window::MessageHandler(hwnd, message, wparam, lparam);
+}
+
+void FlutterWindow::RegisterPlatformChannel() {
+  auto channel =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "yneko/platform",
+          &flutter::StandardMethodCodec::GetInstance());
+
+  channel->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+                 result) {
+        if (call.method_name() != "selectDirectory") {
+          result->NotImplemented();
+          return;
+        }
+
+        const auto selected = SelectDirectory(
+            GetHandle(), InitialDirectoryFromArguments(call.arguments()));
+        if (!selected.has_value()) {
+          result->Success(flutter::EncodableValue());
+          return;
+        }
+
+        result->Success(flutter::EncodableValue(WideToUtf8(selected.value())));
+      });
+
+  platform_channel_ = std::move(channel);
 }

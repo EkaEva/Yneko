@@ -6,7 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yneko/src/features/shell/index.dart';
 import 'package:yneko/src/features/watch/application/watch_providers.dart';
 import 'package:yneko/src/infrastructure/bridge/yneko_backend.dart';
+import 'package:yneko/src/infrastructure/platform/directory_picker/index.dart';
 import 'package:yneko/src/shared/assets/index.dart';
+import 'package:yneko/src/shared/domain/index.dart';
 import 'package:yneko/src/shared/theme/index.dart';
 
 import 'support/fake_yneko_backend.dart';
@@ -101,9 +103,13 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          ynekoBackendProvider.overrideWithValue(FakeYnekoBackend()),
-          shellThemeModeProvider.overrideWith(
-            () => _FixedThemeModeController(ThemeMode.dark),
+          ynekoBackendProvider.overrideWithValue(
+            FakeYnekoBackend(
+              appearanceSettings: const AppearanceSettings(
+                themeMode: ThemeMode.dark,
+                colorScheme: YnekoColorScheme.yneko,
+              ),
+            ),
           ),
         ],
         child: const YnekoApp(),
@@ -292,6 +298,80 @@ void main() {
     );
     await settingsMouse.removePointer();
 
+    await tester.tap(downloadEntry);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('settings-detail-download')),
+      findsOneWidget,
+    );
+    expect(find.text('保存位置'), findsOneWidget);
+    expect(find.text('下载路径'), findsOneWidget);
+    expect(find.text('D:\\Yneko\\Downloads'), findsOneWidget);
+    expect(find.text('任务设置'), findsOneWidget);
+    expect(find.text('并发任务'), findsOneWidget);
+    expect(find.text('同时下载的任务数量'), findsOneWidget);
+    await tester.tap(find.byTooltip('增加'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('增加'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('增加'));
+    await tester.pumpAndSettle();
+    expect(find.text('5'), findsOneWidget);
+    expect(find.text('6'), findsNothing);
+    expect(find.text('下载策略'), findsOneWidget);
+    expect(find.text('自动'), findsWidgets);
+    expect(find.text('仅 Wi-Fi'), findsOneWidget);
+    expect(find.text('手动确认'), findsOneWidget);
+    expect(find.text('文件命名'), findsOneWidget);
+    expect(find.text('命名规范'), findsOneWidget);
+    expect(find.text('葬送的芙莉莲/S01E01.mp4'), findsOneWidget);
+    expect(find.text('下载与离线缓存不在 V1 范围内，本页先保留完整设置入口。'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('settings-entry-下载路径')));
+    await tester.pumpAndSettle();
+    expect(find.text('系统下载目录'), findsOneWidget);
+    expect(find.text('使用系统常用下载位置'), findsOneWidget);
+    expect(find.text('Yneko 默认目录'), findsOneWidget);
+    expect(find.text('按应用独立归档'), findsOneWidget);
+    expect(find.text('自定义路径'), findsOneWidget);
+    expect(find.text('在下方输入保存位置'), findsOneWidget);
+    expect(find.text('保存位置'), findsWidgets);
+    await tester.tap(find.text('自定义路径'));
+    await tester.pumpAndSettle();
+    expect(find.text('E:\\Yneko\\Picked'), findsOneWidget);
+    expect(find.text('桌面端会打开文件夹选择器，当前预览环境可手动输入路径。'), findsNothing);
+    expect(find.text('取消'), findsOneWidget);
+    expect(find.text('保存'), findsOneWidget);
+    await tester.tap(find.byTooltip('关闭下载路径'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('settings-entry-命名规范')));
+    await tester.pumpAndSettle();
+    expect(find.text('番剧名/集数'), findsOneWidget);
+    expect(find.text('番剧名 - S01E01'), findsOneWidget);
+    expect(find.text('番剧名/季度/集数'), findsOneWidget);
+    expect(find.text('自定义模板'), findsOneWidget);
+    expect(find.text('预览'), findsOneWidget);
+    expect(find.text('葬送的芙莉莲/S01E01.mp4'), findsWidgets);
+    await tester.tap(find.text('番剧名 - S01E01'));
+    await tester.pumpAndSettle();
+    expect(find.text('葬送的芙莉莲 - S01E01.mp4'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('settings-entry-命名规范')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('自定义模板'));
+    await tester.pumpAndSettle();
+    expect(find.text('自定义模板'), findsWidgets);
+    expect(find.text('{title}/S{season}E{episode}'), findsWidgets);
+    expect(find.text('取消'), findsOneWidget);
+    expect(find.text('保存'), findsOneWidget);
+    await tester.tap(find.byTooltip('关闭命名规范'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('rail-back-button')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('settings-root-page')), findsOneWidget);
+
     await tester.tap(find.text('外观').first);
     await tester.pumpAndSettle();
 
@@ -301,6 +381,7 @@ void main() {
     );
     expect(find.byKey(const ValueKey('settings-detail-back')), findsNothing);
     expect(find.text('返回设置'), findsNothing);
+    expect(find.text('外观'), findsOneWidget);
     expect(find.text('主题配色'), findsOneWidget);
     expect(find.text('字体设置'), findsOneWidget);
     expect(find.text('启动页设置'), findsOneWidget);
@@ -333,19 +414,41 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('settings-entry-配色方案')));
     await tester.pumpAndSettle();
-    expect(find.text('清爽蓝'), findsOneWidget);
-    expect(find.text('晨雾紫'), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey('settings-color-scheme-option-Yneko 粉')),
-      findsOneWidget,
+    expect(YnekoColorScheme.values, hasLength(16));
+    for (final scheme in YnekoColorScheme.values) {
+      expect(
+        find.byKey(ValueKey('settings-color-scheme-option-${scheme.label}')),
+        findsOneWidget,
+      );
+    }
+    final firstOption = find.byKey(
+      const ValueKey('settings-color-scheme-option-Yneko 粉'),
+    );
+    final eighthOption = find.byKey(
+      const ValueKey('settings-color-scheme-option-珊瑚红'),
+    );
+    final ninthOption = find.byKey(
+      const ValueKey('settings-color-scheme-option-琥珀黄'),
     );
     expect(
-      find.byKey(const ValueKey('settings-color-scheme-option-暖杏白')),
-      findsOneWidget,
+      (tester.getCenter(firstOption).dy - tester.getCenter(eighthOption).dy)
+          .abs(),
+      lessThan(1),
     );
-    await tester.tap(find.text('清爽蓝'));
+    expect(
+      tester.getCenter(ninthOption).dy,
+      greaterThan(tester.getCenter(firstOption).dy + 80),
+    );
+    await tester.tap(find.text('湖水蓝'));
     await tester.pumpAndSettle();
-    expect(find.text('清爽蓝'), findsOneWidget);
+    expect(find.text('湖水蓝'), findsOneWidget);
+    final cyanTokens = Theme.of(
+      tester.element(find.byKey(const ValueKey('settings-detail-appearance'))),
+    ).extension<YnekoThemeTokens>()!;
+    expect(cyanTokens.primary, const Color(0xFF2BA7B8));
+    expect(cyanTokens.page, const Color(0xFFFAFEFF));
+    expect(cyanTokens.railSurface, const Color(0xFFE9F8FA));
+    final activeSettingsTokens = cyanTokens;
 
     await tester.tap(find.byKey(const ValueKey('rail-back-button')));
     await tester.pumpAndSettle();
@@ -400,11 +503,22 @@ void main() {
     final defaultRuleRow = find.byKey(const ValueKey('source-row-默认规则组'));
     final idleRuleRow = tester.widget<AnimatedContainer>(defaultRuleRow);
     final idleRuleDecoration = idleRuleRow.decoration! as BoxDecoration;
-    expect(idleRuleDecoration.color, YnekoThemeTokens.light.surface);
+    expect(idleRuleDecoration.color, activeSettingsTokens.surface);
     expect(idleRuleDecoration.color, isNot(Colors.transparent));
     expect(
       find.ancestor(of: defaultRuleRow, matching: find.byType(ClipRRect)),
       findsWidgets,
+    );
+    final ruleGroupContainer = tester
+        .widgetList<Container>(
+          find.ancestor(of: defaultRuleRow, matching: find.byType(Container)),
+        )
+        .firstWhere((container) => container.foregroundDecoration != null);
+    final ruleGroupForeground =
+        ruleGroupContainer.foregroundDecoration! as BoxDecoration;
+    expect(
+      (ruleGroupForeground.border! as Border).top.color,
+      activeSettingsTokens.outline.withValues(alpha: 0.58),
     );
 
     final ruleMouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
@@ -417,14 +531,14 @@ void main() {
     expect(
       hoveredRuleDecoration.color,
       Color.lerp(
-        YnekoThemeTokens.light.surfaceHigh,
-        YnekoThemeTokens.light.surface,
+        activeSettingsTokens.surfaceHigh,
+        activeSettingsTokens.surface,
         0.12,
       ),
     );
     expect(
       hoveredRuleDecoration.color,
-      isNot(YnekoThemeTokens.light.primaryContainer),
+      isNot(activeSettingsTokens.primaryContainer),
     );
     await ruleMouse.removePointer();
 
@@ -470,7 +584,7 @@ void main() {
     );
     final subscriptionDecoration =
         subscriptionOption.decoration! as BoxDecoration;
-    expect(subscriptionDecoration.color, YnekoThemeTokens.light.surface);
+    expect(subscriptionDecoration.color, activeSettingsTokens.surface);
     expect(subscriptionDecoration.color, isNot(Colors.transparent));
     expect(
       tester
@@ -508,7 +622,7 @@ void main() {
       find.byKey(const ValueKey('source-editor-mode-segmented')),
     );
     final modeTrackDecoration = modeTrack.decoration! as BoxDecoration;
-    expect(modeTrackDecoration.color, YnekoThemeTokens.light.surfaceLow);
+    expect(modeTrackDecoration.color, activeSettingsTokens.surfaceLow);
 
     AnimatedPositioned modeThumb() => tester.widget<AnimatedPositioned>(
       find.byKey(const ValueKey('source-editor-mode-thumb')),
@@ -522,7 +636,7 @@ void main() {
       ),
     );
     final thumbDecoration = thumbBox.decoration as BoxDecoration;
-    expect(thumbDecoration.color, YnekoThemeTokens.light.surface);
+    expect(thumbDecoration.color, activeSettingsTokens.surface);
 
     await tester.tap(find.byKey(const ValueKey('source-editor-mode-config')));
     await tester.pumpAndSettle();
@@ -902,14 +1016,63 @@ void main() {
 
       expect(find.byKey(const ValueKey('watch-follow-button')), findsOneWidget);
       expect(find.text('追番'), findsWidgets);
+      final followButton = find.byKey(const ValueKey('watch-follow-button'));
+      final followSlide = find
+          .ancestor(of: followButton, matching: find.byType(AnimatedSlide))
+          .first;
+      expect(tester.widget<AnimatedSlide>(followSlide).offset, Offset.zero);
+
+      final followMouse = await tester.createGesture(
+        kind: PointerDeviceKind.mouse,
+      );
+      await followMouse.addPointer();
+      await followMouse.moveTo(tester.getCenter(followButton));
+      await tester.pump();
+      expect(
+        tester.widget<AnimatedSlide>(followSlide).offset,
+        const Offset(0, -0.03),
+      );
+      await followMouse.moveTo(const Offset(40, 40));
+      await tester.pumpAndSettle();
+      await followMouse.removePointer();
+
       await tester.tap(find.byKey(const ValueKey('watch-follow-button')));
       await tester.pumpAndSettle();
       expect(find.text('在看'), findsWidgets);
+      expect(find.text('想看'), findsNothing);
+      expect(find.text('取消标记'), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('watch-follow-button')));
+      await tester.pumpAndSettle();
       expect(find.text('想看'), findsOneWidget);
       expect(find.text('看过'), findsOneWidget);
       expect(find.text('搁置'), findsOneWidget);
       expect(find.text('抛弃'), findsOneWidget);
-      expect(find.text('取消追番'), findsOneWidget);
+      expect(find.text('取消标记'), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const ValueKey('watch-follow-panel'))).width,
+        82,
+      );
+      final plannedOption = find.byKey(
+        const ValueKey('watch-follow-option-planned'),
+      );
+      final plannedOptionFrame = find
+          .descendant(
+            of: plannedOption,
+            matching: find.byType(AnimatedContainer),
+          )
+          .first;
+      final plannedOptionContainer = tester.widget<AnimatedContainer>(
+        plannedOptionFrame,
+      );
+      expect(plannedOptionContainer.duration, Duration.zero);
+      expect(find.text('取消标记'), findsOneWidget);
+      await tester.tapAt(const Offset(24, 24));
+      await tester.pumpAndSettle();
+      expect(find.text('取消标记'), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('watch-follow-button')));
+      await tester.pumpAndSettle();
 
       await tester.tap(
         find.byKey(const ValueKey('watch-follow-option-planned')),
@@ -983,6 +1146,31 @@ void main() {
     expect(find.textContaining('Microsoft YaHei UI'), findsOneWidget);
   });
 
+  testWidgets('persisted dark cocoa appearance drives app theme', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _appWithBackend(
+        backend: FakeYnekoBackend(
+          appearanceSettings: const AppearanceSettings(
+            themeMode: ThemeMode.dark,
+            colorScheme: YnekoColorScheme.cocoa,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final tokens = Theme.of(
+      tester.element(find.byKey(const ValueKey('home-anime-grid'))),
+    ).extension<YnekoThemeTokens>()!;
+    expect(tokens.primary, const Color(0xFFD9B08A));
+    expect(tokens.primaryContainer, const Color(0xFF3A2D24));
+  });
+
   test('dark theme separates the rail from the content canvas', () {
     final tokens = YnekoThemeTokens.dark;
     expect(
@@ -1010,23 +1198,26 @@ void main() {
   });
 }
 
-class _FixedThemeModeController extends ShellThemeModeController {
-  _FixedThemeModeController(this._mode);
-
-  final ThemeMode _mode;
-
-  @override
-  ThemeMode build() => _mode;
-}
-
-Widget _appWithBackend() {
+Widget _appWithBackend({FakeYnekoBackend? backend}) {
   return ProviderScope(
     overrides: [
-      ynekoBackendProvider.overrideWithValue(FakeYnekoBackend()),
+      ynekoBackendProvider.overrideWithValue(backend ?? FakeYnekoBackend()),
+      directoryPickerProvider.overrideWithValue(
+        const _FakeDirectoryPickerService('E:\\Yneko\\Picked'),
+      ),
       watchPlayerAdapterFactoryProvider.overrideWithValue(
         (_) => FakePlayerAdapter(),
       ),
     ],
     child: const YnekoApp(),
   );
+}
+
+class _FakeDirectoryPickerService implements DirectoryPickerService {
+  const _FakeDirectoryPickerService(this.path);
+
+  final String? path;
+
+  @override
+  Future<String?> pickDirectory({String? initialDirectory}) async => path;
 }

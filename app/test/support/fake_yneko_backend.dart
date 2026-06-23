@@ -1,15 +1,18 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:yneko/src/features/sources/index.dart';
 import 'package:yneko/src/infrastructure/player/player_adapter.dart';
 import 'package:yneko/src/infrastructure/bridge/yneko_backend.dart';
 import 'package:yneko/src/shared/domain/index.dart';
+import 'package:yneko/src/shared/theme/index.dart';
 
 class FakeYnekoBackend implements YnekoBackend {
   FakeYnekoBackend({
     List<SourcePackageSummary>? sourcePackages,
     List<PlaybackContract>? playbackContracts,
+    AppearanceSettings? appearanceSettings,
   }) : _sourcePackages = List.of(sourcePackages ?? _defaultPackages),
        _ruleGroups = [
          RuleGroupSummary(
@@ -21,7 +24,8 @@ class FakeYnekoBackend implements YnekoBackend {
                .toList(),
          ),
        ],
-       _playbackContracts = List.of(playbackContracts ?? _defaultPlayback);
+       _playbackContracts = List.of(playbackContracts ?? _defaultPlayback),
+       _appearanceSettings = appearanceSettings ?? AppearanceSettings.defaults;
 
   static const subject = AnimeSubject(
     id: 400602,
@@ -87,6 +91,26 @@ class FakeYnekoBackend implements YnekoBackend {
   final List<PlaybackContract> _playbackContracts;
   final List<FavoriteItem> _favorites = [];
   final List<WatchHistoryItem> _history = [];
+  AppearanceSettings _appearanceSettings;
+
+  @override
+  Future<AppearanceSettings> getAppearanceSettings() async {
+    return _appearanceSettings;
+  }
+
+  @override
+  Future<AppearanceSettings> saveAppearanceSettings(
+    AppearanceSettings settings,
+  ) async {
+    final normalized = AppearanceSettings(
+      themeMode: settings.themeMode == ThemeMode.dark
+          ? ThemeMode.dark
+          : ThemeMode.light,
+      colorScheme: YnekoColorScheme.fromValue(settings.colorScheme.name),
+    );
+    _appearanceSettings = normalized;
+    return normalized;
+  }
 
   @override
   Future<List<AnimeSubject>> searchSubjects(String query, int page) async {

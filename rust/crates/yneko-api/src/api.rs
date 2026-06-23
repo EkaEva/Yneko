@@ -26,6 +26,12 @@ use yneko_source_rules::{
 use yneko_storage::StorageService;
 
 #[derive(Debug, Clone)]
+pub struct AppearanceSettings {
+    pub theme_mode: String,
+    pub color_scheme: String,
+}
+
+#[derive(Debug, Clone)]
 pub struct SubjectSummary {
     pub id: i64,
     pub name: String,
@@ -371,6 +377,26 @@ pub async fn browse_subjects(request: BangumiBrowseRequest) -> Result<Vec<Subjec
         .browse_subjects(request.into())
         .await
         .map(|items| items.into_iter().map(Into::into).collect())
+        .map_err(error_message)
+}
+
+pub async fn get_appearance_settings() -> Result<AppearanceSettings, String> {
+    let storage = storage_service().await.map_err(error_message)?;
+    storage
+        .get_appearance_settings()
+        .await
+        .map(Into::into)
+        .map_err(error_message)
+}
+
+pub async fn save_appearance_settings(
+    settings: AppearanceSettings,
+) -> Result<AppearanceSettings, String> {
+    let storage = storage_service().await.map_err(error_message)?;
+    storage
+        .save_appearance_settings(settings.into())
+        .await
+        .map(Into::into)
         .map_err(error_message)
 }
 
@@ -1503,6 +1529,24 @@ impl From<CoreWatchHistoryItem> for WatchHistoryItem {
     }
 }
 
+impl From<yneko_storage::AppearanceSettings> for AppearanceSettings {
+    fn from(value: yneko_storage::AppearanceSettings) -> Self {
+        Self {
+            theme_mode: value.theme_mode,
+            color_scheme: value.color_scheme,
+        }
+    }
+}
+
+impl From<AppearanceSettings> for yneko_storage::AppearanceSettings {
+    fn from(value: AppearanceSettings) -> Self {
+        Self {
+            theme_mode: value.theme_mode,
+            color_scheme: value.color_scheme,
+        }
+    }
+}
+
 fn package_record(value: SourcePackageRecord) -> RulePackageRecord {
     RulePackageRecord {
         id: value.id,
@@ -1519,5 +1563,45 @@ mod tests {
     async fn resolve_playback_rejects_invalid_ids() {
         let result = resolve_playback(0, 1).await;
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn appearance_settings_round_trip_normalizes_invalid_values() {
+        let storage = StorageService::open_memory().await.expect("storage");
+        let defaults: AppearanceSettings = storage
+            .get_appearance_settings()
+            .await
+            .expect("defaults")
+            .into();
+        assert_eq!(defaults.theme_mode, "light");
+        assert_eq!(defaults.color_scheme, "yneko");
+
+        let saved: AppearanceSettings = storage
+            .save_appearance_settings(
+                AppearanceSettings {
+                    theme_mode: "dark".to_string(),
+                    color_scheme: "cocoa".to_string(),
+                }
+                .into(),
+            )
+            .await
+            .expect("save")
+            .into();
+        assert_eq!(saved.theme_mode, "dark");
+        assert_eq!(saved.color_scheme, "cocoa");
+
+        let normalized: AppearanceSettings = storage
+            .save_appearance_settings(
+                AppearanceSettings {
+                    theme_mode: "system".to_string(),
+                    color_scheme: "violet".to_string(),
+                }
+                .into(),
+            )
+            .await
+            .expect("normalize")
+            .into();
+        assert_eq!(normalized.theme_mode, "light");
+        assert_eq!(normalized.color_scheme, "yneko");
     }
 }

@@ -56,7 +56,8 @@ class _RecommendWorkbench extends StatelessWidget {
             items: subjectsToUiCards(subjects),
             onOpen: onOpen,
           ),
-          loading: () => const _LoadingPanel(label: '正在同步 Bangumi 推荐'),
+          loading: () =>
+              const YnekoLoadingState(title: '正在同步 Bangumi 推荐', minHeight: 520),
           error: (error, stackTrace) => _ErrorPanel(
             title: 'Bangumi 推荐加载失败',
             description: error.toString(),
@@ -143,7 +144,7 @@ class _ScheduleWorkbench extends StatelessWidget {
                   onOpen: onOpen,
                 );
               },
-              loading: () => const _LoadingPanel(label: '正在同步 Bangumi 时间表'),
+              loading: () => const YnekoLoadingState(title: '正在同步 Bangumi 时间表'),
               error: (error, stackTrace) => _ErrorPanel(
                 title: 'Bangumi 时间表加载失败',
                 description: error.toString(),
@@ -297,7 +298,7 @@ class _RankingWorkbench extends StatelessWidget {
                 items: subjectsToUiCards(response.items),
                 onOpen: onOpen,
               ),
-              loading: () => const _LoadingPanel(label: '正在同步 Bangumi 榜单'),
+              loading: () => const YnekoLoadingState(title: '正在同步 Bangumi 榜单'),
               error: (error, stackTrace) => _ErrorPanel(
                 title: 'Bangumi 榜单加载失败',
                 description: error.toString(),
@@ -766,29 +767,6 @@ class _FilterRowData {
   final List<String> items;
   final int activeIndex;
   final ValueChanged<int>? onPick;
-}
-
-class _LoadingPanel extends StatelessWidget {
-  const _LoadingPanel({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 260,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 14),
-            Text(label),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _ErrorPanel extends StatelessWidget {

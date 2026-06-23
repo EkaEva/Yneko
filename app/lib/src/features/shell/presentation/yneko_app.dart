@@ -9,6 +9,7 @@ import '../../settings/index.dart';
 import '../../watch/index.dart';
 import '../../../infrastructure/platform/window_chrome/index.dart';
 import '../../../shared/assets/index.dart';
+import '../../../shared/domain/index.dart';
 import '../../../shared/theme/index.dart';
 import '../../../shared/ui/index.dart';
 import 'window_controls.dart';
@@ -19,14 +20,19 @@ class YnekoApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final route = ref.watch(shellRouteProvider);
-    final themeMode = ref.watch(shellThemeModeProvider);
+    final appearance =
+        ref.watch(appearanceSettingsProvider).value ??
+        AppearanceSettings.defaults;
 
     return MaterialApp(
       title: 'Yneko',
       debugShowCheckedModeBanner: false,
-      theme: ynekoTheme(Brightness.light),
-      darkTheme: ynekoTheme(Brightness.dark),
-      themeMode: themeMode,
+      theme: ynekoTheme(Brightness.light, colorScheme: appearance.colorScheme),
+      darkTheme: ynekoTheme(
+        Brightness.dark,
+        colorScheme: appearance.colorScheme,
+      ),
+      themeMode: appearance.themeMode,
       home: switch (route) {
         WatchRoute(:final subjectId, :final episodeId) => WatchPage(
           subjectId: subjectId,
@@ -549,9 +555,22 @@ class _TopBar extends ConsumerWidget {
                 ),
                 const SizedBox(width: 16),
                 _DayNightToggle(
-                  dark: ref.watch(shellThemeModeProvider) == ThemeMode.dark,
-                  onTap: () =>
-                      ref.read(shellThemeModeProvider.notifier).toggle(),
+                  dark:
+                      (ref.watch(appearanceSettingsProvider).value ??
+                              AppearanceSettings.defaults)
+                          .themeMode ==
+                      ThemeMode.dark,
+                  onTap: () {
+                    final controller = ref.read(
+                      appearanceSettingsProvider.notifier,
+                    );
+                    final current = controller.current.themeMode;
+                    controller.setThemeMode(
+                      current == ThemeMode.dark
+                          ? ThemeMode.light
+                          : ThemeMode.dark,
+                    );
+                  },
                 ),
                 const SizedBox(width: 12),
                 const _TopActionDivider(),
@@ -1380,21 +1399,3 @@ class ShellRouteController extends Notifier<ShellRoute> {
 final shellRouteProvider = NotifierProvider<ShellRouteController, ShellRoute>(
   ShellRouteController.new,
 );
-
-class ShellThemeModeController extends Notifier<ThemeMode> {
-  @override
-  ThemeMode build() => ThemeMode.light;
-
-  void toggle() {
-    state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-  }
-
-  void setMode(ThemeMode mode) {
-    state = mode;
-  }
-}
-
-final shellThemeModeProvider =
-    NotifierProvider<ShellThemeModeController, ThemeMode>(
-      ShellThemeModeController.new,
-    );

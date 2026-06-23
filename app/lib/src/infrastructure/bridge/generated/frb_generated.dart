@@ -7,2508 +7,4301 @@ import 'api.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
-import 'frb_generated.io.dart' if (dart.library.js_interop) 'frb_generated.web.dart';
+import 'frb_generated.io.dart'
+    if (dart.library.js_interop) 'frb_generated.web.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+/// Main entrypoint of the Rust API
+class YnekoRustLib
+    extends
+        BaseEntrypoint<YnekoRustLibApi, YnekoRustLibApiImpl, YnekoRustLibWire> {
+  @internal
+  static final instance = YnekoRustLib._();
 
-                /// Main entrypoint of the Rust API
-                class YnekoRustLib extends BaseEntrypoint<YnekoRustLibApi, YnekoRustLibApiImpl, YnekoRustLibWire> {
-                  @internal
-                  static final instance = YnekoRustLib._();
+  YnekoRustLib._();
 
-                  YnekoRustLib._();
+  /// Initialize flutter_rust_bridge
+  static Future<void> init({
+    YnekoRustLibApi? api,
+    BaseHandler? handler,
+    ExternalLibrary? externalLibrary,
+    bool forceSameCodegenVersion = true,
+  }) async {
+    await instance.initImpl(
+      api: api,
+      handler: handler,
+      externalLibrary: externalLibrary,
+      forceSameCodegenVersion: forceSameCodegenVersion,
+    );
+  }
 
-                  /// Initialize flutter_rust_bridge
-                  static Future<void> init({
-                    YnekoRustLibApi? api,
-                    BaseHandler? handler,
-                    ExternalLibrary? externalLibrary,
-                    bool forceSameCodegenVersion = true,
-                  }) async {
-                    await instance.initImpl(
-                      api: api,
-                      handler: handler,
-                      externalLibrary: externalLibrary,
-                      forceSameCodegenVersion: forceSameCodegenVersion,
-                    );
-                  }
+  /// Initialize flutter_rust_bridge in mock mode.
+  /// No libraries for FFI are loaded.
+  static void initMock({required YnekoRustLibApi api}) {
+    instance.initMockImpl(api: api);
+  }
 
-                  /// Initialize flutter_rust_bridge in mock mode.
-                  /// No libraries for FFI are loaded.
-                  static void initMock({
-                    required YnekoRustLibApi api,
-                  }) {
-                    instance.initMockImpl(
-                      api: api,
-                    );
-                  }
+  /// Dispose flutter_rust_bridge
+  ///
+  /// The call to this function is optional, since flutter_rust_bridge (and everything else)
+  /// is automatically disposed when the app stops.
+  static void dispose() => instance.disposeImpl();
 
-                  /// Dispose flutter_rust_bridge
-                  ///
-                  /// The call to this function is optional, since flutter_rust_bridge (and everything else)
-                  /// is automatically disposed when the app stops.
-                  static void dispose() => instance.disposeImpl();
+  @override
+  ApiImplConstructor<YnekoRustLibApiImpl, YnekoRustLibWire>
+  get apiImplConstructor => YnekoRustLibApiImpl.new;
 
-                  @override
-                  ApiImplConstructor<YnekoRustLibApiImpl, YnekoRustLibWire> get apiImplConstructor => YnekoRustLibApiImpl.new;
+  @override
+  WireConstructor<YnekoRustLibWire> get wireConstructor =>
+      YnekoRustLibWire.fromExternalLibrary;
 
-                  @override
-                  WireConstructor<YnekoRustLibWire> get wireConstructor => YnekoRustLibWire.fromExternalLibrary;
+  @override
+  Future<void> executeRustInitializers() async {}
 
-                  @override
-                  Future<void> executeRustInitializers() async {
-                    
-                  }
+  @override
+  ExternalLibraryLoaderConfig get defaultExternalLibraryLoaderConfig =>
+      kDefaultExternalLibraryLoaderConfig;
 
-                  @override
-                  ExternalLibraryLoaderConfig get defaultExternalLibraryLoaderConfig => kDefaultExternalLibraryLoaderConfig;
+  @override
+  String get codegenVersion => '2.11.1';
 
-                  @override
-                  String get codegenVersion => '2.11.1';
+  @override
+  int get rustContentHash => -1389456164;
 
-                  @override
-                  int get rustContentHash => 1665116153;
+  static const kDefaultExternalLibraryLoaderConfig =
+      ExternalLibraryLoaderConfig(
+        stem: 'yneko_api',
+        ioDirectory: '../rust/crates/yneko-api/target/release/',
+        webPrefix: 'pkg/',
+      );
+}
 
-                  static const kDefaultExternalLibraryLoaderConfig = ExternalLibraryLoaderConfig(
-                    stem: 'yneko_api',
-                    ioDirectory: '../rust/crates/yneko-api/target/release/',
-                    webPrefix: 'pkg/',
-                  );
-                }
-                
+abstract class YnekoRustLibApi extends BaseApi {
+  Future<List<SubjectSummary>> crateApiBrowseSubjects({
+    required BangumiBrowseRequest request,
+  });
 
-                abstract class YnekoRustLibApi extends BaseApi {
-                  Future<List<SubjectSummary>> crateApiBrowseSubjects({required BangumiBrowseRequest request });
+  Future<void> crateApiClearWatchHistory();
 
-Future<void> crateApiClearWatchHistory();
+  Future<void> crateApiDeleteFavorite({required int subjectId});
 
-Future<void> crateApiDeleteFavorite({required int subjectId });
+  Future<void> crateApiDeleteRuleGroup({required String id});
 
-Future<void> crateApiDeleteRuleGroup({required String id });
+  Future<void> crateApiDeleteRuleRepositorySubscription({required String id});
 
-Future<void> crateApiDeleteRuleRepositorySubscription({required String id });
+  Future<void> crateApiDeleteSourcePackage({required String id});
 
-Future<void> crateApiDeleteSourcePackage({required String id });
+  Future<void> crateApiDeleteWatchHistoryItem({
+    required int subjectId,
+    required int episodeId,
+  });
 
-Future<void> crateApiDeleteWatchHistoryItem({required int subjectId , required int episodeId });
+  Future<AnimeRankingResponse> crateApiGetAnimeRanking({
+    required AnimeRankingRequest request,
+  });
 
-Future<AnimeRankingResponse> crateApiGetAnimeRanking({required AnimeRankingRequest request });
+  Future<AppearanceSettings> crateApiGetAppearanceSettings();
 
-Future<List<BangumiCalendarDay>> crateApiGetCalendar();
+  Future<List<BangumiCalendarDay>> crateApiGetCalendar();
 
-Future<PlaybackProgress?> crateApiGetPlaybackProgress({required int subjectId , required int episodeId });
+  Future<PlaybackProgress?> crateApiGetPlaybackProgress({
+    required int subjectId,
+    required int episodeId,
+  });
 
-Future<SourcePackageText?> crateApiGetSourcePackageText({required String id });
+  Future<SourcePackageText?> crateApiGetSourcePackageText({required String id});
 
-Future<SubjectDetail> crateApiGetSubjectDetail({required int subjectId });
+  Future<SubjectDetail> crateApiGetSubjectDetail({required int subjectId});
 
-Future<SourceImportResult> crateApiImportRepositoryRule({required String groupId , required RuleRepositoryIndexEntry entry });
+  Future<SourceImportResult> crateApiImportRepositoryRule({
+    required String groupId,
+    required RuleRepositoryIndexEntry entry,
+  });
 
-Future<SourceImportResult> crateApiImportSourceText({required String text });
+  Future<SourceImportResult> crateApiImportSourceText({required String text});
 
-Future<SourceImportResult> crateApiImportSourceUrl({required String url });
+  Future<SourceImportResult> crateApiImportSourceUrl({required String url});
 
-Future<List<FavoriteItem>> crateApiListFavorites({CollectionStatus? status });
+  Future<List<FavoriteItem>> crateApiListFavorites({CollectionStatus? status});
 
-Future<List<RuleGroupSummary>> crateApiListRuleGroups();
+  Future<List<RuleGroupSummary>> crateApiListRuleGroups();
 
-Future<List<RuleRepositorySubscription>> crateApiListRuleRepositorySubscriptions();
+  Future<List<RuleRepositorySubscription>>
+  crateApiListRuleRepositorySubscriptions();
 
-Future<List<SourcePackageSummary>> crateApiListSourcePackages();
+  Future<List<SourcePackageSummary>> crateApiListSourcePackages();
 
-Future<List<WatchHistoryItem>> crateApiListWatchHistory({int? limit });
+  Future<List<WatchHistoryItem>> crateApiListWatchHistory({int? limit});
 
-Future<List<RuleRepositoryIndexEntry>> crateApiLoadRuleRepositoryIndex({required RuleRepositorySubscription subscription });
+  Future<List<RuleRepositoryIndexEntry>> crateApiLoadRuleRepositoryIndex({
+    required RuleRepositorySubscription subscription,
+  });
 
-Future<EpisodeBindingResolveResult> crateApiResolveEpisodeBindings({required int subjectId , required int episodeId , required SourceCandidate candidate , required List<SourceCandidate> fallbackCandidates });
+  Future<EpisodeBindingResolveResult> crateApiResolveEpisodeBindings({
+    required int subjectId,
+    required int episodeId,
+    required SourceCandidate candidate,
+    required List<SourceCandidate> fallbackCandidates,
+  });
 
-Future<EpisodeStreamResolveResult> crateApiResolveEpisodeStreams({required String ruleId , required String playUrl , required List<String> fallbackPlayUrls , String? refererUrl });
+  Future<EpisodeStreamResolveResult> crateApiResolveEpisodeStreams({
+    required String ruleId,
+    required String playUrl,
+    required List<String> fallbackPlayUrls,
+    String? refererUrl,
+  });
 
-Future<List<PlaybackCandidate>> crateApiResolvePlayback({required int subjectId , required int episodeId });
+  Future<List<PlaybackCandidate>> crateApiResolvePlayback({
+    required int subjectId,
+    required int episodeId,
+  });
 
-Future<FavoriteItem> crateApiSaveFavorite({required SubjectSummary subject , required CollectionStatus status });
+  Future<AppearanceSettings> crateApiSaveAppearanceSettings({
+    required AppearanceSettings settings,
+  });
 
-Future<PlaybackProgress> crateApiSavePlaybackProgress({required SubjectSummary subject , required Episode episode , required int positionMs , int? durationMs });
+  Future<FavoriteItem> crateApiSaveFavorite({
+    required SubjectSummary subject,
+    required CollectionStatus status,
+  });
 
-Future<RuleGroupSummary> crateApiSaveRuleGroup({required RuleGroupSummary group });
+  Future<PlaybackProgress> crateApiSavePlaybackProgress({
+    required SubjectSummary subject,
+    required Episode episode,
+    required int positionMs,
+    int? durationMs,
+  });
 
-Future<RuleRepositorySubscription> crateApiSaveRuleRepositorySubscription({required RuleRepositorySubscription subscription });
+  Future<RuleGroupSummary> crateApiSaveRuleGroup({
+    required RuleGroupSummary group,
+  });
 
-Future<RuleSourceSearchResult> crateApiSearchRuleSource({required String ruleId , required int subjectId });
+  Future<RuleRepositorySubscription> crateApiSaveRuleRepositorySubscription({
+    required RuleRepositorySubscription subscription,
+  });
 
-Future<List<RuleSourceSearchResult>> crateApiSearchRuleSources({required int subjectId , required List<String> ruleIds });
+  Future<RuleSourceSearchResult> crateApiSearchRuleSource({
+    required String ruleId,
+    required int subjectId,
+  });
 
-Future<List<SubjectSummary>> crateApiSearchSubjects({required String query , required int page });
+  Future<List<RuleSourceSearchResult>> crateApiSearchRuleSources({
+    required int subjectId,
+    required List<String> ruleIds,
+  });
 
-Future<void> crateApiSetSourcePackageEnabled({required String id , required bool enabled });
+  Future<List<SubjectSummary>> crateApiSearchSubjects({
+    required String query,
+    required int page,
+  });
 
+  Future<void> crateApiSetSourcePackageEnabled({
+    required String id,
+    required bool enabled,
+  });
+}
 
-                }
-                
+class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
+    implements YnekoRustLibApi {
+  YnekoRustLibApiImpl({
+    required super.handler,
+    required super.wire,
+    required super.generalizedFrbRustBinding,
+    required super.portManager,
+  });
 
-                class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform implements YnekoRustLibApi {
-                  YnekoRustLibApiImpl({
-                    required super.handler,
-                    required super.wire,
-                    required super.generalizedFrbRustBinding,
-                    required super.portManager,
-                  });
-
-                  @override Future<List<SubjectSummary>> crateApiBrowseSubjects({required BangumiBrowseRequest request })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_box_autoadd_bangumi_browse_request(request, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<List<SubjectSummary>> crateApiBrowseSubjects({
+    required BangumiBrowseRequest request,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_bangumi_browse_request(request, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 1,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_subject_summary,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiBrowseSubjectsConstMeta,
-            argValues: [request],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiBrowseSubjectsConstMeta,
+        argValues: [request],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiBrowseSubjectsConstMeta =>
+      const TaskConstMeta(debugName: "browse_subjects", argNames: ["request"]);
 
-        TaskConstMeta get kCrateApiBrowseSubjectsConstMeta => const TaskConstMeta(
-            debugName: "browse_subjects",
-            argNames: ["request"],
-        );
-        
-
-@override Future<void> crateApiClearWatchHistory()  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 2, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<void> crateApiClearWatchHistory() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 2,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiClearWatchHistoryConstMeta,
-            argValues: [],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiClearWatchHistoryConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiClearWatchHistoryConstMeta =>
+      const TaskConstMeta(debugName: "clear_watch_history", argNames: []);
 
-        TaskConstMeta get kCrateApiClearWatchHistoryConstMeta => const TaskConstMeta(
-            debugName: "clear_watch_history",
-            argNames: [],
-        );
-        
-
-@override Future<void> crateApiDeleteFavorite({required int subjectId })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_CastedPrimitive_i_64(subjectId, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<void> crateApiDeleteFavorite({required int subjectId}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_CastedPrimitive_i_64(subjectId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 3,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiDeleteFavoriteConstMeta,
-            argValues: [subjectId],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiDeleteFavoriteConstMeta,
+        argValues: [subjectId],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiDeleteFavoriteConstMeta => const TaskConstMeta(
+    debugName: "delete_favorite",
+    argNames: ["subjectId"],
+  );
 
-        TaskConstMeta get kCrateApiDeleteFavoriteConstMeta => const TaskConstMeta(
-            debugName: "delete_favorite",
-            argNames: ["subjectId"],
-        );
-        
-
-@override Future<void> crateApiDeleteRuleGroup({required String id })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(id, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<void> crateApiDeleteRuleGroup({required String id}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(id, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 4,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiDeleteRuleGroupConstMeta,
-            argValues: [id],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiDeleteRuleGroupConstMeta,
+        argValues: [id],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiDeleteRuleGroupConstMeta =>
+      const TaskConstMeta(debugName: "delete_rule_group", argNames: ["id"]);
 
-        TaskConstMeta get kCrateApiDeleteRuleGroupConstMeta => const TaskConstMeta(
-            debugName: "delete_rule_group",
-            argNames: ["id"],
-        );
-        
-
-@override Future<void> crateApiDeleteRuleRepositorySubscription({required String id })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(id, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<void> crateApiDeleteRuleRepositorySubscription({required String id}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(id, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 5,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiDeleteRuleRepositorySubscriptionConstMeta,
-            argValues: [id],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiDeleteRuleRepositorySubscriptionConstMeta,
+        argValues: [id],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiDeleteRuleRepositorySubscriptionConstMeta =>
+      const TaskConstMeta(
+        debugName: "delete_rule_repository_subscription",
+        argNames: ["id"],
+      );
 
-        TaskConstMeta get kCrateApiDeleteRuleRepositorySubscriptionConstMeta => const TaskConstMeta(
-            debugName: "delete_rule_repository_subscription",
-            argNames: ["id"],
-        );
-        
-
-@override Future<void> crateApiDeleteSourcePackage({required String id })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(id, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 6, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<void> crateApiDeleteSourcePackage({required String id}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(id, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 6,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiDeleteSourcePackageConstMeta,
-            argValues: [id],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiDeleteSourcePackageConstMeta,
+        argValues: [id],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiDeleteSourcePackageConstMeta =>
+      const TaskConstMeta(debugName: "delete_source_package", argNames: ["id"]);
 
-        TaskConstMeta get kCrateApiDeleteSourcePackageConstMeta => const TaskConstMeta(
-            debugName: "delete_source_package",
-            argNames: ["id"],
-        );
-        
-
-@override Future<void> crateApiDeleteWatchHistoryItem({required int subjectId , required int episodeId })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_CastedPrimitive_i_64(subjectId, serializer);
-sse_encode_CastedPrimitive_i_64(episodeId, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<void> crateApiDeleteWatchHistoryItem({
+    required int subjectId,
+    required int episodeId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_CastedPrimitive_i_64(subjectId, serializer);
+          sse_encode_CastedPrimitive_i_64(episodeId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 7,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiDeleteWatchHistoryItemConstMeta,
-            argValues: [subjectId, episodeId],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiDeleteWatchHistoryItemConstMeta,
+        argValues: [subjectId, episodeId],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiDeleteWatchHistoryItemConstMeta =>
+      const TaskConstMeta(
+        debugName: "delete_watch_history_item",
+        argNames: ["subjectId", "episodeId"],
+      );
 
-        TaskConstMeta get kCrateApiDeleteWatchHistoryItemConstMeta => const TaskConstMeta(
-            debugName: "delete_watch_history_item",
-            argNames: ["subjectId", "episodeId"],
-        );
-        
-
-@override Future<AnimeRankingResponse> crateApiGetAnimeRanking({required AnimeRankingRequest request })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_box_autoadd_anime_ranking_request(request, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<AnimeRankingResponse> crateApiGetAnimeRanking({
+    required AnimeRankingRequest request,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_anime_ranking_request(request, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 8,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_anime_ranking_response,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiGetAnimeRankingConstMeta,
-            argValues: [request],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiGetAnimeRankingConstMeta,
+        argValues: [request],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiGetAnimeRankingConstMeta => const TaskConstMeta(
+    debugName: "get_anime_ranking",
+    argNames: ["request"],
+  );
 
-        TaskConstMeta get kCrateApiGetAnimeRankingConstMeta => const TaskConstMeta(
-            debugName: "get_anime_ranking",
-            argNames: ["request"],
-        );
-        
+  @override
+  Future<AppearanceSettings> crateApiGetAppearanceSettings() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 9,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_appearance_settings,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiGetAppearanceSettingsConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
 
-@override Future<List<BangumiCalendarDay>> crateApiGetCalendar()  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  TaskConstMeta get kCrateApiGetAppearanceSettingsConstMeta =>
+      const TaskConstMeta(debugName: "get_appearance_settings", argNames: []);
+
+  @override
+  Future<List<BangumiCalendarDay>> crateApiGetCalendar() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 10,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_bangumi_calendar_day,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiGetCalendarConstMeta,
-            argValues: [],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiGetCalendarConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiGetCalendarConstMeta =>
+      const TaskConstMeta(debugName: "get_calendar", argNames: []);
 
-        TaskConstMeta get kCrateApiGetCalendarConstMeta => const TaskConstMeta(
-            debugName: "get_calendar",
-            argNames: [],
-        );
-        
-
-@override Future<PlaybackProgress?> crateApiGetPlaybackProgress({required int subjectId , required int episodeId })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_CastedPrimitive_i_64(subjectId, serializer);
-sse_encode_CastedPrimitive_i_64(episodeId, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<PlaybackProgress?> crateApiGetPlaybackProgress({
+    required int subjectId,
+    required int episodeId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_CastedPrimitive_i_64(subjectId, serializer);
+          sse_encode_CastedPrimitive_i_64(episodeId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 11,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_opt_box_autoadd_playback_progress,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiGetPlaybackProgressConstMeta,
-            argValues: [subjectId, episodeId],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiGetPlaybackProgressConstMeta,
+        argValues: [subjectId, episodeId],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiGetPlaybackProgressConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_playback_progress",
+        argNames: ["subjectId", "episodeId"],
+      );
 
-        TaskConstMeta get kCrateApiGetPlaybackProgressConstMeta => const TaskConstMeta(
-            debugName: "get_playback_progress",
-            argNames: ["subjectId", "episodeId"],
-        );
-        
-
-@override Future<SourcePackageText?> crateApiGetSourcePackageText({required String id })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(id, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<SourcePackageText?> crateApiGetSourcePackageText({
+    required String id,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(id, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 12,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_opt_box_autoadd_source_package_text,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiGetSourcePackageTextConstMeta,
-            argValues: [id],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiGetSourcePackageTextConstMeta,
+        argValues: [id],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiGetSourcePackageTextConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_source_package_text",
+        argNames: ["id"],
+      );
 
-        TaskConstMeta get kCrateApiGetSourcePackageTextConstMeta => const TaskConstMeta(
-            debugName: "get_source_package_text",
-            argNames: ["id"],
-        );
-        
-
-@override Future<SubjectDetail> crateApiGetSubjectDetail({required int subjectId })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_CastedPrimitive_i_64(subjectId, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<SubjectDetail> crateApiGetSubjectDetail({required int subjectId}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_CastedPrimitive_i_64(subjectId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 13,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_subject_detail,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiGetSubjectDetailConstMeta,
-            argValues: [subjectId],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiGetSubjectDetailConstMeta,
+        argValues: [subjectId],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiGetSubjectDetailConstMeta => const TaskConstMeta(
+    debugName: "get_subject_detail",
+    argNames: ["subjectId"],
+  );
 
-        TaskConstMeta get kCrateApiGetSubjectDetailConstMeta => const TaskConstMeta(
-            debugName: "get_subject_detail",
-            argNames: ["subjectId"],
-        );
-        
-
-@override Future<SourceImportResult> crateApiImportRepositoryRule({required String groupId , required RuleRepositoryIndexEntry entry })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(groupId, serializer);
-sse_encode_box_autoadd_rule_repository_index_entry(entry, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<SourceImportResult> crateApiImportRepositoryRule({
+    required String groupId,
+    required RuleRepositoryIndexEntry entry,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(groupId, serializer);
+          sse_encode_box_autoadd_rule_repository_index_entry(entry, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 14,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_source_import_result,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiImportRepositoryRuleConstMeta,
-            argValues: [groupId, entry],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiImportRepositoryRuleConstMeta,
+        argValues: [groupId, entry],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiImportRepositoryRuleConstMeta =>
+      const TaskConstMeta(
+        debugName: "import_repository_rule",
+        argNames: ["groupId", "entry"],
+      );
 
-        TaskConstMeta get kCrateApiImportRepositoryRuleConstMeta => const TaskConstMeta(
-            debugName: "import_repository_rule",
-            argNames: ["groupId", "entry"],
-        );
-        
-
-@override Future<SourceImportResult> crateApiImportSourceText({required String text })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(text, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<SourceImportResult> crateApiImportSourceText({required String text}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(text, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 15,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_source_import_result,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiImportSourceTextConstMeta,
-            argValues: [text],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiImportSourceTextConstMeta,
+        argValues: [text],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiImportSourceTextConstMeta =>
+      const TaskConstMeta(debugName: "import_source_text", argNames: ["text"]);
 
-        TaskConstMeta get kCrateApiImportSourceTextConstMeta => const TaskConstMeta(
-            debugName: "import_source_text",
-            argNames: ["text"],
-        );
-        
-
-@override Future<SourceImportResult> crateApiImportSourceUrl({required String url })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(url, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<SourceImportResult> crateApiImportSourceUrl({required String url}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(url, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 16,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_source_import_result,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiImportSourceUrlConstMeta,
-            argValues: [url],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiImportSourceUrlConstMeta,
+        argValues: [url],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiImportSourceUrlConstMeta =>
+      const TaskConstMeta(debugName: "import_source_url", argNames: ["url"]);
 
-        TaskConstMeta get kCrateApiImportSourceUrlConstMeta => const TaskConstMeta(
-            debugName: "import_source_url",
-            argNames: ["url"],
-        );
-        
-
-@override Future<List<FavoriteItem>> crateApiListFavorites({CollectionStatus? status })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_opt_box_autoadd_collection_status(status, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<List<FavoriteItem>> crateApiListFavorites({CollectionStatus? status}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_opt_box_autoadd_collection_status(status, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 17,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_favorite_item,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiListFavoritesConstMeta,
-            argValues: [status],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiListFavoritesConstMeta,
+        argValues: [status],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiListFavoritesConstMeta =>
+      const TaskConstMeta(debugName: "list_favorites", argNames: ["status"]);
 
-        TaskConstMeta get kCrateApiListFavoritesConstMeta => const TaskConstMeta(
-            debugName: "list_favorites",
-            argNames: ["status"],
-        );
-        
-
-@override Future<List<RuleGroupSummary>> crateApiListRuleGroups()  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<List<RuleGroupSummary>> crateApiListRuleGroups() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 18,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_rule_group_summary,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiListRuleGroupsConstMeta,
-            argValues: [],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiListRuleGroupsConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiListRuleGroupsConstMeta =>
+      const TaskConstMeta(debugName: "list_rule_groups", argNames: []);
 
-        TaskConstMeta get kCrateApiListRuleGroupsConstMeta => const TaskConstMeta(
-            debugName: "list_rule_groups",
-            argNames: [],
-        );
-        
-
-@override Future<List<RuleRepositorySubscription>> crateApiListRuleRepositorySubscriptions()  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<List<RuleRepositorySubscription>>
+  crateApiListRuleRepositorySubscriptions() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 19,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_rule_repository_subscription,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiListRuleRepositorySubscriptionsConstMeta,
-            argValues: [],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiListRuleRepositorySubscriptionsConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiListRuleRepositorySubscriptionsConstMeta =>
+      const TaskConstMeta(
+        debugName: "list_rule_repository_subscriptions",
+        argNames: [],
+      );
 
-        TaskConstMeta get kCrateApiListRuleRepositorySubscriptionsConstMeta => const TaskConstMeta(
-            debugName: "list_rule_repository_subscriptions",
-            argNames: [],
-        );
-        
-
-@override Future<List<SourcePackageSummary>> crateApiListSourcePackages()  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<List<SourcePackageSummary>> crateApiListSourcePackages() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 20,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_source_package_summary,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiListSourcePackagesConstMeta,
-            argValues: [],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiListSourcePackagesConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiListSourcePackagesConstMeta =>
+      const TaskConstMeta(debugName: "list_source_packages", argNames: []);
 
-        TaskConstMeta get kCrateApiListSourcePackagesConstMeta => const TaskConstMeta(
-            debugName: "list_source_packages",
-            argNames: [],
-        );
-        
-
-@override Future<List<WatchHistoryItem>> crateApiListWatchHistory({int? limit })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_opt_box_autoadd_u_32(limit, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<List<WatchHistoryItem>> crateApiListWatchHistory({int? limit}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_opt_box_autoadd_u_32(limit, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 21,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_watch_history_item,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiListWatchHistoryConstMeta,
-            argValues: [limit],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiListWatchHistoryConstMeta,
+        argValues: [limit],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiListWatchHistoryConstMeta =>
+      const TaskConstMeta(debugName: "list_watch_history", argNames: ["limit"]);
 
-        TaskConstMeta get kCrateApiListWatchHistoryConstMeta => const TaskConstMeta(
-            debugName: "list_watch_history",
-            argNames: ["limit"],
-        );
-        
-
-@override Future<List<RuleRepositoryIndexEntry>> crateApiLoadRuleRepositoryIndex({required RuleRepositorySubscription subscription })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_box_autoadd_rule_repository_subscription(subscription, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<List<RuleRepositoryIndexEntry>> crateApiLoadRuleRepositoryIndex({
+    required RuleRepositorySubscription subscription,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_rule_repository_subscription(
+            subscription,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 22,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_rule_repository_index_entry,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiLoadRuleRepositoryIndexConstMeta,
-            argValues: [subscription],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiLoadRuleRepositoryIndexConstMeta,
+        argValues: [subscription],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiLoadRuleRepositoryIndexConstMeta =>
+      const TaskConstMeta(
+        debugName: "load_rule_repository_index",
+        argNames: ["subscription"],
+      );
 
-        TaskConstMeta get kCrateApiLoadRuleRepositoryIndexConstMeta => const TaskConstMeta(
-            debugName: "load_rule_repository_index",
-            argNames: ["subscription"],
-        );
-        
-
-@override Future<EpisodeBindingResolveResult> crateApiResolveEpisodeBindings({required int subjectId , required int episodeId , required SourceCandidate candidate , required List<SourceCandidate> fallbackCandidates })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_CastedPrimitive_i_64(subjectId, serializer);
-sse_encode_CastedPrimitive_i_64(episodeId, serializer);
-sse_encode_box_autoadd_source_candidate(candidate, serializer);
-sse_encode_list_source_candidate(fallbackCandidates, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<EpisodeBindingResolveResult> crateApiResolveEpisodeBindings({
+    required int subjectId,
+    required int episodeId,
+    required SourceCandidate candidate,
+    required List<SourceCandidate> fallbackCandidates,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_CastedPrimitive_i_64(subjectId, serializer);
+          sse_encode_CastedPrimitive_i_64(episodeId, serializer);
+          sse_encode_box_autoadd_source_candidate(candidate, serializer);
+          sse_encode_list_source_candidate(fallbackCandidates, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 23,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_episode_binding_resolve_result,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiResolveEpisodeBindingsConstMeta,
-            argValues: [subjectId, episodeId, candidate, fallbackCandidates],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiResolveEpisodeBindingsConstMeta,
+        argValues: [subjectId, episodeId, candidate, fallbackCandidates],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiResolveEpisodeBindingsConstMeta =>
+      const TaskConstMeta(
+        debugName: "resolve_episode_bindings",
+        argNames: ["subjectId", "episodeId", "candidate", "fallbackCandidates"],
+      );
 
-        TaskConstMeta get kCrateApiResolveEpisodeBindingsConstMeta => const TaskConstMeta(
-            debugName: "resolve_episode_bindings",
-            argNames: ["subjectId", "episodeId", "candidate", "fallbackCandidates"],
-        );
-        
-
-@override Future<EpisodeStreamResolveResult> crateApiResolveEpisodeStreams({required String ruleId , required String playUrl , required List<String> fallbackPlayUrls , String? refererUrl })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(ruleId, serializer);
-sse_encode_String(playUrl, serializer);
-sse_encode_list_String(fallbackPlayUrls, serializer);
-sse_encode_opt_String(refererUrl, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 23, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<EpisodeStreamResolveResult> crateApiResolveEpisodeStreams({
+    required String ruleId,
+    required String playUrl,
+    required List<String> fallbackPlayUrls,
+    String? refererUrl,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(ruleId, serializer);
+          sse_encode_String(playUrl, serializer);
+          sse_encode_list_String(fallbackPlayUrls, serializer);
+          sse_encode_opt_String(refererUrl, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 24,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_episode_stream_resolve_result,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiResolveEpisodeStreamsConstMeta,
-            argValues: [ruleId, playUrl, fallbackPlayUrls, refererUrl],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiResolveEpisodeStreamsConstMeta,
+        argValues: [ruleId, playUrl, fallbackPlayUrls, refererUrl],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiResolveEpisodeStreamsConstMeta =>
+      const TaskConstMeta(
+        debugName: "resolve_episode_streams",
+        argNames: ["ruleId", "playUrl", "fallbackPlayUrls", "refererUrl"],
+      );
 
-        TaskConstMeta get kCrateApiResolveEpisodeStreamsConstMeta => const TaskConstMeta(
-            debugName: "resolve_episode_streams",
-            argNames: ["ruleId", "playUrl", "fallbackPlayUrls", "refererUrl"],
-        );
-        
-
-@override Future<List<PlaybackCandidate>> crateApiResolvePlayback({required int subjectId , required int episodeId })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_CastedPrimitive_i_64(subjectId, serializer);
-sse_encode_CastedPrimitive_i_64(episodeId, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 24, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<List<PlaybackCandidate>> crateApiResolvePlayback({
+    required int subjectId,
+    required int episodeId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_CastedPrimitive_i_64(subjectId, serializer);
+          sse_encode_CastedPrimitive_i_64(episodeId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 25,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_playback_candidate,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiResolvePlaybackConstMeta,
-            argValues: [subjectId, episodeId],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiResolvePlaybackConstMeta,
+        argValues: [subjectId, episodeId],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiResolvePlaybackConstMeta => const TaskConstMeta(
+    debugName: "resolve_playback",
+    argNames: ["subjectId", "episodeId"],
+  );
 
-        TaskConstMeta get kCrateApiResolvePlaybackConstMeta => const TaskConstMeta(
-            debugName: "resolve_playback",
-            argNames: ["subjectId", "episodeId"],
-        );
-        
+  @override
+  Future<AppearanceSettings> crateApiSaveAppearanceSettings({
+    required AppearanceSettings settings,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_appearance_settings(settings, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 26,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_appearance_settings,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiSaveAppearanceSettingsConstMeta,
+        argValues: [settings],
+        apiImpl: this,
+      ),
+    );
+  }
 
-@override Future<FavoriteItem> crateApiSaveFavorite({required SubjectSummary subject , required CollectionStatus status })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_box_autoadd_subject_summary(subject, serializer);
-sse_encode_collection_status(status, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 25, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  TaskConstMeta get kCrateApiSaveAppearanceSettingsConstMeta =>
+      const TaskConstMeta(
+        debugName: "save_appearance_settings",
+        argNames: ["settings"],
+      );
+
+  @override
+  Future<FavoriteItem> crateApiSaveFavorite({
+    required SubjectSummary subject,
+    required CollectionStatus status,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_subject_summary(subject, serializer);
+          sse_encode_collection_status(status, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 27,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_favorite_item,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiSaveFavoriteConstMeta,
-            argValues: [subject, status],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiSaveFavoriteConstMeta,
+        argValues: [subject, status],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiSaveFavoriteConstMeta => const TaskConstMeta(
+    debugName: "save_favorite",
+    argNames: ["subject", "status"],
+  );
 
-        TaskConstMeta get kCrateApiSaveFavoriteConstMeta => const TaskConstMeta(
-            debugName: "save_favorite",
-            argNames: ["subject", "status"],
-        );
-        
-
-@override Future<PlaybackProgress> crateApiSavePlaybackProgress({required SubjectSummary subject , required Episode episode , required int positionMs , int? durationMs })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_box_autoadd_subject_summary(subject, serializer);
-sse_encode_box_autoadd_episode(episode, serializer);
-sse_encode_CastedPrimitive_i_64(positionMs, serializer);
-sse_encode_opt_CastedPrimitive_i_64(durationMs, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<PlaybackProgress> crateApiSavePlaybackProgress({
+    required SubjectSummary subject,
+    required Episode episode,
+    required int positionMs,
+    int? durationMs,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_subject_summary(subject, serializer);
+          sse_encode_box_autoadd_episode(episode, serializer);
+          sse_encode_CastedPrimitive_i_64(positionMs, serializer);
+          sse_encode_opt_CastedPrimitive_i_64(durationMs, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 28,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_playback_progress,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiSavePlaybackProgressConstMeta,
-            argValues: [subject, episode, positionMs, durationMs],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiSavePlaybackProgressConstMeta,
+        argValues: [subject, episode, positionMs, durationMs],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiSavePlaybackProgressConstMeta =>
+      const TaskConstMeta(
+        debugName: "save_playback_progress",
+        argNames: ["subject", "episode", "positionMs", "durationMs"],
+      );
 
-        TaskConstMeta get kCrateApiSavePlaybackProgressConstMeta => const TaskConstMeta(
-            debugName: "save_playback_progress",
-            argNames: ["subject", "episode", "positionMs", "durationMs"],
-        );
-        
-
-@override Future<RuleGroupSummary> crateApiSaveRuleGroup({required RuleGroupSummary group })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_box_autoadd_rule_group_summary(group, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<RuleGroupSummary> crateApiSaveRuleGroup({
+    required RuleGroupSummary group,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_rule_group_summary(group, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 29,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_rule_group_summary,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiSaveRuleGroupConstMeta,
-            argValues: [group],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiSaveRuleGroupConstMeta,
+        argValues: [group],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiSaveRuleGroupConstMeta =>
+      const TaskConstMeta(debugName: "save_rule_group", argNames: ["group"]);
 
-        TaskConstMeta get kCrateApiSaveRuleGroupConstMeta => const TaskConstMeta(
-            debugName: "save_rule_group",
-            argNames: ["group"],
-        );
-        
-
-@override Future<RuleRepositorySubscription> crateApiSaveRuleRepositorySubscription({required RuleRepositorySubscription subscription })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_box_autoadd_rule_repository_subscription(subscription, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<RuleRepositorySubscription> crateApiSaveRuleRepositorySubscription({
+    required RuleRepositorySubscription subscription,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_rule_repository_subscription(
+            subscription,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 30,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_rule_repository_subscription,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiSaveRuleRepositorySubscriptionConstMeta,
-            argValues: [subscription],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiSaveRuleRepositorySubscriptionConstMeta,
+        argValues: [subscription],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiSaveRuleRepositorySubscriptionConstMeta =>
+      const TaskConstMeta(
+        debugName: "save_rule_repository_subscription",
+        argNames: ["subscription"],
+      );
 
-        TaskConstMeta get kCrateApiSaveRuleRepositorySubscriptionConstMeta => const TaskConstMeta(
-            debugName: "save_rule_repository_subscription",
-            argNames: ["subscription"],
-        );
-        
-
-@override Future<RuleSourceSearchResult> crateApiSearchRuleSource({required String ruleId , required int subjectId })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(ruleId, serializer);
-sse_encode_CastedPrimitive_i_64(subjectId, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<RuleSourceSearchResult> crateApiSearchRuleSource({
+    required String ruleId,
+    required int subjectId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(ruleId, serializer);
+          sse_encode_CastedPrimitive_i_64(subjectId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 31,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_rule_source_search_result,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiSearchRuleSourceConstMeta,
-            argValues: [ruleId, subjectId],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiSearchRuleSourceConstMeta,
+        argValues: [ruleId, subjectId],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiSearchRuleSourceConstMeta => const TaskConstMeta(
+    debugName: "search_rule_source",
+    argNames: ["ruleId", "subjectId"],
+  );
 
-        TaskConstMeta get kCrateApiSearchRuleSourceConstMeta => const TaskConstMeta(
-            debugName: "search_rule_source",
-            argNames: ["ruleId", "subjectId"],
-        );
-        
-
-@override Future<List<RuleSourceSearchResult>> crateApiSearchRuleSources({required int subjectId , required List<String> ruleIds })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_CastedPrimitive_i_64(subjectId, serializer);
-sse_encode_list_String(ruleIds, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<List<RuleSourceSearchResult>> crateApiSearchRuleSources({
+    required int subjectId,
+    required List<String> ruleIds,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_CastedPrimitive_i_64(subjectId, serializer);
+          sse_encode_list_String(ruleIds, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 32,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_rule_source_search_result,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiSearchRuleSourcesConstMeta,
-            argValues: [subjectId, ruleIds],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiSearchRuleSourcesConstMeta,
+        argValues: [subjectId, ruleIds],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiSearchRuleSourcesConstMeta => const TaskConstMeta(
+    debugName: "search_rule_sources",
+    argNames: ["subjectId", "ruleIds"],
+  );
 
-        TaskConstMeta get kCrateApiSearchRuleSourcesConstMeta => const TaskConstMeta(
-            debugName: "search_rule_sources",
-            argNames: ["subjectId", "ruleIds"],
-        );
-        
-
-@override Future<List<SubjectSummary>> crateApiSearchSubjects({required String query , required int page })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(query, serializer);
-sse_encode_u_32(page, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 31, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<List<SubjectSummary>> crateApiSearchSubjects({
+    required String query,
+    required int page,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(query, serializer);
+          sse_encode_u_32(page, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 33,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_subject_summary,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiSearchSubjectsConstMeta,
-            argValues: [query, page],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiSearchSubjectsConstMeta,
+        argValues: [query, page],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiSearchSubjectsConstMeta => const TaskConstMeta(
+    debugName: "search_subjects",
+    argNames: ["query", "page"],
+  );
 
-        TaskConstMeta get kCrateApiSearchSubjectsConstMeta => const TaskConstMeta(
-            debugName: "search_subjects",
-            argNames: ["query", "page"],
-        );
-        
-
-@override Future<void> crateApiSetSourcePackageEnabled({required String id , required bool enabled })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(id, serializer);
-sse_encode_bool(enabled, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 32, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<void> crateApiSetSourcePackageEnabled({
+    required String id,
+    required bool enabled,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(id, serializer);
+          sse_encode_bool(enabled, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 34,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiSetSourcePackageEnabledConstMeta,
-            argValues: [id, enabled],
-            apiImpl: this,
-        )); }
-
-
-        TaskConstMeta get kCrateApiSetSourcePackageEnabledConstMeta => const TaskConstMeta(
-            debugName: "set_source_package_enabled",
-            argNames: ["id", "enabled"],
-        );
-        
-
-
-
-                  @protected int dco_decode_CastedPrimitive_i_64(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-throw UnimplementedError('Not implemented in this codec, please use the other one'); }
-
-@protected Map<String, String> dco_decode_Map_String_String_None(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return Map.fromEntries(dco_decode_list_record_string_string(raw).map((e) => MapEntry(e.$1, e.$2))); }
-
-@protected String dco_decode_String(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as String; }
-
-@protected AnimeRankingApplied dco_decode_anime_ranking_applied(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 9) throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
-                return AnimeRankingApplied(sort: dco_decode_String(arr[0]),
-filters: dco_decode_Map_String_String_None(arr[1]),
-filterGroup: dco_decode_opt_String(arr[2]),
-filter: dco_decode_opt_String(arr[3]),
-year: dco_decode_opt_box_autoadd_u_16(arr[4]),
-season: dco_decode_opt_String(arr[5]),
-keyword: dco_decode_opt_String(arr[6]),
-page: dco_decode_u_32(arr[7]),
-limit: dco_decode_u_8(arr[8]),); }
-
-@protected AnimeRankingRequest dco_decode_anime_ranking_request(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 9) throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
-                return AnimeRankingRequest(sort: dco_decode_anime_ranking_sort(arr[0]),
-filters: dco_decode_Map_String_String_None(arr[1]),
-filterGroup: dco_decode_opt_String(arr[2]),
-filter: dco_decode_opt_String(arr[3]),
-year: dco_decode_opt_box_autoadd_u_16(arr[4]),
-season: dco_decode_opt_box_autoadd_anime_season(arr[5]),
-keyword: dco_decode_String(arr[6]),
-page: dco_decode_u_32(arr[7]),
-limit: dco_decode_u_8(arr[8]),); }
-
-@protected AnimeRankingResponse dco_decode_anime_ranking_response(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 4) throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
-                return AnimeRankingResponse(items: dco_decode_list_subject_summary(arr[0]),
-page: dco_decode_u_32(arr[1]),
-hasNext: dco_decode_bool(arr[2]),
-applied: dco_decode_anime_ranking_applied(arr[3]),); }
-
-@protected AnimeRankingSort dco_decode_anime_ranking_sort(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return AnimeRankingSort.values[raw as int]; }
-
-@protected AnimeSeason dco_decode_anime_season(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return AnimeSeason.values[raw as int]; }
-
-@protected BangumiBrowseRequest dco_decode_bangumi_browse_request(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 5) throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
-                return BangumiBrowseRequest(sort: dco_decode_bangumi_browse_sort(arr[0]),
-year: dco_decode_opt_box_autoadd_u_16(arr[1]),
-month: dco_decode_opt_box_autoadd_u_8(arr[2]),
-limit: dco_decode_opt_box_autoadd_u_16(arr[3]),
-offset: dco_decode_opt_box_autoadd_u_32(arr[4]),); }
-
-@protected BangumiBrowseSort dco_decode_bangumi_browse_sort(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return BangumiBrowseSort.values[raw as int]; }
-
-@protected BangumiCalendarDay dco_decode_bangumi_calendar_day(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 4) throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
-                return BangumiCalendarDay(weekdayId: dco_decode_u_8(arr[0]),
-weekdayCn: dco_decode_String(arr[1]),
-weekdayEn: dco_decode_String(arr[2]),
-items: dco_decode_list_subject_summary(arr[3]),); }
-
-@protected bool dco_decode_bool(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as bool; }
-
-@protected AnimeRankingRequest dco_decode_box_autoadd_anime_ranking_request(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_anime_ranking_request(raw); }
-
-@protected AnimeSeason dco_decode_box_autoadd_anime_season(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_anime_season(raw); }
-
-@protected BangumiBrowseRequest dco_decode_box_autoadd_bangumi_browse_request(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_bangumi_browse_request(raw); }
-
-@protected CollectionStatus dco_decode_box_autoadd_collection_status(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_collection_status(raw); }
-
-@protected Episode dco_decode_box_autoadd_episode(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_episode(raw); }
-
-@protected EpisodeSourceBinding dco_decode_box_autoadd_episode_source_binding(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_episode_source_binding(raw); }
-
-@protected double dco_decode_box_autoadd_f_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as double; }
-
-@protected PlaybackProgress dco_decode_box_autoadd_playback_progress(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_playback_progress(raw); }
-
-@protected RuleGroupSummary dco_decode_box_autoadd_rule_group_summary(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_rule_group_summary(raw); }
-
-@protected RuleRepositoryIndexEntry dco_decode_box_autoadd_rule_repository_index_entry(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_rule_repository_index_entry(raw); }
-
-@protected RuleRepositorySubscription dco_decode_box_autoadd_rule_repository_subscription(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_rule_repository_subscription(raw); }
-
-@protected SourceCandidate dco_decode_box_autoadd_source_candidate(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_source_candidate(raw); }
-
-@protected SourcePackageText dco_decode_box_autoadd_source_package_text(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_source_package_text(raw); }
-
-@protected SubjectSummary dco_decode_box_autoadd_subject_summary(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_subject_summary(raw); }
-
-@protected int dco_decode_box_autoadd_u_16(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as int; }
-
-@protected int dco_decode_box_autoadd_u_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as int; }
-
-@protected int dco_decode_box_autoadd_u_8(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as int; }
-
-@protected CollectionStatus dco_decode_collection_status(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return CollectionStatus.values[raw as int]; }
-
-@protected Episode dco_decode_episode(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 6) throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
-                return Episode(id: dco_decode_CastedPrimitive_i_64(arr[0]),
-subjectId: dco_decode_CastedPrimitive_i_64(arr[1]),
-sort: dco_decode_i_32(arr[2]),
-title: dco_decode_String(arr[3]),
-titleCn: dco_decode_opt_String(arr[4]),
-airDate: dco_decode_opt_String(arr[5]),); }
-
-@protected EpisodeBindingResolveResult dco_decode_episode_binding_resolve_result(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 4) throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
-                return EpisodeBindingResolveResult(bindings: dco_decode_list_episode_source_binding(arr[0]),
-selectedCandidate: dco_decode_opt_box_autoadd_source_candidate(arr[1]),
-selectedBinding: dco_decode_opt_box_autoadd_episode_source_binding(arr[2]),
-attempts: dco_decode_list_rule_resolve_attempt(arr[3]),); }
-
-@protected EpisodeSourceBinding dco_decode_episode_source_binding(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 10) throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
-                return EpisodeSourceBinding(subjectId: dco_decode_CastedPrimitive_i_64(arr[0]),
-episodeId: dco_decode_CastedPrimitive_i_64(arr[1]),
-episodeOrder: dco_decode_i_32(arr[2]),
-ruleId: dco_decode_String(arr[3]),
-sourceEpisodeKey: dco_decode_String(arr[4]),
-title: dco_decode_String(arr[5]),
-playUrl: dco_decode_String(arr[6]),
-fallbackPlayUrls: dco_decode_list_String(arr[7]),
-refererUrl: dco_decode_opt_String(arr[8]),
-confidence: dco_decode_String(arr[9]),); }
-
-@protected EpisodeStreamResolveResult dco_decode_episode_stream_resolve_result(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-                return EpisodeStreamResolveResult(streams: dco_decode_list_play_stream(arr[0]),
-attempts: dco_decode_list_rule_resolve_attempt(arr[1]),); }
-
-@protected double dco_decode_f_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as double; }
-
-@protected FavoriteItem dco_decode_favorite_item(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 3) throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
-                return FavoriteItem(subject: dco_decode_subject_summary(arr[0]),
-status: dco_decode_collection_status(arr[1]),
-updatedAtMs: dco_decode_CastedPrimitive_i_64(arr[2]),); }
-
-@protected int dco_decode_i_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as int; }
-
-@protected PlatformInt64 dco_decode_i_64(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dcoDecodeI64(raw); }
-
-@protected List<String> dco_decode_list_String(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_String).toList(); }
-
-@protected List<BangumiCalendarDay> dco_decode_list_bangumi_calendar_day(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_bangumi_calendar_day).toList(); }
-
-@protected List<Episode> dco_decode_list_episode(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_episode).toList(); }
-
-@protected List<EpisodeSourceBinding> dco_decode_list_episode_source_binding(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_episode_source_binding).toList(); }
-
-@protected List<FavoriteItem> dco_decode_list_favorite_item(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_favorite_item).toList(); }
-
-@protected List<PlayStream> dco_decode_list_play_stream(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_play_stream).toList(); }
-
-@protected List<PlaybackCandidate> dco_decode_list_playback_candidate(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_playback_candidate).toList(); }
-
-@protected List<PlaybackHeader> dco_decode_list_playback_header(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_playback_header).toList(); }
-
-@protected Uint8List dco_decode_list_prim_u_8_strict(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as Uint8List; }
-
-@protected List<(String,String)> dco_decode_list_record_string_string(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_record_string_string).toList(); }
-
-@protected List<RuleGroupSummary> dco_decode_list_rule_group_summary(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_rule_group_summary).toList(); }
-
-@protected List<RuleRepositoryIndexEntry> dco_decode_list_rule_repository_index_entry(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_rule_repository_index_entry).toList(); }
-
-@protected List<RuleRepositorySubscription> dco_decode_list_rule_repository_subscription(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_rule_repository_subscription).toList(); }
-
-@protected List<RuleResolveAttempt> dco_decode_list_rule_resolve_attempt(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_rule_resolve_attempt).toList(); }
-
-@protected List<RuleSourceSearchResult> dco_decode_list_rule_source_search_result(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_rule_source_search_result).toList(); }
-
-@protected List<SourceCandidate> dco_decode_list_source_candidate(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_source_candidate).toList(); }
-
-@protected List<SourcePackageSummary> dco_decode_list_source_package_summary(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_source_package_summary).toList(); }
-
-@protected List<SubjectSummary> dco_decode_list_subject_summary(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_subject_summary).toList(); }
-
-@protected List<WatchHistoryItem> dco_decode_list_watch_history_item(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_watch_history_item).toList(); }
-
-@protected int? dco_decode_opt_CastedPrimitive_i_64(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_CastedPrimitive_i_64(raw); }
-
-@protected String? dco_decode_opt_String(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_String(raw); }
-
-@protected AnimeSeason? dco_decode_opt_box_autoadd_anime_season(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_anime_season(raw); }
-
-@protected CollectionStatus? dco_decode_opt_box_autoadd_collection_status(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_collection_status(raw); }
-
-@protected EpisodeSourceBinding? dco_decode_opt_box_autoadd_episode_source_binding(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_episode_source_binding(raw); }
-
-@protected double? dco_decode_opt_box_autoadd_f_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_f_32(raw); }
-
-@protected PlaybackProgress? dco_decode_opt_box_autoadd_playback_progress(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_playback_progress(raw); }
-
-@protected SourceCandidate? dco_decode_opt_box_autoadd_source_candidate(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_source_candidate(raw); }
-
-@protected SourcePackageText? dco_decode_opt_box_autoadd_source_package_text(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_source_package_text(raw); }
-
-@protected int? dco_decode_opt_box_autoadd_u_16(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_u_16(raw); }
-
-@protected int? dco_decode_opt_box_autoadd_u_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_u_32(raw); }
-
-@protected int? dco_decode_opt_box_autoadd_u_8(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_u_8(raw); }
-
-@protected PlayStream dco_decode_play_stream(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 7) throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
-                return PlayStream(id: dco_decode_String(arr[0]),
-ruleId: dco_decode_String(arr[1]),
-kind: dco_decode_String(arr[2]),
-url: dco_decode_String(arr[3]),
-refererUrl: dco_decode_opt_String(arr[4]),
-userAgent: dco_decode_opt_String(arr[5]),
-headers: dco_decode_list_playback_header(arr[6]),); }
-
-@protected PlaybackCandidate dco_decode_playback_candidate(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 7) throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
-                return PlaybackCandidate(id: dco_decode_String(arr[0]),
-subjectId: dco_decode_CastedPrimitive_i_64(arr[1]),
-episodeId: dco_decode_CastedPrimitive_i_64(arr[2]),
-sourcePackageId: dco_decode_String(arr[3]),
-title: dco_decode_String(arr[4]),
-url: dco_decode_String(arr[5]),
-headers: dco_decode_list_playback_header(arr[6]),); }
-
-@protected PlaybackHeader dco_decode_playback_header(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-                return PlaybackHeader(name: dco_decode_String(arr[0]),
-value: dco_decode_String(arr[1]),); }
-
-@protected PlaybackProgress dco_decode_playback_progress(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 5) throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
-                return PlaybackProgress(subjectId: dco_decode_CastedPrimitive_i_64(arr[0]),
-episodeId: dco_decode_CastedPrimitive_i_64(arr[1]),
-positionMs: dco_decode_CastedPrimitive_i_64(arr[2]),
-durationMs: dco_decode_opt_CastedPrimitive_i_64(arr[3]),
-updatedAtMs: dco_decode_CastedPrimitive_i_64(arr[4]),); }
-
-@protected (String,String) dco_decode_record_string_string(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-            if (arr.length != 2) {
-                throw Exception('Expected 2 elements, got ${arr.length}');
-            }
-            return (dco_decode_String(arr[0]),dco_decode_String(arr[1]),); }
-
-@protected RuleGroupSummary dco_decode_rule_group_summary(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 5) throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
-                return RuleGroupSummary(id: dco_decode_String(arr[0]),
-name: dco_decode_String(arr[1]),
-enabled: dco_decode_bool(arr[2]),
-ruleIds: dco_decode_list_String(arr[3]),
-disabledRuleIds: dco_decode_list_String(arr[4]),); }
-
-@protected RuleRepositoryIndexEntry dco_decode_rule_repository_index_entry(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 5) throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
-                return RuleRepositoryIndexEntry(name: dco_decode_String(arr[0]),
-version: dco_decode_String(arr[1]),
-lastUpdateMs: dco_decode_opt_CastedPrimitive_i_64(arr[2]),
-antiCrawlerEnabled: dco_decode_bool(arr[3]),
-rawUrl: dco_decode_String(arr[4]),); }
-
-@protected RuleRepositorySubscription dco_decode_rule_repository_subscription(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 5) throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
-                return RuleRepositorySubscription(id: dco_decode_String(arr[0]),
-name: dco_decode_String(arr[1]),
-url: dco_decode_String(arr[2]),
-enabled: dco_decode_bool(arr[3]),
-updatedAtMs: dco_decode_CastedPrimitive_i_64(arr[4]),); }
-
-@protected RuleResolveAttempt dco_decode_rule_resolve_attempt(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 3) throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
-                return RuleResolveAttempt(ruleId: dco_decode_String(arr[0]),
-status: dco_decode_String(arr[1]),
-message: dco_decode_String(arr[2]),); }
-
-@protected RuleSourceSearchResult dco_decode_rule_source_search_result(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 11) throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
-                return RuleSourceSearchResult(ruleId: dco_decode_String(arr[0]),
-ruleName: dco_decode_String(arr[1]),
-status: dco_decode_String(arr[2]),
-elapsedMs: dco_decode_CastedPrimitive_i_64(arr[3]),
-candidates: dco_decode_list_source_candidate(arr[4]),
-rawCandidates: dco_decode_list_source_candidate(arr[5]),
-selectedKeyword: dco_decode_opt_String(arr[6]),
-selectedTitle: dco_decode_opt_String(arr[7]),
-selectedScore: dco_decode_opt_box_autoadd_f_32(arr[8]),
-keywordTraces: dco_decode_list_String(arr[9]),
-error: dco_decode_opt_String(arr[10]),); }
-
-@protected SourceCandidate dco_decode_source_candidate(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 9) throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
-                return SourceCandidate(ruleId: dco_decode_String(arr[0]),
-ruleName: dco_decode_String(arr[1]),
-sourceItemKey: dco_decode_String(arr[2]),
-title: dco_decode_String(arr[3]),
-detailUrl: dco_decode_String(arr[4]),
-searchUrl: dco_decode_opt_String(arr[5]),
-confidence: dco_decode_String(arr[6]),
-score: dco_decode_opt_box_autoadd_f_32(arr[7]),
-matchedKeyword: dco_decode_opt_String(arr[8]),); }
-
-@protected SourceImportResult dco_decode_source_import_result(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-                return SourceImportResult(package: dco_decode_source_package_summary(arr[0]),
-diagnostics: dco_decode_list_String(arr[1]),); }
-
-@protected SourcePackageSummary dco_decode_source_package_summary(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 9) throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
-                return SourcePackageSummary(id: dco_decode_String(arr[0]),
-name: dco_decode_String(arr[1]),
-version: dco_decode_String(arr[2]),
-enabled: dco_decode_bool(arr[3]),
-format: dco_decode_String(arr[4]),
-sourceUrl: dco_decode_opt_String(arr[5]),
-diagnostics: dco_decode_list_String(arr[6]),
-importedAtMs: dco_decode_CastedPrimitive_i_64(arr[7]),
-updatedAtMs: dco_decode_CastedPrimitive_i_64(arr[8]),); }
-
-@protected SourcePackageText dco_decode_source_package_text(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 4) throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
-                return SourcePackageText(id: dco_decode_String(arr[0]),
-name: dco_decode_String(arr[1]),
-format: dco_decode_String(arr[2]),
-body: dco_decode_String(arr[3]),); }
-
-@protected SubjectDetail dco_decode_subject_detail(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 4) throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
-                return SubjectDetail(subject: dco_decode_subject_summary(arr[0]),
-episodes: dco_decode_list_episode(arr[1]),
-isFavorite: dco_decode_bool(arr[2]),
-progress: dco_decode_opt_box_autoadd_playback_progress(arr[3]),); }
-
-@protected SubjectSummary dco_decode_subject_summary(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 11) throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
-                return SubjectSummary(id: dco_decode_CastedPrimitive_i_64(arr[0]),
-name: dco_decode_String(arr[1]),
-nameCn: dco_decode_opt_String(arr[2]),
-aliases: dco_decode_list_String(arr[3]),
-coverUrl: dco_decode_opt_String(arr[4]),
-summary: dco_decode_opt_String(arr[5]),
-airDate: dco_decode_opt_String(arr[6]),
-ratingScore: dco_decode_opt_box_autoadd_f_32(arr[7]),
-ratingRank: dco_decode_opt_box_autoadd_u_32(arr[8]),
-tags: dco_decode_list_String(arr[9]),
-totalEpisodes: dco_decode_u_32(arr[10]),); }
-
-@protected int dco_decode_u_16(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as int; }
-
-@protected int dco_decode_u_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as int; }
-
-@protected int dco_decode_u_8(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as int; }
-
-@protected void dco_decode_unit(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return; }
-
-@protected WatchHistoryItem dco_decode_watch_history_item(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 3) throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
-                return WatchHistoryItem(subject: dco_decode_subject_summary(arr[0]),
-episode: dco_decode_episode(arr[1]),
-progress: dco_decode_playback_progress(arr[2]),); }
-
-@protected int sse_decode_CastedPrimitive_i_64(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var inner = sse_decode_i_64(deserializer);
-        return inner.toInt(); }
-
-@protected Map<String, String> sse_decode_Map_String_String_None(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var inner = sse_decode_list_record_string_string(deserializer);
-        return Map.fromEntries(inner.map((e) => MapEntry(e.$1, e.$2))); }
-
-@protected String sse_decode_String(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var inner = sse_decode_list_prim_u_8_strict(deserializer);
-        return utf8.decoder.convert(inner); }
-
-@protected AnimeRankingApplied sse_decode_anime_ranking_applied(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_sort = sse_decode_String(deserializer);
-var var_filters = sse_decode_Map_String_String_None(deserializer);
-var var_filterGroup = sse_decode_opt_String(deserializer);
-var var_filter = sse_decode_opt_String(deserializer);
-var var_year = sse_decode_opt_box_autoadd_u_16(deserializer);
-var var_season = sse_decode_opt_String(deserializer);
-var var_keyword = sse_decode_opt_String(deserializer);
-var var_page = sse_decode_u_32(deserializer);
-var var_limit = sse_decode_u_8(deserializer);
-return AnimeRankingApplied(sort: var_sort, filters: var_filters, filterGroup: var_filterGroup, filter: var_filter, year: var_year, season: var_season, keyword: var_keyword, page: var_page, limit: var_limit); }
-
-@protected AnimeRankingRequest sse_decode_anime_ranking_request(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_sort = sse_decode_anime_ranking_sort(deserializer);
-var var_filters = sse_decode_Map_String_String_None(deserializer);
-var var_filterGroup = sse_decode_opt_String(deserializer);
-var var_filter = sse_decode_opt_String(deserializer);
-var var_year = sse_decode_opt_box_autoadd_u_16(deserializer);
-var var_season = sse_decode_opt_box_autoadd_anime_season(deserializer);
-var var_keyword = sse_decode_String(deserializer);
-var var_page = sse_decode_u_32(deserializer);
-var var_limit = sse_decode_u_8(deserializer);
-return AnimeRankingRequest(sort: var_sort, filters: var_filters, filterGroup: var_filterGroup, filter: var_filter, year: var_year, season: var_season, keyword: var_keyword, page: var_page, limit: var_limit); }
-
-@protected AnimeRankingResponse sse_decode_anime_ranking_response(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_items = sse_decode_list_subject_summary(deserializer);
-var var_page = sse_decode_u_32(deserializer);
-var var_hasNext = sse_decode_bool(deserializer);
-var var_applied = sse_decode_anime_ranking_applied(deserializer);
-return AnimeRankingResponse(items: var_items, page: var_page, hasNext: var_hasNext, applied: var_applied); }
-
-@protected AnimeRankingSort sse_decode_anime_ranking_sort(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var inner = sse_decode_i_32(deserializer);
-        return AnimeRankingSort.values[inner]; }
-
-@protected AnimeSeason sse_decode_anime_season(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var inner = sse_decode_i_32(deserializer);
-        return AnimeSeason.values[inner]; }
-
-@protected BangumiBrowseRequest sse_decode_bangumi_browse_request(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_sort = sse_decode_bangumi_browse_sort(deserializer);
-var var_year = sse_decode_opt_box_autoadd_u_16(deserializer);
-var var_month = sse_decode_opt_box_autoadd_u_8(deserializer);
-var var_limit = sse_decode_opt_box_autoadd_u_16(deserializer);
-var var_offset = sse_decode_opt_box_autoadd_u_32(deserializer);
-return BangumiBrowseRequest(sort: var_sort, year: var_year, month: var_month, limit: var_limit, offset: var_offset); }
-
-@protected BangumiBrowseSort sse_decode_bangumi_browse_sort(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var inner = sse_decode_i_32(deserializer);
-        return BangumiBrowseSort.values[inner]; }
-
-@protected BangumiCalendarDay sse_decode_bangumi_calendar_day(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_weekdayId = sse_decode_u_8(deserializer);
-var var_weekdayCn = sse_decode_String(deserializer);
-var var_weekdayEn = sse_decode_String(deserializer);
-var var_items = sse_decode_list_subject_summary(deserializer);
-return BangumiCalendarDay(weekdayId: var_weekdayId, weekdayCn: var_weekdayCn, weekdayEn: var_weekdayEn, items: var_items); }
-
-@protected bool sse_decode_bool(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getUint8() != 0; }
-
-@protected AnimeRankingRequest sse_decode_box_autoadd_anime_ranking_request(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_anime_ranking_request(deserializer)); }
-
-@protected AnimeSeason sse_decode_box_autoadd_anime_season(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_anime_season(deserializer)); }
-
-@protected BangumiBrowseRequest sse_decode_box_autoadd_bangumi_browse_request(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_bangumi_browse_request(deserializer)); }
-
-@protected CollectionStatus sse_decode_box_autoadd_collection_status(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_collection_status(deserializer)); }
-
-@protected Episode sse_decode_box_autoadd_episode(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_episode(deserializer)); }
-
-@protected EpisodeSourceBinding sse_decode_box_autoadd_episode_source_binding(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_episode_source_binding(deserializer)); }
-
-@protected double sse_decode_box_autoadd_f_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_f_32(deserializer)); }
-
-@protected PlaybackProgress sse_decode_box_autoadd_playback_progress(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_playback_progress(deserializer)); }
-
-@protected RuleGroupSummary sse_decode_box_autoadd_rule_group_summary(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_rule_group_summary(deserializer)); }
-
-@protected RuleRepositoryIndexEntry sse_decode_box_autoadd_rule_repository_index_entry(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_rule_repository_index_entry(deserializer)); }
-
-@protected RuleRepositorySubscription sse_decode_box_autoadd_rule_repository_subscription(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_rule_repository_subscription(deserializer)); }
-
-@protected SourceCandidate sse_decode_box_autoadd_source_candidate(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_source_candidate(deserializer)); }
-
-@protected SourcePackageText sse_decode_box_autoadd_source_package_text(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_source_package_text(deserializer)); }
-
-@protected SubjectSummary sse_decode_box_autoadd_subject_summary(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_subject_summary(deserializer)); }
-
-@protected int sse_decode_box_autoadd_u_16(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_u_16(deserializer)); }
-
-@protected int sse_decode_box_autoadd_u_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_u_32(deserializer)); }
-
-@protected int sse_decode_box_autoadd_u_8(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_u_8(deserializer)); }
-
-@protected CollectionStatus sse_decode_collection_status(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var inner = sse_decode_i_32(deserializer);
-        return CollectionStatus.values[inner]; }
-
-@protected Episode sse_decode_episode(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_id = sse_decode_CastedPrimitive_i_64(deserializer);
-var var_subjectId = sse_decode_CastedPrimitive_i_64(deserializer);
-var var_sort = sse_decode_i_32(deserializer);
-var var_title = sse_decode_String(deserializer);
-var var_titleCn = sse_decode_opt_String(deserializer);
-var var_airDate = sse_decode_opt_String(deserializer);
-return Episode(id: var_id, subjectId: var_subjectId, sort: var_sort, title: var_title, titleCn: var_titleCn, airDate: var_airDate); }
-
-@protected EpisodeBindingResolveResult sse_decode_episode_binding_resolve_result(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_bindings = sse_decode_list_episode_source_binding(deserializer);
-var var_selectedCandidate = sse_decode_opt_box_autoadd_source_candidate(deserializer);
-var var_selectedBinding = sse_decode_opt_box_autoadd_episode_source_binding(deserializer);
-var var_attempts = sse_decode_list_rule_resolve_attempt(deserializer);
-return EpisodeBindingResolveResult(bindings: var_bindings, selectedCandidate: var_selectedCandidate, selectedBinding: var_selectedBinding, attempts: var_attempts); }
-
-@protected EpisodeSourceBinding sse_decode_episode_source_binding(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_subjectId = sse_decode_CastedPrimitive_i_64(deserializer);
-var var_episodeId = sse_decode_CastedPrimitive_i_64(deserializer);
-var var_episodeOrder = sse_decode_i_32(deserializer);
-var var_ruleId = sse_decode_String(deserializer);
-var var_sourceEpisodeKey = sse_decode_String(deserializer);
-var var_title = sse_decode_String(deserializer);
-var var_playUrl = sse_decode_String(deserializer);
-var var_fallbackPlayUrls = sse_decode_list_String(deserializer);
-var var_refererUrl = sse_decode_opt_String(deserializer);
-var var_confidence = sse_decode_String(deserializer);
-return EpisodeSourceBinding(subjectId: var_subjectId, episodeId: var_episodeId, episodeOrder: var_episodeOrder, ruleId: var_ruleId, sourceEpisodeKey: var_sourceEpisodeKey, title: var_title, playUrl: var_playUrl, fallbackPlayUrls: var_fallbackPlayUrls, refererUrl: var_refererUrl, confidence: var_confidence); }
-
-@protected EpisodeStreamResolveResult sse_decode_episode_stream_resolve_result(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_streams = sse_decode_list_play_stream(deserializer);
-var var_attempts = sse_decode_list_rule_resolve_attempt(deserializer);
-return EpisodeStreamResolveResult(streams: var_streams, attempts: var_attempts); }
-
-@protected double sse_decode_f_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getFloat32(); }
-
-@protected FavoriteItem sse_decode_favorite_item(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_subject = sse_decode_subject_summary(deserializer);
-var var_status = sse_decode_collection_status(deserializer);
-var var_updatedAtMs = sse_decode_CastedPrimitive_i_64(deserializer);
-return FavoriteItem(subject: var_subject, status: var_status, updatedAtMs: var_updatedAtMs); }
-
-@protected int sse_decode_i_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getInt32(); }
-
-@protected PlatformInt64 sse_decode_i_64(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getPlatformInt64(); }
-
-@protected List<String> sse_decode_list_String(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <String>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_String(deserializer)); }
-        return ans_;
-         }
-
-@protected List<BangumiCalendarDay> sse_decode_list_bangumi_calendar_day(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <BangumiCalendarDay>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_bangumi_calendar_day(deserializer)); }
-        return ans_;
-         }
-
-@protected List<Episode> sse_decode_list_episode(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <Episode>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_episode(deserializer)); }
-        return ans_;
-         }
-
-@protected List<EpisodeSourceBinding> sse_decode_list_episode_source_binding(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <EpisodeSourceBinding>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_episode_source_binding(deserializer)); }
-        return ans_;
-         }
-
-@protected List<FavoriteItem> sse_decode_list_favorite_item(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <FavoriteItem>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_favorite_item(deserializer)); }
-        return ans_;
-         }
-
-@protected List<PlayStream> sse_decode_list_play_stream(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <PlayStream>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_play_stream(deserializer)); }
-        return ans_;
-         }
-
-@protected List<PlaybackCandidate> sse_decode_list_playback_candidate(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <PlaybackCandidate>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_playback_candidate(deserializer)); }
-        return ans_;
-         }
-
-@protected List<PlaybackHeader> sse_decode_list_playback_header(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <PlaybackHeader>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_playback_header(deserializer)); }
-        return ans_;
-         }
-
-@protected Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var len_ = sse_decode_i_32(deserializer);
-                return deserializer.buffer.getUint8List(len_); }
-
-@protected List<(String,String)> sse_decode_list_record_string_string(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <(String,String)>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_record_string_string(deserializer)); }
-        return ans_;
-         }
-
-@protected List<RuleGroupSummary> sse_decode_list_rule_group_summary(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <RuleGroupSummary>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_rule_group_summary(deserializer)); }
-        return ans_;
-         }
-
-@protected List<RuleRepositoryIndexEntry> sse_decode_list_rule_repository_index_entry(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <RuleRepositoryIndexEntry>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_rule_repository_index_entry(deserializer)); }
-        return ans_;
-         }
-
-@protected List<RuleRepositorySubscription> sse_decode_list_rule_repository_subscription(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <RuleRepositorySubscription>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_rule_repository_subscription(deserializer)); }
-        return ans_;
-         }
-
-@protected List<RuleResolveAttempt> sse_decode_list_rule_resolve_attempt(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <RuleResolveAttempt>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_rule_resolve_attempt(deserializer)); }
-        return ans_;
-         }
-
-@protected List<RuleSourceSearchResult> sse_decode_list_rule_source_search_result(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <RuleSourceSearchResult>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_rule_source_search_result(deserializer)); }
-        return ans_;
-         }
-
-@protected List<SourceCandidate> sse_decode_list_source_candidate(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <SourceCandidate>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_source_candidate(deserializer)); }
-        return ans_;
-         }
-
-@protected List<SourcePackageSummary> sse_decode_list_source_package_summary(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <SourcePackageSummary>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_source_package_summary(deserializer)); }
-        return ans_;
-         }
-
-@protected List<SubjectSummary> sse_decode_list_subject_summary(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <SubjectSummary>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_subject_summary(deserializer)); }
-        return ans_;
-         }
-
-@protected List<WatchHistoryItem> sse_decode_list_watch_history_item(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <WatchHistoryItem>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_watch_history_item(deserializer)); }
-        return ans_;
-         }
-
-@protected int? sse_decode_opt_CastedPrimitive_i_64(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_CastedPrimitive_i_64(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected String? sse_decode_opt_String(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_String(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected AnimeSeason? sse_decode_opt_box_autoadd_anime_season(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_anime_season(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected CollectionStatus? sse_decode_opt_box_autoadd_collection_status(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_collection_status(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected EpisodeSourceBinding? sse_decode_opt_box_autoadd_episode_source_binding(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_episode_source_binding(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected double? sse_decode_opt_box_autoadd_f_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_f_32(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected PlaybackProgress? sse_decode_opt_box_autoadd_playback_progress(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_playback_progress(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected SourceCandidate? sse_decode_opt_box_autoadd_source_candidate(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_source_candidate(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected SourcePackageText? sse_decode_opt_box_autoadd_source_package_text(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_source_package_text(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected int? sse_decode_opt_box_autoadd_u_16(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_u_16(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_u_32(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected int? sse_decode_opt_box_autoadd_u_8(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_u_8(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected PlayStream sse_decode_play_stream(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_id = sse_decode_String(deserializer);
-var var_ruleId = sse_decode_String(deserializer);
-var var_kind = sse_decode_String(deserializer);
-var var_url = sse_decode_String(deserializer);
-var var_refererUrl = sse_decode_opt_String(deserializer);
-var var_userAgent = sse_decode_opt_String(deserializer);
-var var_headers = sse_decode_list_playback_header(deserializer);
-return PlayStream(id: var_id, ruleId: var_ruleId, kind: var_kind, url: var_url, refererUrl: var_refererUrl, userAgent: var_userAgent, headers: var_headers); }
-
-@protected PlaybackCandidate sse_decode_playback_candidate(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_id = sse_decode_String(deserializer);
-var var_subjectId = sse_decode_CastedPrimitive_i_64(deserializer);
-var var_episodeId = sse_decode_CastedPrimitive_i_64(deserializer);
-var var_sourcePackageId = sse_decode_String(deserializer);
-var var_title = sse_decode_String(deserializer);
-var var_url = sse_decode_String(deserializer);
-var var_headers = sse_decode_list_playback_header(deserializer);
-return PlaybackCandidate(id: var_id, subjectId: var_subjectId, episodeId: var_episodeId, sourcePackageId: var_sourcePackageId, title: var_title, url: var_url, headers: var_headers); }
-
-@protected PlaybackHeader sse_decode_playback_header(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_name = sse_decode_String(deserializer);
-var var_value = sse_decode_String(deserializer);
-return PlaybackHeader(name: var_name, value: var_value); }
-
-@protected PlaybackProgress sse_decode_playback_progress(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_subjectId = sse_decode_CastedPrimitive_i_64(deserializer);
-var var_episodeId = sse_decode_CastedPrimitive_i_64(deserializer);
-var var_positionMs = sse_decode_CastedPrimitive_i_64(deserializer);
-var var_durationMs = sse_decode_opt_CastedPrimitive_i_64(deserializer);
-var var_updatedAtMs = sse_decode_CastedPrimitive_i_64(deserializer);
-return PlaybackProgress(subjectId: var_subjectId, episodeId: var_episodeId, positionMs: var_positionMs, durationMs: var_durationMs, updatedAtMs: var_updatedAtMs); }
-
-@protected (String,String) sse_decode_record_string_string(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_field0 = sse_decode_String(deserializer);
-var var_field1 = sse_decode_String(deserializer);
-return (var_field0, var_field1); }
-
-@protected RuleGroupSummary sse_decode_rule_group_summary(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_id = sse_decode_String(deserializer);
-var var_name = sse_decode_String(deserializer);
-var var_enabled = sse_decode_bool(deserializer);
-var var_ruleIds = sse_decode_list_String(deserializer);
-var var_disabledRuleIds = sse_decode_list_String(deserializer);
-return RuleGroupSummary(id: var_id, name: var_name, enabled: var_enabled, ruleIds: var_ruleIds, disabledRuleIds: var_disabledRuleIds); }
-
-@protected RuleRepositoryIndexEntry sse_decode_rule_repository_index_entry(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_name = sse_decode_String(deserializer);
-var var_version = sse_decode_String(deserializer);
-var var_lastUpdateMs = sse_decode_opt_CastedPrimitive_i_64(deserializer);
-var var_antiCrawlerEnabled = sse_decode_bool(deserializer);
-var var_rawUrl = sse_decode_String(deserializer);
-return RuleRepositoryIndexEntry(name: var_name, version: var_version, lastUpdateMs: var_lastUpdateMs, antiCrawlerEnabled: var_antiCrawlerEnabled, rawUrl: var_rawUrl); }
-
-@protected RuleRepositorySubscription sse_decode_rule_repository_subscription(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_id = sse_decode_String(deserializer);
-var var_name = sse_decode_String(deserializer);
-var var_url = sse_decode_String(deserializer);
-var var_enabled = sse_decode_bool(deserializer);
-var var_updatedAtMs = sse_decode_CastedPrimitive_i_64(deserializer);
-return RuleRepositorySubscription(id: var_id, name: var_name, url: var_url, enabled: var_enabled, updatedAtMs: var_updatedAtMs); }
-
-@protected RuleResolveAttempt sse_decode_rule_resolve_attempt(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_ruleId = sse_decode_String(deserializer);
-var var_status = sse_decode_String(deserializer);
-var var_message = sse_decode_String(deserializer);
-return RuleResolveAttempt(ruleId: var_ruleId, status: var_status, message: var_message); }
-
-@protected RuleSourceSearchResult sse_decode_rule_source_search_result(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_ruleId = sse_decode_String(deserializer);
-var var_ruleName = sse_decode_String(deserializer);
-var var_status = sse_decode_String(deserializer);
-var var_elapsedMs = sse_decode_CastedPrimitive_i_64(deserializer);
-var var_candidates = sse_decode_list_source_candidate(deserializer);
-var var_rawCandidates = sse_decode_list_source_candidate(deserializer);
-var var_selectedKeyword = sse_decode_opt_String(deserializer);
-var var_selectedTitle = sse_decode_opt_String(deserializer);
-var var_selectedScore = sse_decode_opt_box_autoadd_f_32(deserializer);
-var var_keywordTraces = sse_decode_list_String(deserializer);
-var var_error = sse_decode_opt_String(deserializer);
-return RuleSourceSearchResult(ruleId: var_ruleId, ruleName: var_ruleName, status: var_status, elapsedMs: var_elapsedMs, candidates: var_candidates, rawCandidates: var_rawCandidates, selectedKeyword: var_selectedKeyword, selectedTitle: var_selectedTitle, selectedScore: var_selectedScore, keywordTraces: var_keywordTraces, error: var_error); }
-
-@protected SourceCandidate sse_decode_source_candidate(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_ruleId = sse_decode_String(deserializer);
-var var_ruleName = sse_decode_String(deserializer);
-var var_sourceItemKey = sse_decode_String(deserializer);
-var var_title = sse_decode_String(deserializer);
-var var_detailUrl = sse_decode_String(deserializer);
-var var_searchUrl = sse_decode_opt_String(deserializer);
-var var_confidence = sse_decode_String(deserializer);
-var var_score = sse_decode_opt_box_autoadd_f_32(deserializer);
-var var_matchedKeyword = sse_decode_opt_String(deserializer);
-return SourceCandidate(ruleId: var_ruleId, ruleName: var_ruleName, sourceItemKey: var_sourceItemKey, title: var_title, detailUrl: var_detailUrl, searchUrl: var_searchUrl, confidence: var_confidence, score: var_score, matchedKeyword: var_matchedKeyword); }
-
-@protected SourceImportResult sse_decode_source_import_result(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_package = sse_decode_source_package_summary(deserializer);
-var var_diagnostics = sse_decode_list_String(deserializer);
-return SourceImportResult(package: var_package, diagnostics: var_diagnostics); }
-
-@protected SourcePackageSummary sse_decode_source_package_summary(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_id = sse_decode_String(deserializer);
-var var_name = sse_decode_String(deserializer);
-var var_version = sse_decode_String(deserializer);
-var var_enabled = sse_decode_bool(deserializer);
-var var_format = sse_decode_String(deserializer);
-var var_sourceUrl = sse_decode_opt_String(deserializer);
-var var_diagnostics = sse_decode_list_String(deserializer);
-var var_importedAtMs = sse_decode_CastedPrimitive_i_64(deserializer);
-var var_updatedAtMs = sse_decode_CastedPrimitive_i_64(deserializer);
-return SourcePackageSummary(id: var_id, name: var_name, version: var_version, enabled: var_enabled, format: var_format, sourceUrl: var_sourceUrl, diagnostics: var_diagnostics, importedAtMs: var_importedAtMs, updatedAtMs: var_updatedAtMs); }
-
-@protected SourcePackageText sse_decode_source_package_text(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_id = sse_decode_String(deserializer);
-var var_name = sse_decode_String(deserializer);
-var var_format = sse_decode_String(deserializer);
-var var_body = sse_decode_String(deserializer);
-return SourcePackageText(id: var_id, name: var_name, format: var_format, body: var_body); }
-
-@protected SubjectDetail sse_decode_subject_detail(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_subject = sse_decode_subject_summary(deserializer);
-var var_episodes = sse_decode_list_episode(deserializer);
-var var_isFavorite = sse_decode_bool(deserializer);
-var var_progress = sse_decode_opt_box_autoadd_playback_progress(deserializer);
-return SubjectDetail(subject: var_subject, episodes: var_episodes, isFavorite: var_isFavorite, progress: var_progress); }
-
-@protected SubjectSummary sse_decode_subject_summary(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_id = sse_decode_CastedPrimitive_i_64(deserializer);
-var var_name = sse_decode_String(deserializer);
-var var_nameCn = sse_decode_opt_String(deserializer);
-var var_aliases = sse_decode_list_String(deserializer);
-var var_coverUrl = sse_decode_opt_String(deserializer);
-var var_summary = sse_decode_opt_String(deserializer);
-var var_airDate = sse_decode_opt_String(deserializer);
-var var_ratingScore = sse_decode_opt_box_autoadd_f_32(deserializer);
-var var_ratingRank = sse_decode_opt_box_autoadd_u_32(deserializer);
-var var_tags = sse_decode_list_String(deserializer);
-var var_totalEpisodes = sse_decode_u_32(deserializer);
-return SubjectSummary(id: var_id, name: var_name, nameCn: var_nameCn, aliases: var_aliases, coverUrl: var_coverUrl, summary: var_summary, airDate: var_airDate, ratingScore: var_ratingScore, ratingRank: var_ratingRank, tags: var_tags, totalEpisodes: var_totalEpisodes); }
-
-@protected int sse_decode_u_16(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getUint16(); }
-
-@protected int sse_decode_u_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getUint32(); }
-
-@protected int sse_decode_u_8(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getUint8(); }
-
-@protected void sse_decode_unit(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
- }
-
-@protected WatchHistoryItem sse_decode_watch_history_item(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_subject = sse_decode_subject_summary(deserializer);
-var var_episode = sse_decode_episode(deserializer);
-var var_progress = sse_decode_playback_progress(deserializer);
-return WatchHistoryItem(subject: var_subject, episode: var_episode, progress: var_progress); }
-
-@protected void sse_encode_CastedPrimitive_i_64(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_64(sseEncodeCastedPrimitiveI64(self), serializer); }
-
-@protected void sse_encode_Map_String_String_None(Map<String, String> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_list_record_string_string(self.entries.map((e) => (e.key, e.value)).toList(), serializer); }
-
-@protected void sse_encode_String(String self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer); }
-
-@protected void sse_encode_anime_ranking_applied(AnimeRankingApplied self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.sort, serializer);
-sse_encode_Map_String_String_None(self.filters, serializer);
-sse_encode_opt_String(self.filterGroup, serializer);
-sse_encode_opt_String(self.filter, serializer);
-sse_encode_opt_box_autoadd_u_16(self.year, serializer);
-sse_encode_opt_String(self.season, serializer);
-sse_encode_opt_String(self.keyword, serializer);
-sse_encode_u_32(self.page, serializer);
-sse_encode_u_8(self.limit, serializer);
- }
-
-@protected void sse_encode_anime_ranking_request(AnimeRankingRequest self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_anime_ranking_sort(self.sort, serializer);
-sse_encode_Map_String_String_None(self.filters, serializer);
-sse_encode_opt_String(self.filterGroup, serializer);
-sse_encode_opt_String(self.filter, serializer);
-sse_encode_opt_box_autoadd_u_16(self.year, serializer);
-sse_encode_opt_box_autoadd_anime_season(self.season, serializer);
-sse_encode_String(self.keyword, serializer);
-sse_encode_u_32(self.page, serializer);
-sse_encode_u_8(self.limit, serializer);
- }
-
-@protected void sse_encode_anime_ranking_response(AnimeRankingResponse self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_list_subject_summary(self.items, serializer);
-sse_encode_u_32(self.page, serializer);
-sse_encode_bool(self.hasNext, serializer);
-sse_encode_anime_ranking_applied(self.applied, serializer);
- }
-
-@protected void sse_encode_anime_ranking_sort(AnimeRankingSort self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.index, serializer); }
-
-@protected void sse_encode_anime_season(AnimeSeason self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.index, serializer); }
-
-@protected void sse_encode_bangumi_browse_request(BangumiBrowseRequest self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_bangumi_browse_sort(self.sort, serializer);
-sse_encode_opt_box_autoadd_u_16(self.year, serializer);
-sse_encode_opt_box_autoadd_u_8(self.month, serializer);
-sse_encode_opt_box_autoadd_u_16(self.limit, serializer);
-sse_encode_opt_box_autoadd_u_32(self.offset, serializer);
- }
-
-@protected void sse_encode_bangumi_browse_sort(BangumiBrowseSort self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.index, serializer); }
-
-@protected void sse_encode_bangumi_calendar_day(BangumiCalendarDay self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_u_8(self.weekdayId, serializer);
-sse_encode_String(self.weekdayCn, serializer);
-sse_encode_String(self.weekdayEn, serializer);
-sse_encode_list_subject_summary(self.items, serializer);
- }
-
-@protected void sse_encode_bool(bool self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putUint8(self ? 1 : 0); }
-
-@protected void sse_encode_box_autoadd_anime_ranking_request(AnimeRankingRequest self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_anime_ranking_request(self, serializer); }
-
-@protected void sse_encode_box_autoadd_anime_season(AnimeSeason self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_anime_season(self, serializer); }
-
-@protected void sse_encode_box_autoadd_bangumi_browse_request(BangumiBrowseRequest self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_bangumi_browse_request(self, serializer); }
-
-@protected void sse_encode_box_autoadd_collection_status(CollectionStatus self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_collection_status(self, serializer); }
-
-@protected void sse_encode_box_autoadd_episode(Episode self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_episode(self, serializer); }
-
-@protected void sse_encode_box_autoadd_episode_source_binding(EpisodeSourceBinding self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_episode_source_binding(self, serializer); }
-
-@protected void sse_encode_box_autoadd_f_32(double self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_f_32(self, serializer); }
-
-@protected void sse_encode_box_autoadd_playback_progress(PlaybackProgress self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_playback_progress(self, serializer); }
-
-@protected void sse_encode_box_autoadd_rule_group_summary(RuleGroupSummary self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_rule_group_summary(self, serializer); }
-
-@protected void sse_encode_box_autoadd_rule_repository_index_entry(RuleRepositoryIndexEntry self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_rule_repository_index_entry(self, serializer); }
-
-@protected void sse_encode_box_autoadd_rule_repository_subscription(RuleRepositorySubscription self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_rule_repository_subscription(self, serializer); }
-
-@protected void sse_encode_box_autoadd_source_candidate(SourceCandidate self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_source_candidate(self, serializer); }
-
-@protected void sse_encode_box_autoadd_source_package_text(SourcePackageText self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_source_package_text(self, serializer); }
-
-@protected void sse_encode_box_autoadd_subject_summary(SubjectSummary self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_subject_summary(self, serializer); }
-
-@protected void sse_encode_box_autoadd_u_16(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_u_16(self, serializer); }
-
-@protected void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_u_32(self, serializer); }
-
-@protected void sse_encode_box_autoadd_u_8(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_u_8(self, serializer); }
-
-@protected void sse_encode_collection_status(CollectionStatus self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.index, serializer); }
-
-@protected void sse_encode_episode(Episode self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_CastedPrimitive_i_64(self.id, serializer);
-sse_encode_CastedPrimitive_i_64(self.subjectId, serializer);
-sse_encode_i_32(self.sort, serializer);
-sse_encode_String(self.title, serializer);
-sse_encode_opt_String(self.titleCn, serializer);
-sse_encode_opt_String(self.airDate, serializer);
- }
-
-@protected void sse_encode_episode_binding_resolve_result(EpisodeBindingResolveResult self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_list_episode_source_binding(self.bindings, serializer);
-sse_encode_opt_box_autoadd_source_candidate(self.selectedCandidate, serializer);
-sse_encode_opt_box_autoadd_episode_source_binding(self.selectedBinding, serializer);
-sse_encode_list_rule_resolve_attempt(self.attempts, serializer);
- }
-
-@protected void sse_encode_episode_source_binding(EpisodeSourceBinding self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_CastedPrimitive_i_64(self.subjectId, serializer);
-sse_encode_CastedPrimitive_i_64(self.episodeId, serializer);
-sse_encode_i_32(self.episodeOrder, serializer);
-sse_encode_String(self.ruleId, serializer);
-sse_encode_String(self.sourceEpisodeKey, serializer);
-sse_encode_String(self.title, serializer);
-sse_encode_String(self.playUrl, serializer);
-sse_encode_list_String(self.fallbackPlayUrls, serializer);
-sse_encode_opt_String(self.refererUrl, serializer);
-sse_encode_String(self.confidence, serializer);
- }
-
-@protected void sse_encode_episode_stream_resolve_result(EpisodeStreamResolveResult self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_list_play_stream(self.streams, serializer);
-sse_encode_list_rule_resolve_attempt(self.attempts, serializer);
- }
-
-@protected void sse_encode_f_32(double self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putFloat32(self); }
-
-@protected void sse_encode_favorite_item(FavoriteItem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_subject_summary(self.subject, serializer);
-sse_encode_collection_status(self.status, serializer);
-sse_encode_CastedPrimitive_i_64(self.updatedAtMs, serializer);
- }
-
-@protected void sse_encode_i_32(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putInt32(self); }
-
-@protected void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putPlatformInt64(self); }
-
-@protected void sse_encode_list_String(List<String> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_String(item, serializer); } }
-
-@protected void sse_encode_list_bangumi_calendar_day(List<BangumiCalendarDay> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_bangumi_calendar_day(item, serializer); } }
-
-@protected void sse_encode_list_episode(List<Episode> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_episode(item, serializer); } }
-
-@protected void sse_encode_list_episode_source_binding(List<EpisodeSourceBinding> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_episode_source_binding(item, serializer); } }
-
-@protected void sse_encode_list_favorite_item(List<FavoriteItem> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_favorite_item(item, serializer); } }
-
-@protected void sse_encode_list_play_stream(List<PlayStream> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_play_stream(item, serializer); } }
-
-@protected void sse_encode_list_playback_candidate(List<PlaybackCandidate> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_playback_candidate(item, serializer); } }
-
-@protected void sse_encode_list_playback_header(List<PlaybackHeader> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_playback_header(item, serializer); } }
-
-@protected void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-                    serializer.buffer.putUint8List(self); }
-
-@protected void sse_encode_list_record_string_string(List<(String,String)> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_record_string_string(item, serializer); } }
-
-@protected void sse_encode_list_rule_group_summary(List<RuleGroupSummary> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_rule_group_summary(item, serializer); } }
-
-@protected void sse_encode_list_rule_repository_index_entry(List<RuleRepositoryIndexEntry> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_rule_repository_index_entry(item, serializer); } }
-
-@protected void sse_encode_list_rule_repository_subscription(List<RuleRepositorySubscription> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_rule_repository_subscription(item, serializer); } }
-
-@protected void sse_encode_list_rule_resolve_attempt(List<RuleResolveAttempt> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_rule_resolve_attempt(item, serializer); } }
-
-@protected void sse_encode_list_rule_source_search_result(List<RuleSourceSearchResult> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_rule_source_search_result(item, serializer); } }
-
-@protected void sse_encode_list_source_candidate(List<SourceCandidate> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_source_candidate(item, serializer); } }
-
-@protected void sse_encode_list_source_package_summary(List<SourcePackageSummary> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_source_package_summary(item, serializer); } }
-
-@protected void sse_encode_list_subject_summary(List<SubjectSummary> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_subject_summary(item, serializer); } }
-
-@protected void sse_encode_list_watch_history_item(List<WatchHistoryItem> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_watch_history_item(item, serializer); } }
-
-@protected void sse_encode_opt_CastedPrimitive_i_64(int? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_CastedPrimitive_i_64(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_String(String? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_String(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_anime_season(AnimeSeason? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_anime_season(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_collection_status(CollectionStatus? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_collection_status(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_episode_source_binding(EpisodeSourceBinding? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_episode_source_binding(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_f_32(double? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_f_32(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_playback_progress(PlaybackProgress? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_playback_progress(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_source_candidate(SourceCandidate? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_source_candidate(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_source_package_text(SourcePackageText? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_source_package_text(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_u_16(int? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_u_16(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_u_32(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_u_8(int? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_u_8(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_play_stream(PlayStream self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.id, serializer);
-sse_encode_String(self.ruleId, serializer);
-sse_encode_String(self.kind, serializer);
-sse_encode_String(self.url, serializer);
-sse_encode_opt_String(self.refererUrl, serializer);
-sse_encode_opt_String(self.userAgent, serializer);
-sse_encode_list_playback_header(self.headers, serializer);
- }
-
-@protected void sse_encode_playback_candidate(PlaybackCandidate self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.id, serializer);
-sse_encode_CastedPrimitive_i_64(self.subjectId, serializer);
-sse_encode_CastedPrimitive_i_64(self.episodeId, serializer);
-sse_encode_String(self.sourcePackageId, serializer);
-sse_encode_String(self.title, serializer);
-sse_encode_String(self.url, serializer);
-sse_encode_list_playback_header(self.headers, serializer);
- }
-
-@protected void sse_encode_playback_header(PlaybackHeader self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.name, serializer);
-sse_encode_String(self.value, serializer);
- }
-
-@protected void sse_encode_playback_progress(PlaybackProgress self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_CastedPrimitive_i_64(self.subjectId, serializer);
-sse_encode_CastedPrimitive_i_64(self.episodeId, serializer);
-sse_encode_CastedPrimitive_i_64(self.positionMs, serializer);
-sse_encode_opt_CastedPrimitive_i_64(self.durationMs, serializer);
-sse_encode_CastedPrimitive_i_64(self.updatedAtMs, serializer);
- }
-
-@protected void sse_encode_record_string_string((String,String) self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.$1, serializer);
-sse_encode_String(self.$2, serializer);
- }
-
-@protected void sse_encode_rule_group_summary(RuleGroupSummary self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.id, serializer);
-sse_encode_String(self.name, serializer);
-sse_encode_bool(self.enabled, serializer);
-sse_encode_list_String(self.ruleIds, serializer);
-sse_encode_list_String(self.disabledRuleIds, serializer);
- }
-
-@protected void sse_encode_rule_repository_index_entry(RuleRepositoryIndexEntry self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.name, serializer);
-sse_encode_String(self.version, serializer);
-sse_encode_opt_CastedPrimitive_i_64(self.lastUpdateMs, serializer);
-sse_encode_bool(self.antiCrawlerEnabled, serializer);
-sse_encode_String(self.rawUrl, serializer);
- }
-
-@protected void sse_encode_rule_repository_subscription(RuleRepositorySubscription self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.id, serializer);
-sse_encode_String(self.name, serializer);
-sse_encode_String(self.url, serializer);
-sse_encode_bool(self.enabled, serializer);
-sse_encode_CastedPrimitive_i_64(self.updatedAtMs, serializer);
- }
-
-@protected void sse_encode_rule_resolve_attempt(RuleResolveAttempt self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.ruleId, serializer);
-sse_encode_String(self.status, serializer);
-sse_encode_String(self.message, serializer);
- }
-
-@protected void sse_encode_rule_source_search_result(RuleSourceSearchResult self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.ruleId, serializer);
-sse_encode_String(self.ruleName, serializer);
-sse_encode_String(self.status, serializer);
-sse_encode_CastedPrimitive_i_64(self.elapsedMs, serializer);
-sse_encode_list_source_candidate(self.candidates, serializer);
-sse_encode_list_source_candidate(self.rawCandidates, serializer);
-sse_encode_opt_String(self.selectedKeyword, serializer);
-sse_encode_opt_String(self.selectedTitle, serializer);
-sse_encode_opt_box_autoadd_f_32(self.selectedScore, serializer);
-sse_encode_list_String(self.keywordTraces, serializer);
-sse_encode_opt_String(self.error, serializer);
- }
-
-@protected void sse_encode_source_candidate(SourceCandidate self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.ruleId, serializer);
-sse_encode_String(self.ruleName, serializer);
-sse_encode_String(self.sourceItemKey, serializer);
-sse_encode_String(self.title, serializer);
-sse_encode_String(self.detailUrl, serializer);
-sse_encode_opt_String(self.searchUrl, serializer);
-sse_encode_String(self.confidence, serializer);
-sse_encode_opt_box_autoadd_f_32(self.score, serializer);
-sse_encode_opt_String(self.matchedKeyword, serializer);
- }
-
-@protected void sse_encode_source_import_result(SourceImportResult self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_source_package_summary(self.package, serializer);
-sse_encode_list_String(self.diagnostics, serializer);
- }
-
-@protected void sse_encode_source_package_summary(SourcePackageSummary self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.id, serializer);
-sse_encode_String(self.name, serializer);
-sse_encode_String(self.version, serializer);
-sse_encode_bool(self.enabled, serializer);
-sse_encode_String(self.format, serializer);
-sse_encode_opt_String(self.sourceUrl, serializer);
-sse_encode_list_String(self.diagnostics, serializer);
-sse_encode_CastedPrimitive_i_64(self.importedAtMs, serializer);
-sse_encode_CastedPrimitive_i_64(self.updatedAtMs, serializer);
- }
-
-@protected void sse_encode_source_package_text(SourcePackageText self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.id, serializer);
-sse_encode_String(self.name, serializer);
-sse_encode_String(self.format, serializer);
-sse_encode_String(self.body, serializer);
- }
-
-@protected void sse_encode_subject_detail(SubjectDetail self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_subject_summary(self.subject, serializer);
-sse_encode_list_episode(self.episodes, serializer);
-sse_encode_bool(self.isFavorite, serializer);
-sse_encode_opt_box_autoadd_playback_progress(self.progress, serializer);
- }
-
-@protected void sse_encode_subject_summary(SubjectSummary self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_CastedPrimitive_i_64(self.id, serializer);
-sse_encode_String(self.name, serializer);
-sse_encode_opt_String(self.nameCn, serializer);
-sse_encode_list_String(self.aliases, serializer);
-sse_encode_opt_String(self.coverUrl, serializer);
-sse_encode_opt_String(self.summary, serializer);
-sse_encode_opt_String(self.airDate, serializer);
-sse_encode_opt_box_autoadd_f_32(self.ratingScore, serializer);
-sse_encode_opt_box_autoadd_u_32(self.ratingRank, serializer);
-sse_encode_list_String(self.tags, serializer);
-sse_encode_u_32(self.totalEpisodes, serializer);
- }
-
-@protected void sse_encode_u_16(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putUint16(self); }
-
-@protected void sse_encode_u_32(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putUint32(self); }
-
-@protected void sse_encode_u_8(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putUint8(self); }
-
-@protected void sse_encode_unit(void self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
- }
-
-@protected void sse_encode_watch_history_item(WatchHistoryItem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_subject_summary(self.subject, serializer);
-sse_encode_episode(self.episode, serializer);
-sse_encode_playback_progress(self.progress, serializer);
- }
-                }
-                
+        ),
+        constMeta: kCrateApiSetSourcePackageEnabledConstMeta,
+        argValues: [id, enabled],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiSetSourcePackageEnabledConstMeta =>
+      const TaskConstMeta(
+        debugName: "set_source_package_enabled",
+        argNames: ["id", "enabled"],
+      );
+
+  @protected
+  int dco_decode_CastedPrimitive_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError(
+      'Not implemented in this codec, please use the other one',
+    );
+  }
+
+  @protected
+  Map<String, String> dco_decode_Map_String_String_None(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return Map.fromEntries(
+      dco_decode_list_record_string_string(
+        raw,
+      ).map((e) => MapEntry(e.$1, e.$2)),
+    );
+  }
+
+  @protected
+  String dco_decode_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as String;
+  }
+
+  @protected
+  AnimeRankingApplied dco_decode_anime_ranking_applied(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 9)
+      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    return AnimeRankingApplied(
+      sort: dco_decode_String(arr[0]),
+      filters: dco_decode_Map_String_String_None(arr[1]),
+      filterGroup: dco_decode_opt_String(arr[2]),
+      filter: dco_decode_opt_String(arr[3]),
+      year: dco_decode_opt_box_autoadd_u_16(arr[4]),
+      season: dco_decode_opt_String(arr[5]),
+      keyword: dco_decode_opt_String(arr[6]),
+      page: dco_decode_u_32(arr[7]),
+      limit: dco_decode_u_8(arr[8]),
+    );
+  }
+
+  @protected
+  AnimeRankingRequest dco_decode_anime_ranking_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 9)
+      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    return AnimeRankingRequest(
+      sort: dco_decode_anime_ranking_sort(arr[0]),
+      filters: dco_decode_Map_String_String_None(arr[1]),
+      filterGroup: dco_decode_opt_String(arr[2]),
+      filter: dco_decode_opt_String(arr[3]),
+      year: dco_decode_opt_box_autoadd_u_16(arr[4]),
+      season: dco_decode_opt_box_autoadd_anime_season(arr[5]),
+      keyword: dco_decode_String(arr[6]),
+      page: dco_decode_u_32(arr[7]),
+      limit: dco_decode_u_8(arr[8]),
+    );
+  }
+
+  @protected
+  AnimeRankingResponse dco_decode_anime_ranking_response(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return AnimeRankingResponse(
+      items: dco_decode_list_subject_summary(arr[0]),
+      page: dco_decode_u_32(arr[1]),
+      hasNext: dco_decode_bool(arr[2]),
+      applied: dco_decode_anime_ranking_applied(arr[3]),
+    );
+  }
+
+  @protected
+  AnimeRankingSort dco_decode_anime_ranking_sort(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return AnimeRankingSort.values[raw as int];
+  }
+
+  @protected
+  AnimeSeason dco_decode_anime_season(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return AnimeSeason.values[raw as int];
+  }
+
+  @protected
+  AppearanceSettings dco_decode_appearance_settings(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return AppearanceSettings(
+      themeMode: dco_decode_String(arr[0]),
+      colorScheme: dco_decode_String(arr[1]),
+    );
+  }
+
+  @protected
+  BangumiBrowseRequest dco_decode_bangumi_browse_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return BangumiBrowseRequest(
+      sort: dco_decode_bangumi_browse_sort(arr[0]),
+      year: dco_decode_opt_box_autoadd_u_16(arr[1]),
+      month: dco_decode_opt_box_autoadd_u_8(arr[2]),
+      limit: dco_decode_opt_box_autoadd_u_16(arr[3]),
+      offset: dco_decode_opt_box_autoadd_u_32(arr[4]),
+    );
+  }
+
+  @protected
+  BangumiBrowseSort dco_decode_bangumi_browse_sort(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return BangumiBrowseSort.values[raw as int];
+  }
+
+  @protected
+  BangumiCalendarDay dco_decode_bangumi_calendar_day(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return BangumiCalendarDay(
+      weekdayId: dco_decode_u_8(arr[0]),
+      weekdayCn: dco_decode_String(arr[1]),
+      weekdayEn: dco_decode_String(arr[2]),
+      items: dco_decode_list_subject_summary(arr[3]),
+    );
+  }
+
+  @protected
+  bool dco_decode_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as bool;
+  }
+
+  @protected
+  AnimeRankingRequest dco_decode_box_autoadd_anime_ranking_request(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_anime_ranking_request(raw);
+  }
+
+  @protected
+  AnimeSeason dco_decode_box_autoadd_anime_season(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_anime_season(raw);
+  }
+
+  @protected
+  AppearanceSettings dco_decode_box_autoadd_appearance_settings(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_appearance_settings(raw);
+  }
+
+  @protected
+  BangumiBrowseRequest dco_decode_box_autoadd_bangumi_browse_request(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_bangumi_browse_request(raw);
+  }
+
+  @protected
+  CollectionStatus dco_decode_box_autoadd_collection_status(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_collection_status(raw);
+  }
+
+  @protected
+  Episode dco_decode_box_autoadd_episode(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_episode(raw);
+  }
+
+  @protected
+  EpisodeSourceBinding dco_decode_box_autoadd_episode_source_binding(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_episode_source_binding(raw);
+  }
+
+  @protected
+  double dco_decode_box_autoadd_f_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
+  }
+
+  @protected
+  PlaybackProgress dco_decode_box_autoadd_playback_progress(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_playback_progress(raw);
+  }
+
+  @protected
+  RuleGroupSummary dco_decode_box_autoadd_rule_group_summary(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_rule_group_summary(raw);
+  }
+
+  @protected
+  RuleRepositoryIndexEntry dco_decode_box_autoadd_rule_repository_index_entry(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_rule_repository_index_entry(raw);
+  }
+
+  @protected
+  RuleRepositorySubscription
+  dco_decode_box_autoadd_rule_repository_subscription(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_rule_repository_subscription(raw);
+  }
+
+  @protected
+  SourceCandidate dco_decode_box_autoadd_source_candidate(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_source_candidate(raw);
+  }
+
+  @protected
+  SourcePackageText dco_decode_box_autoadd_source_package_text(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_source_package_text(raw);
+  }
+
+  @protected
+  SubjectSummary dco_decode_box_autoadd_subject_summary(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_subject_summary(raw);
+  }
+
+  @protected
+  int dco_decode_box_autoadd_u_16(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
+  int dco_decode_box_autoadd_u_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
+  int dco_decode_box_autoadd_u_8(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
+  CollectionStatus dco_decode_collection_status(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return CollectionStatus.values[raw as int];
+  }
+
+  @protected
+  Episode dco_decode_episode(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return Episode(
+      id: dco_decode_CastedPrimitive_i_64(arr[0]),
+      subjectId: dco_decode_CastedPrimitive_i_64(arr[1]),
+      sort: dco_decode_i_32(arr[2]),
+      title: dco_decode_String(arr[3]),
+      titleCn: dco_decode_opt_String(arr[4]),
+      airDate: dco_decode_opt_String(arr[5]),
+    );
+  }
+
+  @protected
+  EpisodeBindingResolveResult dco_decode_episode_binding_resolve_result(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return EpisodeBindingResolveResult(
+      bindings: dco_decode_list_episode_source_binding(arr[0]),
+      selectedCandidate: dco_decode_opt_box_autoadd_source_candidate(arr[1]),
+      selectedBinding: dco_decode_opt_box_autoadd_episode_source_binding(
+        arr[2],
+      ),
+      attempts: dco_decode_list_rule_resolve_attempt(arr[3]),
+    );
+  }
+
+  @protected
+  EpisodeSourceBinding dco_decode_episode_source_binding(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 10)
+      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
+    return EpisodeSourceBinding(
+      subjectId: dco_decode_CastedPrimitive_i_64(arr[0]),
+      episodeId: dco_decode_CastedPrimitive_i_64(arr[1]),
+      episodeOrder: dco_decode_i_32(arr[2]),
+      ruleId: dco_decode_String(arr[3]),
+      sourceEpisodeKey: dco_decode_String(arr[4]),
+      title: dco_decode_String(arr[5]),
+      playUrl: dco_decode_String(arr[6]),
+      fallbackPlayUrls: dco_decode_list_String(arr[7]),
+      refererUrl: dco_decode_opt_String(arr[8]),
+      confidence: dco_decode_String(arr[9]),
+    );
+  }
+
+  @protected
+  EpisodeStreamResolveResult dco_decode_episode_stream_resolve_result(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return EpisodeStreamResolveResult(
+      streams: dco_decode_list_play_stream(arr[0]),
+      attempts: dco_decode_list_rule_resolve_attempt(arr[1]),
+    );
+  }
+
+  @protected
+  double dco_decode_f_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
+  }
+
+  @protected
+  FavoriteItem dco_decode_favorite_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return FavoriteItem(
+      subject: dco_decode_subject_summary(arr[0]),
+      status: dco_decode_collection_status(arr[1]),
+      updatedAtMs: dco_decode_CastedPrimitive_i_64(arr[2]),
+    );
+  }
+
+  @protected
+  int dco_decode_i_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dcoDecodeI64(raw);
+  }
+
+  @protected
+  List<String> dco_decode_list_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_String).toList();
+  }
+
+  @protected
+  List<BangumiCalendarDay> dco_decode_list_bangumi_calendar_day(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_bangumi_calendar_day).toList();
+  }
+
+  @protected
+  List<Episode> dco_decode_list_episode(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_episode).toList();
+  }
+
+  @protected
+  List<EpisodeSourceBinding> dco_decode_list_episode_source_binding(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_episode_source_binding)
+        .toList();
+  }
+
+  @protected
+  List<FavoriteItem> dco_decode_list_favorite_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_favorite_item).toList();
+  }
+
+  @protected
+  List<PlayStream> dco_decode_list_play_stream(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_play_stream).toList();
+  }
+
+  @protected
+  List<PlaybackCandidate> dco_decode_list_playback_candidate(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_playback_candidate).toList();
+  }
+
+  @protected
+  List<PlaybackHeader> dco_decode_list_playback_header(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_playback_header).toList();
+  }
+
+  @protected
+  Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as Uint8List;
+  }
+
+  @protected
+  List<(String, String)> dco_decode_list_record_string_string(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_record_string_string).toList();
+  }
+
+  @protected
+  List<RuleGroupSummary> dco_decode_list_rule_group_summary(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_rule_group_summary).toList();
+  }
+
+  @protected
+  List<RuleRepositoryIndexEntry> dco_decode_list_rule_repository_index_entry(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_rule_repository_index_entry)
+        .toList();
+  }
+
+  @protected
+  List<RuleRepositorySubscription> dco_decode_list_rule_repository_subscription(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_rule_repository_subscription)
+        .toList();
+  }
+
+  @protected
+  List<RuleResolveAttempt> dco_decode_list_rule_resolve_attempt(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_rule_resolve_attempt).toList();
+  }
+
+  @protected
+  List<RuleSourceSearchResult> dco_decode_list_rule_source_search_result(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_rule_source_search_result)
+        .toList();
+  }
+
+  @protected
+  List<SourceCandidate> dco_decode_list_source_candidate(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_source_candidate).toList();
+  }
+
+  @protected
+  List<SourcePackageSummary> dco_decode_list_source_package_summary(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_source_package_summary)
+        .toList();
+  }
+
+  @protected
+  List<SubjectSummary> dco_decode_list_subject_summary(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_subject_summary).toList();
+  }
+
+  @protected
+  List<WatchHistoryItem> dco_decode_list_watch_history_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_watch_history_item).toList();
+  }
+
+  @protected
+  int? dco_decode_opt_CastedPrimitive_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_CastedPrimitive_i_64(raw);
+  }
+
+  @protected
+  String? dco_decode_opt_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_String(raw);
+  }
+
+  @protected
+  AnimeSeason? dco_decode_opt_box_autoadd_anime_season(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_anime_season(raw);
+  }
+
+  @protected
+  CollectionStatus? dco_decode_opt_box_autoadd_collection_status(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_collection_status(raw);
+  }
+
+  @protected
+  EpisodeSourceBinding? dco_decode_opt_box_autoadd_episode_source_binding(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null
+        ? null
+        : dco_decode_box_autoadd_episode_source_binding(raw);
+  }
+
+  @protected
+  double? dco_decode_opt_box_autoadd_f_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_f_32(raw);
+  }
+
+  @protected
+  PlaybackProgress? dco_decode_opt_box_autoadd_playback_progress(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_playback_progress(raw);
+  }
+
+  @protected
+  SourceCandidate? dco_decode_opt_box_autoadd_source_candidate(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_source_candidate(raw);
+  }
+
+  @protected
+  SourcePackageText? dco_decode_opt_box_autoadd_source_package_text(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_source_package_text(raw);
+  }
+
+  @protected
+  int? dco_decode_opt_box_autoadd_u_16(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_u_16(raw);
+  }
+
+  @protected
+  int? dco_decode_opt_box_autoadd_u_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_u_32(raw);
+  }
+
+  @protected
+  int? dco_decode_opt_box_autoadd_u_8(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_u_8(raw);
+  }
+
+  @protected
+  PlayStream dco_decode_play_stream(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    return PlayStream(
+      id: dco_decode_String(arr[0]),
+      ruleId: dco_decode_String(arr[1]),
+      kind: dco_decode_String(arr[2]),
+      url: dco_decode_String(arr[3]),
+      refererUrl: dco_decode_opt_String(arr[4]),
+      userAgent: dco_decode_opt_String(arr[5]),
+      headers: dco_decode_list_playback_header(arr[6]),
+    );
+  }
+
+  @protected
+  PlaybackCandidate dco_decode_playback_candidate(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    return PlaybackCandidate(
+      id: dco_decode_String(arr[0]),
+      subjectId: dco_decode_CastedPrimitive_i_64(arr[1]),
+      episodeId: dco_decode_CastedPrimitive_i_64(arr[2]),
+      sourcePackageId: dco_decode_String(arr[3]),
+      title: dco_decode_String(arr[4]),
+      url: dco_decode_String(arr[5]),
+      headers: dco_decode_list_playback_header(arr[6]),
+    );
+  }
+
+  @protected
+  PlaybackHeader dco_decode_playback_header(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return PlaybackHeader(
+      name: dco_decode_String(arr[0]),
+      value: dco_decode_String(arr[1]),
+    );
+  }
+
+  @protected
+  PlaybackProgress dco_decode_playback_progress(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return PlaybackProgress(
+      subjectId: dco_decode_CastedPrimitive_i_64(arr[0]),
+      episodeId: dco_decode_CastedPrimitive_i_64(arr[1]),
+      positionMs: dco_decode_CastedPrimitive_i_64(arr[2]),
+      durationMs: dco_decode_opt_CastedPrimitive_i_64(arr[3]),
+      updatedAtMs: dco_decode_CastedPrimitive_i_64(arr[4]),
+    );
+  }
+
+  @protected
+  (String, String) dco_decode_record_string_string(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2) {
+      throw Exception('Expected 2 elements, got ${arr.length}');
+    }
+    return (dco_decode_String(arr[0]), dco_decode_String(arr[1]));
+  }
+
+  @protected
+  RuleGroupSummary dco_decode_rule_group_summary(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return RuleGroupSummary(
+      id: dco_decode_String(arr[0]),
+      name: dco_decode_String(arr[1]),
+      enabled: dco_decode_bool(arr[2]),
+      ruleIds: dco_decode_list_String(arr[3]),
+      disabledRuleIds: dco_decode_list_String(arr[4]),
+    );
+  }
+
+  @protected
+  RuleRepositoryIndexEntry dco_decode_rule_repository_index_entry(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return RuleRepositoryIndexEntry(
+      name: dco_decode_String(arr[0]),
+      version: dco_decode_String(arr[1]),
+      lastUpdateMs: dco_decode_opt_CastedPrimitive_i_64(arr[2]),
+      antiCrawlerEnabled: dco_decode_bool(arr[3]),
+      rawUrl: dco_decode_String(arr[4]),
+    );
+  }
+
+  @protected
+  RuleRepositorySubscription dco_decode_rule_repository_subscription(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return RuleRepositorySubscription(
+      id: dco_decode_String(arr[0]),
+      name: dco_decode_String(arr[1]),
+      url: dco_decode_String(arr[2]),
+      enabled: dco_decode_bool(arr[3]),
+      updatedAtMs: dco_decode_CastedPrimitive_i_64(arr[4]),
+    );
+  }
+
+  @protected
+  RuleResolveAttempt dco_decode_rule_resolve_attempt(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return RuleResolveAttempt(
+      ruleId: dco_decode_String(arr[0]),
+      status: dco_decode_String(arr[1]),
+      message: dco_decode_String(arr[2]),
+    );
+  }
+
+  @protected
+  RuleSourceSearchResult dco_decode_rule_source_search_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 11)
+      throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
+    return RuleSourceSearchResult(
+      ruleId: dco_decode_String(arr[0]),
+      ruleName: dco_decode_String(arr[1]),
+      status: dco_decode_String(arr[2]),
+      elapsedMs: dco_decode_CastedPrimitive_i_64(arr[3]),
+      candidates: dco_decode_list_source_candidate(arr[4]),
+      rawCandidates: dco_decode_list_source_candidate(arr[5]),
+      selectedKeyword: dco_decode_opt_String(arr[6]),
+      selectedTitle: dco_decode_opt_String(arr[7]),
+      selectedScore: dco_decode_opt_box_autoadd_f_32(arr[8]),
+      keywordTraces: dco_decode_list_String(arr[9]),
+      error: dco_decode_opt_String(arr[10]),
+    );
+  }
+
+  @protected
+  SourceCandidate dco_decode_source_candidate(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 9)
+      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    return SourceCandidate(
+      ruleId: dco_decode_String(arr[0]),
+      ruleName: dco_decode_String(arr[1]),
+      sourceItemKey: dco_decode_String(arr[2]),
+      title: dco_decode_String(arr[3]),
+      detailUrl: dco_decode_String(arr[4]),
+      searchUrl: dco_decode_opt_String(arr[5]),
+      confidence: dco_decode_String(arr[6]),
+      score: dco_decode_opt_box_autoadd_f_32(arr[7]),
+      matchedKeyword: dco_decode_opt_String(arr[8]),
+    );
+  }
+
+  @protected
+  SourceImportResult dco_decode_source_import_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return SourceImportResult(
+      package: dco_decode_source_package_summary(arr[0]),
+      diagnostics: dco_decode_list_String(arr[1]),
+    );
+  }
+
+  @protected
+  SourcePackageSummary dco_decode_source_package_summary(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 9)
+      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    return SourcePackageSummary(
+      id: dco_decode_String(arr[0]),
+      name: dco_decode_String(arr[1]),
+      version: dco_decode_String(arr[2]),
+      enabled: dco_decode_bool(arr[3]),
+      format: dco_decode_String(arr[4]),
+      sourceUrl: dco_decode_opt_String(arr[5]),
+      diagnostics: dco_decode_list_String(arr[6]),
+      importedAtMs: dco_decode_CastedPrimitive_i_64(arr[7]),
+      updatedAtMs: dco_decode_CastedPrimitive_i_64(arr[8]),
+    );
+  }
+
+  @protected
+  SourcePackageText dco_decode_source_package_text(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return SourcePackageText(
+      id: dco_decode_String(arr[0]),
+      name: dco_decode_String(arr[1]),
+      format: dco_decode_String(arr[2]),
+      body: dco_decode_String(arr[3]),
+    );
+  }
+
+  @protected
+  SubjectDetail dco_decode_subject_detail(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return SubjectDetail(
+      subject: dco_decode_subject_summary(arr[0]),
+      episodes: dco_decode_list_episode(arr[1]),
+      isFavorite: dco_decode_bool(arr[2]),
+      progress: dco_decode_opt_box_autoadd_playback_progress(arr[3]),
+    );
+  }
+
+  @protected
+  SubjectSummary dco_decode_subject_summary(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 11)
+      throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
+    return SubjectSummary(
+      id: dco_decode_CastedPrimitive_i_64(arr[0]),
+      name: dco_decode_String(arr[1]),
+      nameCn: dco_decode_opt_String(arr[2]),
+      aliases: dco_decode_list_String(arr[3]),
+      coverUrl: dco_decode_opt_String(arr[4]),
+      summary: dco_decode_opt_String(arr[5]),
+      airDate: dco_decode_opt_String(arr[6]),
+      ratingScore: dco_decode_opt_box_autoadd_f_32(arr[7]),
+      ratingRank: dco_decode_opt_box_autoadd_u_32(arr[8]),
+      tags: dco_decode_list_String(arr[9]),
+      totalEpisodes: dco_decode_u_32(arr[10]),
+    );
+  }
+
+  @protected
+  int dco_decode_u_16(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
+  int dco_decode_u_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
+  int dco_decode_u_8(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
+  void dco_decode_unit(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return;
+  }
+
+  @protected
+  WatchHistoryItem dco_decode_watch_history_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return WatchHistoryItem(
+      subject: dco_decode_subject_summary(arr[0]),
+      episode: dco_decode_episode(arr[1]),
+      progress: dco_decode_playback_progress(arr[2]),
+    );
+  }
+
+  @protected
+  int sse_decode_CastedPrimitive_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_64(deserializer);
+    return inner.toInt();
+  }
+
+  @protected
+  Map<String, String> sse_decode_Map_String_String_None(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_list_record_string_string(deserializer);
+    return Map.fromEntries(inner.map((e) => MapEntry(e.$1, e.$2)));
+  }
+
+  @protected
+  String sse_decode_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_list_prim_u_8_strict(deserializer);
+    return utf8.decoder.convert(inner);
+  }
+
+  @protected
+  AnimeRankingApplied sse_decode_anime_ranking_applied(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_sort = sse_decode_String(deserializer);
+    var var_filters = sse_decode_Map_String_String_None(deserializer);
+    var var_filterGroup = sse_decode_opt_String(deserializer);
+    var var_filter = sse_decode_opt_String(deserializer);
+    var var_year = sse_decode_opt_box_autoadd_u_16(deserializer);
+    var var_season = sse_decode_opt_String(deserializer);
+    var var_keyword = sse_decode_opt_String(deserializer);
+    var var_page = sse_decode_u_32(deserializer);
+    var var_limit = sse_decode_u_8(deserializer);
+    return AnimeRankingApplied(
+      sort: var_sort,
+      filters: var_filters,
+      filterGroup: var_filterGroup,
+      filter: var_filter,
+      year: var_year,
+      season: var_season,
+      keyword: var_keyword,
+      page: var_page,
+      limit: var_limit,
+    );
+  }
+
+  @protected
+  AnimeRankingRequest sse_decode_anime_ranking_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_sort = sse_decode_anime_ranking_sort(deserializer);
+    var var_filters = sse_decode_Map_String_String_None(deserializer);
+    var var_filterGroup = sse_decode_opt_String(deserializer);
+    var var_filter = sse_decode_opt_String(deserializer);
+    var var_year = sse_decode_opt_box_autoadd_u_16(deserializer);
+    var var_season = sse_decode_opt_box_autoadd_anime_season(deserializer);
+    var var_keyword = sse_decode_String(deserializer);
+    var var_page = sse_decode_u_32(deserializer);
+    var var_limit = sse_decode_u_8(deserializer);
+    return AnimeRankingRequest(
+      sort: var_sort,
+      filters: var_filters,
+      filterGroup: var_filterGroup,
+      filter: var_filter,
+      year: var_year,
+      season: var_season,
+      keyword: var_keyword,
+      page: var_page,
+      limit: var_limit,
+    );
+  }
+
+  @protected
+  AnimeRankingResponse sse_decode_anime_ranking_response(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_items = sse_decode_list_subject_summary(deserializer);
+    var var_page = sse_decode_u_32(deserializer);
+    var var_hasNext = sse_decode_bool(deserializer);
+    var var_applied = sse_decode_anime_ranking_applied(deserializer);
+    return AnimeRankingResponse(
+      items: var_items,
+      page: var_page,
+      hasNext: var_hasNext,
+      applied: var_applied,
+    );
+  }
+
+  @protected
+  AnimeRankingSort sse_decode_anime_ranking_sort(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return AnimeRankingSort.values[inner];
+  }
+
+  @protected
+  AnimeSeason sse_decode_anime_season(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return AnimeSeason.values[inner];
+  }
+
+  @protected
+  AppearanceSettings sse_decode_appearance_settings(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_themeMode = sse_decode_String(deserializer);
+    var var_colorScheme = sse_decode_String(deserializer);
+    return AppearanceSettings(
+      themeMode: var_themeMode,
+      colorScheme: var_colorScheme,
+    );
+  }
+
+  @protected
+  BangumiBrowseRequest sse_decode_bangumi_browse_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_sort = sse_decode_bangumi_browse_sort(deserializer);
+    var var_year = sse_decode_opt_box_autoadd_u_16(deserializer);
+    var var_month = sse_decode_opt_box_autoadd_u_8(deserializer);
+    var var_limit = sse_decode_opt_box_autoadd_u_16(deserializer);
+    var var_offset = sse_decode_opt_box_autoadd_u_32(deserializer);
+    return BangumiBrowseRequest(
+      sort: var_sort,
+      year: var_year,
+      month: var_month,
+      limit: var_limit,
+      offset: var_offset,
+    );
+  }
+
+  @protected
+  BangumiBrowseSort sse_decode_bangumi_browse_sort(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return BangumiBrowseSort.values[inner];
+  }
+
+  @protected
+  BangumiCalendarDay sse_decode_bangumi_calendar_day(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_weekdayId = sse_decode_u_8(deserializer);
+    var var_weekdayCn = sse_decode_String(deserializer);
+    var var_weekdayEn = sse_decode_String(deserializer);
+    var var_items = sse_decode_list_subject_summary(deserializer);
+    return BangumiCalendarDay(
+      weekdayId: var_weekdayId,
+      weekdayCn: var_weekdayCn,
+      weekdayEn: var_weekdayEn,
+      items: var_items,
+    );
+  }
+
+  @protected
+  bool sse_decode_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint8() != 0;
+  }
+
+  @protected
+  AnimeRankingRequest sse_decode_box_autoadd_anime_ranking_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_anime_ranking_request(deserializer));
+  }
+
+  @protected
+  AnimeSeason sse_decode_box_autoadd_anime_season(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_anime_season(deserializer));
+  }
+
+  @protected
+  AppearanceSettings sse_decode_box_autoadd_appearance_settings(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_appearance_settings(deserializer));
+  }
+
+  @protected
+  BangumiBrowseRequest sse_decode_box_autoadd_bangumi_browse_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_bangumi_browse_request(deserializer));
+  }
+
+  @protected
+  CollectionStatus sse_decode_box_autoadd_collection_status(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_collection_status(deserializer));
+  }
+
+  @protected
+  Episode sse_decode_box_autoadd_episode(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_episode(deserializer));
+  }
+
+  @protected
+  EpisodeSourceBinding sse_decode_box_autoadd_episode_source_binding(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_episode_source_binding(deserializer));
+  }
+
+  @protected
+  double sse_decode_box_autoadd_f_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_f_32(deserializer));
+  }
+
+  @protected
+  PlaybackProgress sse_decode_box_autoadd_playback_progress(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_playback_progress(deserializer));
+  }
+
+  @protected
+  RuleGroupSummary sse_decode_box_autoadd_rule_group_summary(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_rule_group_summary(deserializer));
+  }
+
+  @protected
+  RuleRepositoryIndexEntry sse_decode_box_autoadd_rule_repository_index_entry(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_rule_repository_index_entry(deserializer));
+  }
+
+  @protected
+  RuleRepositorySubscription
+  sse_decode_box_autoadd_rule_repository_subscription(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_rule_repository_subscription(deserializer));
+  }
+
+  @protected
+  SourceCandidate sse_decode_box_autoadd_source_candidate(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_source_candidate(deserializer));
+  }
+
+  @protected
+  SourcePackageText sse_decode_box_autoadd_source_package_text(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_source_package_text(deserializer));
+  }
+
+  @protected
+  SubjectSummary sse_decode_box_autoadd_subject_summary(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_subject_summary(deserializer));
+  }
+
+  @protected
+  int sse_decode_box_autoadd_u_16(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_u_16(deserializer));
+  }
+
+  @protected
+  int sse_decode_box_autoadd_u_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_u_32(deserializer));
+  }
+
+  @protected
+  int sse_decode_box_autoadd_u_8(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_u_8(deserializer));
+  }
+
+  @protected
+  CollectionStatus sse_decode_collection_status(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return CollectionStatus.values[inner];
+  }
+
+  @protected
+  Episode sse_decode_episode(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_subjectId = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_sort = sse_decode_i_32(deserializer);
+    var var_title = sse_decode_String(deserializer);
+    var var_titleCn = sse_decode_opt_String(deserializer);
+    var var_airDate = sse_decode_opt_String(deserializer);
+    return Episode(
+      id: var_id,
+      subjectId: var_subjectId,
+      sort: var_sort,
+      title: var_title,
+      titleCn: var_titleCn,
+      airDate: var_airDate,
+    );
+  }
+
+  @protected
+  EpisodeBindingResolveResult sse_decode_episode_binding_resolve_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_bindings = sse_decode_list_episode_source_binding(deserializer);
+    var var_selectedCandidate = sse_decode_opt_box_autoadd_source_candidate(
+      deserializer,
+    );
+    var var_selectedBinding = sse_decode_opt_box_autoadd_episode_source_binding(
+      deserializer,
+    );
+    var var_attempts = sse_decode_list_rule_resolve_attempt(deserializer);
+    return EpisodeBindingResolveResult(
+      bindings: var_bindings,
+      selectedCandidate: var_selectedCandidate,
+      selectedBinding: var_selectedBinding,
+      attempts: var_attempts,
+    );
+  }
+
+  @protected
+  EpisodeSourceBinding sse_decode_episode_source_binding(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_subjectId = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_episodeId = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_episodeOrder = sse_decode_i_32(deserializer);
+    var var_ruleId = sse_decode_String(deserializer);
+    var var_sourceEpisodeKey = sse_decode_String(deserializer);
+    var var_title = sse_decode_String(deserializer);
+    var var_playUrl = sse_decode_String(deserializer);
+    var var_fallbackPlayUrls = sse_decode_list_String(deserializer);
+    var var_refererUrl = sse_decode_opt_String(deserializer);
+    var var_confidence = sse_decode_String(deserializer);
+    return EpisodeSourceBinding(
+      subjectId: var_subjectId,
+      episodeId: var_episodeId,
+      episodeOrder: var_episodeOrder,
+      ruleId: var_ruleId,
+      sourceEpisodeKey: var_sourceEpisodeKey,
+      title: var_title,
+      playUrl: var_playUrl,
+      fallbackPlayUrls: var_fallbackPlayUrls,
+      refererUrl: var_refererUrl,
+      confidence: var_confidence,
+    );
+  }
+
+  @protected
+  EpisodeStreamResolveResult sse_decode_episode_stream_resolve_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_streams = sse_decode_list_play_stream(deserializer);
+    var var_attempts = sse_decode_list_rule_resolve_attempt(deserializer);
+    return EpisodeStreamResolveResult(
+      streams: var_streams,
+      attempts: var_attempts,
+    );
+  }
+
+  @protected
+  double sse_decode_f_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getFloat32();
+  }
+
+  @protected
+  FavoriteItem sse_decode_favorite_item(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_subject = sse_decode_subject_summary(deserializer);
+    var var_status = sse_decode_collection_status(deserializer);
+    var var_updatedAtMs = sse_decode_CastedPrimitive_i_64(deserializer);
+    return FavoriteItem(
+      subject: var_subject,
+      status: var_status,
+      updatedAtMs: var_updatedAtMs,
+    );
+  }
+
+  @protected
+  int sse_decode_i_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getInt32();
+  }
+
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getPlatformInt64();
+  }
+
+  @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <String>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_String(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<BangumiCalendarDay> sse_decode_list_bangumi_calendar_day(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <BangumiCalendarDay>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_bangumi_calendar_day(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<Episode> sse_decode_list_episode(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <Episode>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_episode(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<EpisodeSourceBinding> sse_decode_list_episode_source_binding(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <EpisodeSourceBinding>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_episode_source_binding(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<FavoriteItem> sse_decode_list_favorite_item(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <FavoriteItem>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_favorite_item(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<PlayStream> sse_decode_list_play_stream(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <PlayStream>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_play_stream(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<PlaybackCandidate> sse_decode_list_playback_candidate(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <PlaybackCandidate>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_playback_candidate(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<PlaybackHeader> sse_decode_list_playback_header(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <PlaybackHeader>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_playback_header(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var len_ = sse_decode_i_32(deserializer);
+    return deserializer.buffer.getUint8List(len_);
+  }
+
+  @protected
+  List<(String, String)> sse_decode_list_record_string_string(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <(String, String)>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_record_string_string(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<RuleGroupSummary> sse_decode_list_rule_group_summary(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <RuleGroupSummary>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_rule_group_summary(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<RuleRepositoryIndexEntry> sse_decode_list_rule_repository_index_entry(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <RuleRepositoryIndexEntry>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_rule_repository_index_entry(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<RuleRepositorySubscription> sse_decode_list_rule_repository_subscription(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <RuleRepositorySubscription>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_rule_repository_subscription(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<RuleResolveAttempt> sse_decode_list_rule_resolve_attempt(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <RuleResolveAttempt>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_rule_resolve_attempt(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<RuleSourceSearchResult> sse_decode_list_rule_source_search_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <RuleSourceSearchResult>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_rule_source_search_result(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<SourceCandidate> sse_decode_list_source_candidate(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <SourceCandidate>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_source_candidate(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<SourcePackageSummary> sse_decode_list_source_package_summary(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <SourcePackageSummary>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_source_package_summary(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<SubjectSummary> sse_decode_list_subject_summary(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <SubjectSummary>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_subject_summary(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<WatchHistoryItem> sse_decode_list_watch_history_item(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <WatchHistoryItem>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_watch_history_item(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  int? sse_decode_opt_CastedPrimitive_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_CastedPrimitive_i_64(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  AnimeSeason? sse_decode_opt_box_autoadd_anime_season(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_anime_season(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  CollectionStatus? sse_decode_opt_box_autoadd_collection_status(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_collection_status(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  EpisodeSourceBinding? sse_decode_opt_box_autoadd_episode_source_binding(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_episode_source_binding(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  double? sse_decode_opt_box_autoadd_f_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_f_32(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  PlaybackProgress? sse_decode_opt_box_autoadd_playback_progress(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_playback_progress(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  SourceCandidate? sse_decode_opt_box_autoadd_source_candidate(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_source_candidate(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  SourcePackageText? sse_decode_opt_box_autoadd_source_package_text(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_source_package_text(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  int? sse_decode_opt_box_autoadd_u_16(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_u_16(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_u_32(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  int? sse_decode_opt_box_autoadd_u_8(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_u_8(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  PlayStream sse_decode_play_stream(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_ruleId = sse_decode_String(deserializer);
+    var var_kind = sse_decode_String(deserializer);
+    var var_url = sse_decode_String(deserializer);
+    var var_refererUrl = sse_decode_opt_String(deserializer);
+    var var_userAgent = sse_decode_opt_String(deserializer);
+    var var_headers = sse_decode_list_playback_header(deserializer);
+    return PlayStream(
+      id: var_id,
+      ruleId: var_ruleId,
+      kind: var_kind,
+      url: var_url,
+      refererUrl: var_refererUrl,
+      userAgent: var_userAgent,
+      headers: var_headers,
+    );
+  }
+
+  @protected
+  PlaybackCandidate sse_decode_playback_candidate(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_subjectId = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_episodeId = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_sourcePackageId = sse_decode_String(deserializer);
+    var var_title = sse_decode_String(deserializer);
+    var var_url = sse_decode_String(deserializer);
+    var var_headers = sse_decode_list_playback_header(deserializer);
+    return PlaybackCandidate(
+      id: var_id,
+      subjectId: var_subjectId,
+      episodeId: var_episodeId,
+      sourcePackageId: var_sourcePackageId,
+      title: var_title,
+      url: var_url,
+      headers: var_headers,
+    );
+  }
+
+  @protected
+  PlaybackHeader sse_decode_playback_header(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_name = sse_decode_String(deserializer);
+    var var_value = sse_decode_String(deserializer);
+    return PlaybackHeader(name: var_name, value: var_value);
+  }
+
+  @protected
+  PlaybackProgress sse_decode_playback_progress(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_subjectId = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_episodeId = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_positionMs = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_durationMs = sse_decode_opt_CastedPrimitive_i_64(deserializer);
+    var var_updatedAtMs = sse_decode_CastedPrimitive_i_64(deserializer);
+    return PlaybackProgress(
+      subjectId: var_subjectId,
+      episodeId: var_episodeId,
+      positionMs: var_positionMs,
+      durationMs: var_durationMs,
+      updatedAtMs: var_updatedAtMs,
+    );
+  }
+
+  @protected
+  (String, String) sse_decode_record_string_string(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_field0 = sse_decode_String(deserializer);
+    var var_field1 = sse_decode_String(deserializer);
+    return (var_field0, var_field1);
+  }
+
+  @protected
+  RuleGroupSummary sse_decode_rule_group_summary(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_name = sse_decode_String(deserializer);
+    var var_enabled = sse_decode_bool(deserializer);
+    var var_ruleIds = sse_decode_list_String(deserializer);
+    var var_disabledRuleIds = sse_decode_list_String(deserializer);
+    return RuleGroupSummary(
+      id: var_id,
+      name: var_name,
+      enabled: var_enabled,
+      ruleIds: var_ruleIds,
+      disabledRuleIds: var_disabledRuleIds,
+    );
+  }
+
+  @protected
+  RuleRepositoryIndexEntry sse_decode_rule_repository_index_entry(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_name = sse_decode_String(deserializer);
+    var var_version = sse_decode_String(deserializer);
+    var var_lastUpdateMs = sse_decode_opt_CastedPrimitive_i_64(deserializer);
+    var var_antiCrawlerEnabled = sse_decode_bool(deserializer);
+    var var_rawUrl = sse_decode_String(deserializer);
+    return RuleRepositoryIndexEntry(
+      name: var_name,
+      version: var_version,
+      lastUpdateMs: var_lastUpdateMs,
+      antiCrawlerEnabled: var_antiCrawlerEnabled,
+      rawUrl: var_rawUrl,
+    );
+  }
+
+  @protected
+  RuleRepositorySubscription sse_decode_rule_repository_subscription(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_name = sse_decode_String(deserializer);
+    var var_url = sse_decode_String(deserializer);
+    var var_enabled = sse_decode_bool(deserializer);
+    var var_updatedAtMs = sse_decode_CastedPrimitive_i_64(deserializer);
+    return RuleRepositorySubscription(
+      id: var_id,
+      name: var_name,
+      url: var_url,
+      enabled: var_enabled,
+      updatedAtMs: var_updatedAtMs,
+    );
+  }
+
+  @protected
+  RuleResolveAttempt sse_decode_rule_resolve_attempt(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_ruleId = sse_decode_String(deserializer);
+    var var_status = sse_decode_String(deserializer);
+    var var_message = sse_decode_String(deserializer);
+    return RuleResolveAttempt(
+      ruleId: var_ruleId,
+      status: var_status,
+      message: var_message,
+    );
+  }
+
+  @protected
+  RuleSourceSearchResult sse_decode_rule_source_search_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_ruleId = sse_decode_String(deserializer);
+    var var_ruleName = sse_decode_String(deserializer);
+    var var_status = sse_decode_String(deserializer);
+    var var_elapsedMs = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_candidates = sse_decode_list_source_candidate(deserializer);
+    var var_rawCandidates = sse_decode_list_source_candidate(deserializer);
+    var var_selectedKeyword = sse_decode_opt_String(deserializer);
+    var var_selectedTitle = sse_decode_opt_String(deserializer);
+    var var_selectedScore = sse_decode_opt_box_autoadd_f_32(deserializer);
+    var var_keywordTraces = sse_decode_list_String(deserializer);
+    var var_error = sse_decode_opt_String(deserializer);
+    return RuleSourceSearchResult(
+      ruleId: var_ruleId,
+      ruleName: var_ruleName,
+      status: var_status,
+      elapsedMs: var_elapsedMs,
+      candidates: var_candidates,
+      rawCandidates: var_rawCandidates,
+      selectedKeyword: var_selectedKeyword,
+      selectedTitle: var_selectedTitle,
+      selectedScore: var_selectedScore,
+      keywordTraces: var_keywordTraces,
+      error: var_error,
+    );
+  }
+
+  @protected
+  SourceCandidate sse_decode_source_candidate(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_ruleId = sse_decode_String(deserializer);
+    var var_ruleName = sse_decode_String(deserializer);
+    var var_sourceItemKey = sse_decode_String(deserializer);
+    var var_title = sse_decode_String(deserializer);
+    var var_detailUrl = sse_decode_String(deserializer);
+    var var_searchUrl = sse_decode_opt_String(deserializer);
+    var var_confidence = sse_decode_String(deserializer);
+    var var_score = sse_decode_opt_box_autoadd_f_32(deserializer);
+    var var_matchedKeyword = sse_decode_opt_String(deserializer);
+    return SourceCandidate(
+      ruleId: var_ruleId,
+      ruleName: var_ruleName,
+      sourceItemKey: var_sourceItemKey,
+      title: var_title,
+      detailUrl: var_detailUrl,
+      searchUrl: var_searchUrl,
+      confidence: var_confidence,
+      score: var_score,
+      matchedKeyword: var_matchedKeyword,
+    );
+  }
+
+  @protected
+  SourceImportResult sse_decode_source_import_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_package = sse_decode_source_package_summary(deserializer);
+    var var_diagnostics = sse_decode_list_String(deserializer);
+    return SourceImportResult(
+      package: var_package,
+      diagnostics: var_diagnostics,
+    );
+  }
+
+  @protected
+  SourcePackageSummary sse_decode_source_package_summary(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_name = sse_decode_String(deserializer);
+    var var_version = sse_decode_String(deserializer);
+    var var_enabled = sse_decode_bool(deserializer);
+    var var_format = sse_decode_String(deserializer);
+    var var_sourceUrl = sse_decode_opt_String(deserializer);
+    var var_diagnostics = sse_decode_list_String(deserializer);
+    var var_importedAtMs = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_updatedAtMs = sse_decode_CastedPrimitive_i_64(deserializer);
+    return SourcePackageSummary(
+      id: var_id,
+      name: var_name,
+      version: var_version,
+      enabled: var_enabled,
+      format: var_format,
+      sourceUrl: var_sourceUrl,
+      diagnostics: var_diagnostics,
+      importedAtMs: var_importedAtMs,
+      updatedAtMs: var_updatedAtMs,
+    );
+  }
+
+  @protected
+  SourcePackageText sse_decode_source_package_text(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_name = sse_decode_String(deserializer);
+    var var_format = sse_decode_String(deserializer);
+    var var_body = sse_decode_String(deserializer);
+    return SourcePackageText(
+      id: var_id,
+      name: var_name,
+      format: var_format,
+      body: var_body,
+    );
+  }
+
+  @protected
+  SubjectDetail sse_decode_subject_detail(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_subject = sse_decode_subject_summary(deserializer);
+    var var_episodes = sse_decode_list_episode(deserializer);
+    var var_isFavorite = sse_decode_bool(deserializer);
+    var var_progress = sse_decode_opt_box_autoadd_playback_progress(
+      deserializer,
+    );
+    return SubjectDetail(
+      subject: var_subject,
+      episodes: var_episodes,
+      isFavorite: var_isFavorite,
+      progress: var_progress,
+    );
+  }
+
+  @protected
+  SubjectSummary sse_decode_subject_summary(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_CastedPrimitive_i_64(deserializer);
+    var var_name = sse_decode_String(deserializer);
+    var var_nameCn = sse_decode_opt_String(deserializer);
+    var var_aliases = sse_decode_list_String(deserializer);
+    var var_coverUrl = sse_decode_opt_String(deserializer);
+    var var_summary = sse_decode_opt_String(deserializer);
+    var var_airDate = sse_decode_opt_String(deserializer);
+    var var_ratingScore = sse_decode_opt_box_autoadd_f_32(deserializer);
+    var var_ratingRank = sse_decode_opt_box_autoadd_u_32(deserializer);
+    var var_tags = sse_decode_list_String(deserializer);
+    var var_totalEpisodes = sse_decode_u_32(deserializer);
+    return SubjectSummary(
+      id: var_id,
+      name: var_name,
+      nameCn: var_nameCn,
+      aliases: var_aliases,
+      coverUrl: var_coverUrl,
+      summary: var_summary,
+      airDate: var_airDate,
+      ratingScore: var_ratingScore,
+      ratingRank: var_ratingRank,
+      tags: var_tags,
+      totalEpisodes: var_totalEpisodes,
+    );
+  }
+
+  @protected
+  int sse_decode_u_16(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint16();
+  }
+
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint32();
+  }
+
+  @protected
+  int sse_decode_u_8(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint8();
+  }
+
+  @protected
+  void sse_decode_unit(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+  }
+
+  @protected
+  WatchHistoryItem sse_decode_watch_history_item(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_subject = sse_decode_subject_summary(deserializer);
+    var var_episode = sse_decode_episode(deserializer);
+    var var_progress = sse_decode_playback_progress(deserializer);
+    return WatchHistoryItem(
+      subject: var_subject,
+      episode: var_episode,
+      progress: var_progress,
+    );
+  }
+
+  @protected
+  void sse_encode_CastedPrimitive_i_64(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_64(sseEncodeCastedPrimitiveI64(self), serializer);
+  }
+
+  @protected
+  void sse_encode_Map_String_String_None(
+    Map<String, String> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_record_string_string(
+      self.entries.map((e) => (e.key, e.value)).toList(),
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_String(String self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
+  }
+
+  @protected
+  void sse_encode_anime_ranking_applied(
+    AnimeRankingApplied self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.sort, serializer);
+    sse_encode_Map_String_String_None(self.filters, serializer);
+    sse_encode_opt_String(self.filterGroup, serializer);
+    sse_encode_opt_String(self.filter, serializer);
+    sse_encode_opt_box_autoadd_u_16(self.year, serializer);
+    sse_encode_opt_String(self.season, serializer);
+    sse_encode_opt_String(self.keyword, serializer);
+    sse_encode_u_32(self.page, serializer);
+    sse_encode_u_8(self.limit, serializer);
+  }
+
+  @protected
+  void sse_encode_anime_ranking_request(
+    AnimeRankingRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_anime_ranking_sort(self.sort, serializer);
+    sse_encode_Map_String_String_None(self.filters, serializer);
+    sse_encode_opt_String(self.filterGroup, serializer);
+    sse_encode_opt_String(self.filter, serializer);
+    sse_encode_opt_box_autoadd_u_16(self.year, serializer);
+    sse_encode_opt_box_autoadd_anime_season(self.season, serializer);
+    sse_encode_String(self.keyword, serializer);
+    sse_encode_u_32(self.page, serializer);
+    sse_encode_u_8(self.limit, serializer);
+  }
+
+  @protected
+  void sse_encode_anime_ranking_response(
+    AnimeRankingResponse self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_subject_summary(self.items, serializer);
+    sse_encode_u_32(self.page, serializer);
+    sse_encode_bool(self.hasNext, serializer);
+    sse_encode_anime_ranking_applied(self.applied, serializer);
+  }
+
+  @protected
+  void sse_encode_anime_ranking_sort(
+    AnimeRankingSort self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_anime_season(AnimeSeason self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_appearance_settings(
+    AppearanceSettings self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.themeMode, serializer);
+    sse_encode_String(self.colorScheme, serializer);
+  }
+
+  @protected
+  void sse_encode_bangumi_browse_request(
+    BangumiBrowseRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bangumi_browse_sort(self.sort, serializer);
+    sse_encode_opt_box_autoadd_u_16(self.year, serializer);
+    sse_encode_opt_box_autoadd_u_8(self.month, serializer);
+    sse_encode_opt_box_autoadd_u_16(self.limit, serializer);
+    sse_encode_opt_box_autoadd_u_32(self.offset, serializer);
+  }
+
+  @protected
+  void sse_encode_bangumi_browse_sort(
+    BangumiBrowseSort self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_bangumi_calendar_day(
+    BangumiCalendarDay self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_8(self.weekdayId, serializer);
+    sse_encode_String(self.weekdayCn, serializer);
+    sse_encode_String(self.weekdayEn, serializer);
+    sse_encode_list_subject_summary(self.items, serializer);
+  }
+
+  @protected
+  void sse_encode_bool(bool self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint8(self ? 1 : 0);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_anime_ranking_request(
+    AnimeRankingRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_anime_ranking_request(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_anime_season(
+    AnimeSeason self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_anime_season(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_appearance_settings(
+    AppearanceSettings self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_appearance_settings(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_bangumi_browse_request(
+    BangumiBrowseRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bangumi_browse_request(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_collection_status(
+    CollectionStatus self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_collection_status(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_episode(Episode self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_episode(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_episode_source_binding(
+    EpisodeSourceBinding self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_episode_source_binding(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_f_32(double self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_f_32(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_playback_progress(
+    PlaybackProgress self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_playback_progress(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_rule_group_summary(
+    RuleGroupSummary self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_rule_group_summary(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_rule_repository_index_entry(
+    RuleRepositoryIndexEntry self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_rule_repository_index_entry(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_rule_repository_subscription(
+    RuleRepositorySubscription self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_rule_repository_subscription(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_source_candidate(
+    SourceCandidate self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_source_candidate(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_source_package_text(
+    SourcePackageText self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_source_package_text(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_subject_summary(
+    SubjectSummary self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_subject_summary(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_u_16(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_16(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_32(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_u_8(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_8(self, serializer);
+  }
+
+  @protected
+  void sse_encode_collection_status(
+    CollectionStatus self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_episode(Episode self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_CastedPrimitive_i_64(self.id, serializer);
+    sse_encode_CastedPrimitive_i_64(self.subjectId, serializer);
+    sse_encode_i_32(self.sort, serializer);
+    sse_encode_String(self.title, serializer);
+    sse_encode_opt_String(self.titleCn, serializer);
+    sse_encode_opt_String(self.airDate, serializer);
+  }
+
+  @protected
+  void sse_encode_episode_binding_resolve_result(
+    EpisodeBindingResolveResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_episode_source_binding(self.bindings, serializer);
+    sse_encode_opt_box_autoadd_source_candidate(
+      self.selectedCandidate,
+      serializer,
+    );
+    sse_encode_opt_box_autoadd_episode_source_binding(
+      self.selectedBinding,
+      serializer,
+    );
+    sse_encode_list_rule_resolve_attempt(self.attempts, serializer);
+  }
+
+  @protected
+  void sse_encode_episode_source_binding(
+    EpisodeSourceBinding self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_CastedPrimitive_i_64(self.subjectId, serializer);
+    sse_encode_CastedPrimitive_i_64(self.episodeId, serializer);
+    sse_encode_i_32(self.episodeOrder, serializer);
+    sse_encode_String(self.ruleId, serializer);
+    sse_encode_String(self.sourceEpisodeKey, serializer);
+    sse_encode_String(self.title, serializer);
+    sse_encode_String(self.playUrl, serializer);
+    sse_encode_list_String(self.fallbackPlayUrls, serializer);
+    sse_encode_opt_String(self.refererUrl, serializer);
+    sse_encode_String(self.confidence, serializer);
+  }
+
+  @protected
+  void sse_encode_episode_stream_resolve_result(
+    EpisodeStreamResolveResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_play_stream(self.streams, serializer);
+    sse_encode_list_rule_resolve_attempt(self.attempts, serializer);
+  }
+
+  @protected
+  void sse_encode_f_32(double self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putFloat32(self);
+  }
+
+  @protected
+  void sse_encode_favorite_item(FavoriteItem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_subject_summary(self.subject, serializer);
+    sse_encode_collection_status(self.status, serializer);
+    sse_encode_CastedPrimitive_i_64(self.updatedAtMs, serializer);
+  }
+
+  @protected
+  void sse_encode_i_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putInt32(self);
+  }
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putPlatformInt64(self);
+  }
+
+  @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_String(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_bangumi_calendar_day(
+    List<BangumiCalendarDay> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_bangumi_calendar_day(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_episode(List<Episode> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_episode(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_episode_source_binding(
+    List<EpisodeSourceBinding> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_episode_source_binding(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_favorite_item(
+    List<FavoriteItem> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_favorite_item(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_play_stream(
+    List<PlayStream> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_play_stream(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_playback_candidate(
+    List<PlaybackCandidate> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_playback_candidate(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_playback_header(
+    List<PlaybackHeader> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_playback_header(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_prim_u_8_strict(
+    Uint8List self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    serializer.buffer.putUint8List(self);
+  }
+
+  @protected
+  void sse_encode_list_record_string_string(
+    List<(String, String)> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_record_string_string(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_rule_group_summary(
+    List<RuleGroupSummary> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_rule_group_summary(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_rule_repository_index_entry(
+    List<RuleRepositoryIndexEntry> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_rule_repository_index_entry(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_rule_repository_subscription(
+    List<RuleRepositorySubscription> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_rule_repository_subscription(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_rule_resolve_attempt(
+    List<RuleResolveAttempt> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_rule_resolve_attempt(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_rule_source_search_result(
+    List<RuleSourceSearchResult> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_rule_source_search_result(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_source_candidate(
+    List<SourceCandidate> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_source_candidate(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_source_package_summary(
+    List<SourcePackageSummary> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_source_package_summary(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_subject_summary(
+    List<SubjectSummary> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_subject_summary(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_watch_history_item(
+    List<WatchHistoryItem> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_watch_history_item(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_CastedPrimitive_i_64(
+    int? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_CastedPrimitive_i_64(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_String(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_anime_season(
+    AnimeSeason? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_anime_season(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_collection_status(
+    CollectionStatus? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_collection_status(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_episode_source_binding(
+    EpisodeSourceBinding? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_episode_source_binding(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_f_32(double? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_f_32(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_playback_progress(
+    PlaybackProgress? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_playback_progress(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_source_candidate(
+    SourceCandidate? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_source_candidate(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_source_package_text(
+    SourcePackageText? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_source_package_text(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_16(int? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_u_16(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_u_32(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_u_8(int? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_u_8(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_play_stream(PlayStream self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.ruleId, serializer);
+    sse_encode_String(self.kind, serializer);
+    sse_encode_String(self.url, serializer);
+    sse_encode_opt_String(self.refererUrl, serializer);
+    sse_encode_opt_String(self.userAgent, serializer);
+    sse_encode_list_playback_header(self.headers, serializer);
+  }
+
+  @protected
+  void sse_encode_playback_candidate(
+    PlaybackCandidate self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_CastedPrimitive_i_64(self.subjectId, serializer);
+    sse_encode_CastedPrimitive_i_64(self.episodeId, serializer);
+    sse_encode_String(self.sourcePackageId, serializer);
+    sse_encode_String(self.title, serializer);
+    sse_encode_String(self.url, serializer);
+    sse_encode_list_playback_header(self.headers, serializer);
+  }
+
+  @protected
+  void sse_encode_playback_header(
+    PlaybackHeader self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.name, serializer);
+    sse_encode_String(self.value, serializer);
+  }
+
+  @protected
+  void sse_encode_playback_progress(
+    PlaybackProgress self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_CastedPrimitive_i_64(self.subjectId, serializer);
+    sse_encode_CastedPrimitive_i_64(self.episodeId, serializer);
+    sse_encode_CastedPrimitive_i_64(self.positionMs, serializer);
+    sse_encode_opt_CastedPrimitive_i_64(self.durationMs, serializer);
+    sse_encode_CastedPrimitive_i_64(self.updatedAtMs, serializer);
+  }
+
+  @protected
+  void sse_encode_record_string_string(
+    (String, String) self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.$1, serializer);
+    sse_encode_String(self.$2, serializer);
+  }
+
+  @protected
+  void sse_encode_rule_group_summary(
+    RuleGroupSummary self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.name, serializer);
+    sse_encode_bool(self.enabled, serializer);
+    sse_encode_list_String(self.ruleIds, serializer);
+    sse_encode_list_String(self.disabledRuleIds, serializer);
+  }
+
+  @protected
+  void sse_encode_rule_repository_index_entry(
+    RuleRepositoryIndexEntry self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.name, serializer);
+    sse_encode_String(self.version, serializer);
+    sse_encode_opt_CastedPrimitive_i_64(self.lastUpdateMs, serializer);
+    sse_encode_bool(self.antiCrawlerEnabled, serializer);
+    sse_encode_String(self.rawUrl, serializer);
+  }
+
+  @protected
+  void sse_encode_rule_repository_subscription(
+    RuleRepositorySubscription self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.name, serializer);
+    sse_encode_String(self.url, serializer);
+    sse_encode_bool(self.enabled, serializer);
+    sse_encode_CastedPrimitive_i_64(self.updatedAtMs, serializer);
+  }
+
+  @protected
+  void sse_encode_rule_resolve_attempt(
+    RuleResolveAttempt self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.ruleId, serializer);
+    sse_encode_String(self.status, serializer);
+    sse_encode_String(self.message, serializer);
+  }
+
+  @protected
+  void sse_encode_rule_source_search_result(
+    RuleSourceSearchResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.ruleId, serializer);
+    sse_encode_String(self.ruleName, serializer);
+    sse_encode_String(self.status, serializer);
+    sse_encode_CastedPrimitive_i_64(self.elapsedMs, serializer);
+    sse_encode_list_source_candidate(self.candidates, serializer);
+    sse_encode_list_source_candidate(self.rawCandidates, serializer);
+    sse_encode_opt_String(self.selectedKeyword, serializer);
+    sse_encode_opt_String(self.selectedTitle, serializer);
+    sse_encode_opt_box_autoadd_f_32(self.selectedScore, serializer);
+    sse_encode_list_String(self.keywordTraces, serializer);
+    sse_encode_opt_String(self.error, serializer);
+  }
+
+  @protected
+  void sse_encode_source_candidate(
+    SourceCandidate self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.ruleId, serializer);
+    sse_encode_String(self.ruleName, serializer);
+    sse_encode_String(self.sourceItemKey, serializer);
+    sse_encode_String(self.title, serializer);
+    sse_encode_String(self.detailUrl, serializer);
+    sse_encode_opt_String(self.searchUrl, serializer);
+    sse_encode_String(self.confidence, serializer);
+    sse_encode_opt_box_autoadd_f_32(self.score, serializer);
+    sse_encode_opt_String(self.matchedKeyword, serializer);
+  }
+
+  @protected
+  void sse_encode_source_import_result(
+    SourceImportResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_source_package_summary(self.package, serializer);
+    sse_encode_list_String(self.diagnostics, serializer);
+  }
+
+  @protected
+  void sse_encode_source_package_summary(
+    SourcePackageSummary self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.name, serializer);
+    sse_encode_String(self.version, serializer);
+    sse_encode_bool(self.enabled, serializer);
+    sse_encode_String(self.format, serializer);
+    sse_encode_opt_String(self.sourceUrl, serializer);
+    sse_encode_list_String(self.diagnostics, serializer);
+    sse_encode_CastedPrimitive_i_64(self.importedAtMs, serializer);
+    sse_encode_CastedPrimitive_i_64(self.updatedAtMs, serializer);
+  }
+
+  @protected
+  void sse_encode_source_package_text(
+    SourcePackageText self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.name, serializer);
+    sse_encode_String(self.format, serializer);
+    sse_encode_String(self.body, serializer);
+  }
+
+  @protected
+  void sse_encode_subject_detail(SubjectDetail self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_subject_summary(self.subject, serializer);
+    sse_encode_list_episode(self.episodes, serializer);
+    sse_encode_bool(self.isFavorite, serializer);
+    sse_encode_opt_box_autoadd_playback_progress(self.progress, serializer);
+  }
+
+  @protected
+  void sse_encode_subject_summary(
+    SubjectSummary self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_CastedPrimitive_i_64(self.id, serializer);
+    sse_encode_String(self.name, serializer);
+    sse_encode_opt_String(self.nameCn, serializer);
+    sse_encode_list_String(self.aliases, serializer);
+    sse_encode_opt_String(self.coverUrl, serializer);
+    sse_encode_opt_String(self.summary, serializer);
+    sse_encode_opt_String(self.airDate, serializer);
+    sse_encode_opt_box_autoadd_f_32(self.ratingScore, serializer);
+    sse_encode_opt_box_autoadd_u_32(self.ratingRank, serializer);
+    sse_encode_list_String(self.tags, serializer);
+    sse_encode_u_32(self.totalEpisodes, serializer);
+  }
+
+  @protected
+  void sse_encode_u_16(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint16(self);
+  }
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint32(self);
+  }
+
+  @protected
+  void sse_encode_u_8(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint8(self);
+  }
+
+  @protected
+  void sse_encode_unit(void self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+  }
+
+  @protected
+  void sse_encode_watch_history_item(
+    WatchHistoryItem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_subject_summary(self.subject, serializer);
+    sse_encode_episode(self.episode, serializer);
+    sse_encode_playback_progress(self.progress, serializer);
+  }
+}

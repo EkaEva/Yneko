@@ -1,5 +1,22 @@
+import 'package:flutter/material.dart';
+
 import 'generated/api.dart' as frb;
 import '../../shared/domain/index.dart';
+import '../../shared/theme/index.dart';
+
+AppearanceSettings appearanceSettingsFromFrb(frb.AppearanceSettings settings) {
+  return AppearanceSettings(
+    themeMode: settings.themeMode == 'dark' ? ThemeMode.dark : ThemeMode.light,
+    colorScheme: YnekoColorScheme.fromValue(settings.colorScheme),
+  );
+}
+
+frb.AppearanceSettings appearanceSettingsToFrb(AppearanceSettings settings) {
+  return frb.AppearanceSettings(
+    themeMode: settings.themeMode == ThemeMode.dark ? 'dark' : 'light',
+    colorScheme: settings.colorScheme.name,
+  );
+}
 
 AnimeSubject subjectFromFrb(frb.SubjectSummary subject) {
   return AnimeSubject(

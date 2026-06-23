@@ -19,6 +19,11 @@ final watchSubjectDetailProvider = FutureProvider.family<SubjectDetail, int>((
   return ref.watch(ynekoBackendProvider).getSubjectDetail(subjectId);
 });
 
+final watchFavoriteProvider = NotifierProvider.autoDispose
+    .family<WatchFavoriteController, AsyncValue<FavoriteItem?>, int>(
+      WatchFavoriteController.new,
+    );
+
 String watchSubjectTitle(AnimeSubject subject) => subject.displayTitle;
 
 String watchSubjectScoreLabel(AnimeSubject subject) {
@@ -58,6 +63,77 @@ Color watchSubjectCoverColor(int subjectId) {
 Color watchSubjectAccentColor(int subjectId) {
   final hue = ((subjectId.abs() * 37) + 42) % 360;
   return HSLColor.fromAHSL(1, hue.toDouble(), 0.44, 0.56).toColor();
+}
+
+String collectionStatusLabel(CollectionStatus status) {
+  return switch (status) {
+    CollectionStatus.watching => '在看',
+    CollectionStatus.wish => '想看',
+    CollectionStatus.watched => '看过',
+    CollectionStatus.paused => '搁置',
+    CollectionStatus.dropped => '抛弃',
+  };
+}
+
+class WatchFavoriteController extends Notifier<AsyncValue<FavoriteItem?>> {
+  WatchFavoriteController(this._subjectId);
+
+  late final YnekoBackend _backend;
+  final int _subjectId;
+
+  @override
+  AsyncValue<FavoriteItem?> build() {
+    _backend = ref.watch(ynekoBackendProvider);
+    Future<void>.microtask(_load);
+    return const AsyncLoading();
+  }
+
+  FavoriteItem? get _currentFavorite {
+    return state.maybeWhen(data: (value) => value, orElse: () => null);
+  }
+
+  Future<void> _load() async {
+    try {
+      final favorites = await _backend.listFavorites();
+      if (!ref.mounted) return;
+      state = AsyncData(
+        favorites.where((item) => item.subject.id == _subjectId).firstOrNull,
+      );
+    } catch (error, stackTrace) {
+      if (!ref.mounted) return;
+      state = AsyncError(error, stackTrace);
+    }
+  }
+
+  Future<void> setStatus(AnimeSubject subject, CollectionStatus status) async {
+    final previous = _currentFavorite;
+    state = AsyncData(
+      FavoriteItem(
+        subject: subject,
+        status: status,
+        updatedAtMs: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+    try {
+      state = AsyncData(
+        await _backend.saveFavorite(subject: subject, status: status),
+      );
+    } catch (error, stackTrace) {
+      state = AsyncData(previous);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  Future<void> cancel() async {
+    final previous = _currentFavorite;
+    state = const AsyncData(null);
+    try {
+      await _backend.deleteFavorite(_subjectId);
+    } catch (error, stackTrace) {
+      state = AsyncData(previous);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
 }
 
 final watchPlayerControllerProvider = NotifierProvider.autoDispose

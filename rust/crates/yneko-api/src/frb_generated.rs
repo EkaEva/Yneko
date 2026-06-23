@@ -37,7 +37,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.11.1";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1665116153;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1389456164;
 
 // Section: executor
 
@@ -328,6 +328,41 @@ fn wire__crate__api__get_anime_ranking_impl(
                 transform_result_sse::<_, String>(
                     (move || async move {
                         let output_ok = crate::api::get_anime_ranking(api_request).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__get_appearance_settings_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_appearance_settings",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok = crate::api::get_appearance_settings().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -936,6 +971,42 @@ fn wire__crate__api__resolve_playback_impl(
         },
     )
 }
+fn wire__crate__api__save_appearance_settings_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "save_appearance_settings",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_settings = <crate::api::AppearanceSettings>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok = crate::api::save_appearance_settings(api_settings).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__save_favorite_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1355,6 +1426,18 @@ impl SseDecode for crate::api::AnimeSeason {
             2 => crate::api::AnimeSeason::Summer,
             3 => crate::api::AnimeSeason::Autumn,
             _ => unreachable!("Invalid variant for AnimeSeason: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::api::AppearanceSettings {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_themeMode = <String>::sse_decode(deserializer);
+        let mut var_colorScheme = <String>::sse_decode(deserializer);
+        return crate::api::AppearanceSettings {
+            theme_mode: var_themeMode,
+            color_scheme: var_colorScheme,
         };
     }
 }
@@ -2275,40 +2358,42 @@ fn pde_ffi_dispatcher_primary_impl(
         6 => wire__crate__api__delete_source_package_impl(port, ptr, rust_vec_len, data_len),
         7 => wire__crate__api__delete_watch_history_item_impl(port, ptr, rust_vec_len, data_len),
         8 => wire__crate__api__get_anime_ranking_impl(port, ptr, rust_vec_len, data_len),
-        9 => wire__crate__api__get_calendar_impl(port, ptr, rust_vec_len, data_len),
-        10 => wire__crate__api__get_playback_progress_impl(port, ptr, rust_vec_len, data_len),
-        11 => wire__crate__api__get_source_package_text_impl(port, ptr, rust_vec_len, data_len),
-        12 => wire__crate__api__get_subject_detail_impl(port, ptr, rust_vec_len, data_len),
-        13 => wire__crate__api__import_repository_rule_impl(port, ptr, rust_vec_len, data_len),
-        14 => wire__crate__api__import_source_text_impl(port, ptr, rust_vec_len, data_len),
-        15 => wire__crate__api__import_source_url_impl(port, ptr, rust_vec_len, data_len),
-        16 => wire__crate__api__list_favorites_impl(port, ptr, rust_vec_len, data_len),
-        17 => wire__crate__api__list_rule_groups_impl(port, ptr, rust_vec_len, data_len),
-        18 => wire__crate__api__list_rule_repository_subscriptions_impl(
+        9 => wire__crate__api__get_appearance_settings_impl(port, ptr, rust_vec_len, data_len),
+        10 => wire__crate__api__get_calendar_impl(port, ptr, rust_vec_len, data_len),
+        11 => wire__crate__api__get_playback_progress_impl(port, ptr, rust_vec_len, data_len),
+        12 => wire__crate__api__get_source_package_text_impl(port, ptr, rust_vec_len, data_len),
+        13 => wire__crate__api__get_subject_detail_impl(port, ptr, rust_vec_len, data_len),
+        14 => wire__crate__api__import_repository_rule_impl(port, ptr, rust_vec_len, data_len),
+        15 => wire__crate__api__import_source_text_impl(port, ptr, rust_vec_len, data_len),
+        16 => wire__crate__api__import_source_url_impl(port, ptr, rust_vec_len, data_len),
+        17 => wire__crate__api__list_favorites_impl(port, ptr, rust_vec_len, data_len),
+        18 => wire__crate__api__list_rule_groups_impl(port, ptr, rust_vec_len, data_len),
+        19 => wire__crate__api__list_rule_repository_subscriptions_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        19 => wire__crate__api__list_source_packages_impl(port, ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__list_watch_history_impl(port, ptr, rust_vec_len, data_len),
-        21 => wire__crate__api__load_rule_repository_index_impl(port, ptr, rust_vec_len, data_len),
-        22 => wire__crate__api__resolve_episode_bindings_impl(port, ptr, rust_vec_len, data_len),
-        23 => wire__crate__api__resolve_episode_streams_impl(port, ptr, rust_vec_len, data_len),
-        24 => wire__crate__api__resolve_playback_impl(port, ptr, rust_vec_len, data_len),
-        25 => wire__crate__api__save_favorite_impl(port, ptr, rust_vec_len, data_len),
-        26 => wire__crate__api__save_playback_progress_impl(port, ptr, rust_vec_len, data_len),
-        27 => wire__crate__api__save_rule_group_impl(port, ptr, rust_vec_len, data_len),
-        28 => wire__crate__api__save_rule_repository_subscription_impl(
+        20 => wire__crate__api__list_source_packages_impl(port, ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__list_watch_history_impl(port, ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__load_rule_repository_index_impl(port, ptr, rust_vec_len, data_len),
+        23 => wire__crate__api__resolve_episode_bindings_impl(port, ptr, rust_vec_len, data_len),
+        24 => wire__crate__api__resolve_episode_streams_impl(port, ptr, rust_vec_len, data_len),
+        25 => wire__crate__api__resolve_playback_impl(port, ptr, rust_vec_len, data_len),
+        26 => wire__crate__api__save_appearance_settings_impl(port, ptr, rust_vec_len, data_len),
+        27 => wire__crate__api__save_favorite_impl(port, ptr, rust_vec_len, data_len),
+        28 => wire__crate__api__save_playback_progress_impl(port, ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__save_rule_group_impl(port, ptr, rust_vec_len, data_len),
+        30 => wire__crate__api__save_rule_repository_subscription_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        29 => wire__crate__api__search_rule_source_impl(port, ptr, rust_vec_len, data_len),
-        30 => wire__crate__api__search_rule_sources_impl(port, ptr, rust_vec_len, data_len),
-        31 => wire__crate__api__search_subjects_impl(port, ptr, rust_vec_len, data_len),
-        32 => wire__crate__api__set_source_package_enabled_impl(port, ptr, rust_vec_len, data_len),
+        31 => wire__crate__api__search_rule_source_impl(port, ptr, rust_vec_len, data_len),
+        32 => wire__crate__api__search_rule_sources_impl(port, ptr, rust_vec_len, data_len),
+        33 => wire__crate__api__search_subjects_impl(port, ptr, rust_vec_len, data_len),
+        34 => wire__crate__api__set_source_package_enabled_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2442,6 +2527,27 @@ impl flutter_rust_bridge::IntoDart for crate::api::AnimeSeason {
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::AnimeSeason {}
 impl flutter_rust_bridge::IntoIntoDart<crate::api::AnimeSeason> for crate::api::AnimeSeason {
     fn into_into_dart(self) -> crate::api::AnimeSeason {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::AppearanceSettings {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.theme_mode.into_into_dart().into_dart(),
+            self.color_scheme.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::AppearanceSettings
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::AppearanceSettings>
+    for crate::api::AppearanceSettings
+{
+    fn into_into_dart(self) -> crate::api::AppearanceSettings {
         self
     }
 }
@@ -3088,6 +3194,14 @@ impl SseEncode for crate::api::AnimeSeason {
             },
             serializer,
         );
+    }
+}
+
+impl SseEncode for crate::api::AppearanceSettings {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.theme_mode, serializer);
+        <String>::sse_encode(self.color_scheme, serializer);
     }
 }
 
