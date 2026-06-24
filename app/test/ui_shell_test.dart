@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:yneko/src/features/home/application/home_providers.dart';
 import 'package:yneko/src/features/search/index.dart';
 import 'package:yneko/src/features/shell/index.dart';
 import 'package:yneko/src/features/watch/application/watch_providers.dart';
@@ -934,10 +935,7 @@ void main() {
     expect(find.text('日期'), findsOneWidget);
     expect(find.text('年份'), findsWidgets);
     expect(find.text('季度'), findsWidgets);
-    expect(
-      find.byKey(const ValueKey('schedule-random-button')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const ValueKey('schedule-random-button')), findsNothing);
     expect(find.text('新番时光机'), findsOneWidget);
     expect(
       tester.getSize(find.byKey(const ValueKey('filter-option-周一'))).width,
@@ -960,6 +958,234 @@ void main() {
     expect(find.text('年份'), findsWidgets);
     expect(find.text('季度'), findsWidgets);
     expect(find.text('更多筛选'), findsOneWidget);
+  });
+
+  testWidgets('home ranking filters map to Bangumi ranking requests', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final backend = FakeYnekoBackend();
+    await tester.pumpWidget(_appWithBackend(backend: backend));
+    await tester.tap(find.text('榜单').first);
+    await tester.pumpAndSettle();
+
+    await _tapFilterOption(tester, '排名');
+    await _tapFilterOption(tester, '日本');
+    await _tapFilterOption(tester, '推理');
+    final request = backend.rankingRequests.last;
+    expect(request.sort, AnimeRankingSort.rank);
+    expect(request.filters['region'], '日本');
+    expect(request.filters['type'], '推理');
+    expect(request.page, 1);
+    expect(request.limit, 24);
+
+    final mappingBackend = FakeYnekoBackend();
+    final container = ProviderContainer(
+      overrides: [ynekoBackendProvider.overrideWithValue(mappingBackend)],
+    );
+    addTearDown(container.dispose);
+    final filters = container.read(homeRankingFiltersProvider.notifier);
+    filters.setSort(AnimeRankingSort.heat);
+    filters.setFilter('category', '动态漫画');
+    filters.setYear(2025);
+    filters.setSeason(AnimeSeason.spring);
+    final mappedState = await container.read(homeRankingProvider.future);
+
+    final mappedRequest = mappingBackend.rankingRequests.last;
+    expect(mappedRequest.filters['category'], '动态漫画');
+    expect(mappedRequest.filterGroup, 'category');
+    expect(mappedRequest.filter, 'anime_comic');
+    expect(mappedRequest.year, 2025);
+    expect(mappedRequest.season, AnimeSeason.spring);
+    expect(
+      rankingResponseSummary(
+        mappedState.applied,
+        container.read(homeRankingFiltersProvider),
+      ),
+      '热度 · 动态漫画 · 2025 4月',
+    );
+  });
+
+  testWidgets(
+    'home ranking auto loads more, dedupes, and reports append failure',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const rankingSubject = AnimeSubject(
+        id: 7001,
+        name: 'Ranking A',
+        nameCn: '榜单 A',
+        airDate: '2025-04-01',
+      );
+      const secondRankingSubject = AnimeSubject(
+        id: 7002,
+        name: 'Ranking B',
+        nameCn: '榜单 B',
+        airDate: '2025-04-02',
+      );
+      final backend = FakeYnekoBackend(
+        rankingPages: const [
+          [rankingSubject],
+          [rankingSubject, secondRankingSubject],
+        ],
+      );
+      await tester.pumpWidget(_appWithBackend(backend: backend));
+      await tester.tap(find.text('榜单').first);
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 1600));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('ranking-load-more-button')),
+        findsNothing,
+      );
+      await tester.drag(
+        find.byKey(const ValueKey('home-tab-panel-2')),
+        const Offset(0, -900),
+      );
+      await tester.pump(const Duration(milliseconds: 240));
+
+      expect(
+        backend.rankingRequests.map((request) => request.page),
+        contains(2),
+      );
+      await tester.pump(const Duration(milliseconds: 1600));
+      await tester.pump(const Duration(milliseconds: 240));
+      expect(find.text('榜单 A'), findsOneWidget);
+      expect(find.text('榜单 B'), findsOneWidget);
+      expect(find.text('已经到底了'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+
+      final failingBackend = FakeYnekoBackend(
+        rankingPages: const [
+          [rankingSubject],
+          [secondRankingSubject],
+        ],
+        rankingErrorPage: 2,
+      );
+      await tester.pumpWidget(_appWithBackend(backend: failingBackend));
+      await tester.tap(find.text('榜单').first);
+      await tester.pump(const Duration(milliseconds: 240));
+      await tester.pump(const Duration(milliseconds: 1600));
+      await tester.pump(const Duration(milliseconds: 240));
+      await tester.drag(
+        find.byKey(const ValueKey('home-tab-panel-2')),
+        const Offset(0, -900),
+      );
+      await tester.pump(const Duration(milliseconds: 240));
+
+      expect(find.text('继续加载失败'), findsOneWidget);
+      expect(find.textContaining('ranking page 2 failed'), findsOneWidget);
+    },
+  );
+
+  testWidgets('home back-to-top appears after scrolling home tabs', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final subjects = [
+      for (var index = 0; index < 24; index++)
+        AnimeSubject(
+          id: 8000 + index,
+          name: 'Scroll $index',
+          nameCn: '滚动 $index',
+          airDate: '2025-04-01',
+        ),
+    ];
+    await tester.pumpWidget(
+      _appWithBackend(backend: FakeYnekoBackend(rankingPages: [subjects])),
+    );
+    await tester.tap(find.text('榜单').first);
+    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('home-back-top-button')), findsOneWidget);
+    expect(
+      tester
+          .widget<AnimatedOpacity>(
+            find.byKey(const ValueKey('home-back-top-opacity')),
+          )
+          .opacity,
+      0,
+    );
+
+    await tester.drag(
+      find.byKey(const ValueKey('home-tab-panel-2')),
+      const Offset(0, -900),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<AnimatedOpacity>(
+            find.byKey(const ValueKey('home-back-top-opacity')),
+          )
+          .opacity,
+      1,
+    );
+    await tester.tap(find.byKey(const ValueKey('home-back-top-button')));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets(
+    'home schedule archive uses browse requests and weekday buckets',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const archivedSubject = AnimeSubject(
+        id: 9001,
+        name: 'Archive Sunday',
+        nameCn: '归档周日',
+        airDate: '2025-04-13',
+        totalEpisodes: 12,
+      );
+      final backend = FakeYnekoBackend(
+        browseSubjectsResult: const [archivedSubject],
+      );
+      await tester.pumpWidget(_appWithBackend(backend: backend));
+      await tester.tap(find.text('时间表').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('outline-action-新番时光机')));
+      await tester.pumpAndSettle();
+      await _tapFilterOption(tester, '2025');
+      await _tapFilterOption(tester, '4月');
+      await _tapFilterOption(tester, '周日');
+      await tester.pump(const Duration(milliseconds: 1600));
+      await tester.pumpAndSettle();
+
+      final requestedMonths = backend.browseRequests
+          .map((request) => request.month)
+          .toList(growable: false);
+      expect(requestedMonths.skip(requestedMonths.length - 3), [4, 5, 6]);
+      expect(find.text('归档周日'), findsOneWidget);
+      expect(find.text('2025年4月新番'), findsOneWidget);
+    },
+  );
+
+  testWidgets('home schedule time machine expands archive filters', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(_appWithBackend());
+    await tester.tap(find.text('时间表').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('outline-action-新番时光机')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('新番时光机'), findsOneWidget);
+    expect(find.byKey(const ValueKey('schedule-random-button')), findsNothing);
+    expect(find.byKey(const ValueKey('filter-option-全年')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-schedule-panel')), findsOneWidget);
   });
 
   testWidgets('home recommendation loading uses metallic shimmer cards', (
@@ -1755,6 +1981,14 @@ Widget _appWithBackend({FakeYnekoBackend? backend}) {
     ],
     child: const YnekoApp(),
   );
+}
+
+Future<void> _tapFilterOption(WidgetTester tester, String label) async {
+  final option = find.byKey(ValueKey('filter-option-$label')).hitTestable();
+  expect(option, findsWidgets);
+  await tester.ensureVisible(option);
+  await tester.tap(option.first);
+  await tester.pumpAndSettle();
 }
 
 class _FakeDirectoryPickerService implements DirectoryPickerService {

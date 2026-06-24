@@ -8,6 +8,10 @@
 ## Public Contracts
 
 - `domain/index.dart` exports shared UI/domain value objects.
+- Shared interactive controls keep hover, pressed, and selected visual states on
+  the theme-token path. They must not flash through a neutral gray pressed state
+  or tween selection backgrounds through transparent/neutral midpoint colors
+  before showing the selected theme color.
 
 ## Public Index Export List
 
@@ -25,4 +29,3 @@
 
 - `flutter analyze`
 - `flutter test`
-

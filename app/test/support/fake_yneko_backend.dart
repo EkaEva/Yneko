@@ -12,8 +12,13 @@ class FakeYnekoBackend implements YnekoBackend {
   FakeYnekoBackend({
     List<SourcePackageSummary>? sourcePackages,
     List<PlaybackContract>? playbackContracts,
+    List<List<AnimeSubject>>? rankingPages,
+    List<AnimeSubject>? browseSubjectsResult,
+    List<BangumiCalendarDay>? calendarDays,
     AppearanceSettings? appearanceSettings,
     Duration sourceSearchDelay = Duration.zero,
+    this.rankingErrorPage,
+    this.browseError,
   }) : _sourcePackages = List.of(sourcePackages ?? _defaultPackages),
        _ruleGroups = [
          RuleGroupSummary(
@@ -26,6 +31,9 @@ class FakeYnekoBackend implements YnekoBackend {
          ),
        ],
        _playbackContracts = List.of(playbackContracts ?? _defaultPlayback),
+       _rankingPages = rankingPages,
+       _browseSubjectsResult = browseSubjectsResult,
+       _calendarDays = calendarDays,
        _appearanceSettings = appearanceSettings ?? AppearanceSettings.defaults,
        _sourceSearchDelay = sourceSearchDelay;
 
@@ -91,10 +99,17 @@ class FakeYnekoBackend implements YnekoBackend {
     defaultRuleRepositorySubscription,
   ];
   final List<PlaybackContract> _playbackContracts;
+  final List<List<AnimeSubject>>? _rankingPages;
+  final List<AnimeSubject>? _browseSubjectsResult;
+  final List<BangumiCalendarDay>? _calendarDays;
   final List<FavoriteItem> _favorites = [];
   final List<WatchHistoryItem> _history = [];
   AppearanceSettings _appearanceSettings;
   final Duration _sourceSearchDelay;
+  final int? rankingErrorPage;
+  final String? browseError;
+  final List<AnimeRankingRequest> rankingRequests = [];
+  final List<BangumiBrowseRequest> browseRequests = [];
 
   @override
   Future<AppearanceSettings> getAppearanceSettings() async {
@@ -147,35 +162,48 @@ class FakeYnekoBackend implements YnekoBackend {
 
   @override
   Future<List<BangumiCalendarDay>> getCalendar() async {
-    return const [
-      BangumiCalendarDay(
-        weekdayId: 1,
-        weekdayCn: '星期一',
-        weekdayEn: 'Mon',
-        items: [secondSubject],
-      ),
-      BangumiCalendarDay(
-        weekdayId: 6,
-        weekdayCn: '星期六',
-        weekdayEn: 'Sat',
-        items: [subject],
-      ),
-    ];
+    return _calendarDays ??
+        const [
+          BangumiCalendarDay(
+            weekdayId: 1,
+            weekdayCn: '星期一',
+            weekdayEn: 'Mon',
+            items: [secondSubject],
+          ),
+          BangumiCalendarDay(
+            weekdayId: 6,
+            weekdayCn: '星期六',
+            weekdayEn: 'Sat',
+            items: [subject],
+          ),
+        ];
   }
 
   @override
   Future<AnimeRankingResponse> getAnimeRanking(
     AnimeRankingRequest request,
   ) async {
+    rankingRequests.add(request);
+    if (rankingErrorPage == request.page) {
+      throw StateError('ranking page ${request.page} failed');
+    }
+    final pages = _rankingPages;
+    final items = pages == null
+        ? (request.sort == AnimeRankingSort.rank
+              ? const [subject, secondSubject]
+              : const [secondSubject, subject])
+        : pages[(request.page - 1).clamp(0, pages.length - 1)];
     return AnimeRankingResponse(
-      items: request.sort == AnimeRankingSort.rank
-          ? const [subject, secondSubject]
-          : const [secondSubject, subject],
+      items: items,
       page: request.page,
-      hasNext: false,
+      hasNext: pages != null && request.page < pages.length,
       applied: AnimeRankingApplied(
         sort: request.sort.name,
         filters: request.filters,
+        filterGroup: request.filterGroup,
+        filter: request.filter,
+        year: request.year,
+        season: request.season?.name,
         page: request.page,
         limit: request.limit,
       ),
@@ -186,7 +214,10 @@ class FakeYnekoBackend implements YnekoBackend {
   Future<List<AnimeSubject>> browseSubjects(
     BangumiBrowseRequest request,
   ) async {
-    return const [subject, secondSubject];
+    browseRequests.add(request);
+    final error = browseError;
+    if (error != null) throw StateError(error);
+    return _browseSubjectsResult ?? const [subject, secondSubject];
   }
 
   @override

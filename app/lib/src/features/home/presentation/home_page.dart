@@ -2,42 +2,121 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../shell/index.dart';
 import '../application/home_providers.dart';
+import '../../../shared/assets/index.dart';
 import '../../../shared/domain/index.dart';
 import '../../../shared/theme/index.dart';
 import '../../../shared/ui/index.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key, this.tabIndex = 0});
 
   final int tabIndex;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  static const _rankingLoadAheadExtent = 520.0;
+
+  final _scrollController = ScrollController();
+  var _backTopVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_handleScroll);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _maybeLoadMoreRanking(),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tabIndex != widget.tabIndex) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _maybeLoadMoreRanking(),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
     final controller = ref.read(shellRouteProvider.notifier);
+    ref.listen(homeRankingProvider, (_, _) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _maybeLoadMoreRanking(),
+      );
+    });
 
     return ColoredBox(
       color: tokens.page,
-      child: ListView(
-        key: ValueKey('home-tab-panel-$tabIndex'),
-        padding: YnekoThemeTokens.pagePadding,
+      child: Stack(
         children: [
-          switch (tabIndex) {
-            1 => _ScheduleWorkbench(
-              onOpen: (subjectId) => controller.openWatch(subjectId: subjectId),
-            ),
-            2 => _RankingWorkbench(
-              onOpen: (subjectId) => controller.openWatch(subjectId: subjectId),
-            ),
-            _ => _RecommendWorkbench(
-              onOpen: (subjectId) => controller.openWatch(subjectId: subjectId),
-            ),
-          },
+          ListView(
+            controller: _scrollController,
+            key: ValueKey('home-tab-panel-${widget.tabIndex}'),
+            padding: YnekoThemeTokens.pagePadding,
+            children: [
+              switch (widget.tabIndex) {
+                1 => _ScheduleWorkbench(
+                  onOpen: (subjectId) =>
+                      controller.openWatch(subjectId: subjectId),
+                ),
+                2 => _RankingWorkbench(
+                  onOpen: (subjectId) =>
+                      controller.openWatch(subjectId: subjectId),
+                ),
+                _ => _RecommendWorkbench(
+                  onOpen: (subjectId) =>
+                      controller.openWatch(subjectId: subjectId),
+                ),
+              },
+            ],
+          ),
+          _BackTopButton(visible: _backTopVisible, onTap: _scrollToTop),
         ],
       ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_handleScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _handleScroll() {
+    final visible =
+        _scrollController.hasClients && _scrollController.offset > 240;
+    if (visible != _backTopVisible) {
+      setState(() => _backTopVisible = visible);
+    }
+    _maybeLoadMoreRanking();
+  }
+
+  void _maybeLoadMoreRanking() {
+    if (!mounted || widget.tabIndex != 2 || !_scrollController.hasClients) {
+      return;
+    }
+    final position = _scrollController.position;
+    if (position.extentAfter > _rankingLoadAheadExtent) return;
+    ref.read(homeRankingProvider.notifier).loadMore();
+  }
+
+  void _scrollToTop() {
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      0,
+      duration: _homeMotion(context, const Duration(milliseconds: 320)),
+      curve: Curves.easeOutCubic,
     );
   }
 }
@@ -73,282 +152,435 @@ class _RecommendWorkbench extends StatelessWidget {
   }
 }
 
-class _ScheduleWorkbench extends StatelessWidget {
+class _ScheduleWorkbench extends ConsumerStatefulWidget {
   const _ScheduleWorkbench({required this.onOpen});
 
   final ValueChanged<int> onOpen;
 
   @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final year = now.year;
-
-    return Consumer(
-      builder: (context, ref, child) {
-        final calendar = ref.watch(homeCalendarProvider);
-        final selectedDay = ref.watch(scheduleDayProvider);
-        return Column(
-          key: const ValueKey('home-schedule-panel'),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _FilterWall(
-              label: '时间表筛选',
-              rows: [
-                _FilterRowData(
-                  label: '日期',
-                  items: const ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-                  activeIndex: selectedDay - 1,
-                  onPick: (index) =>
-                      ref.read(scheduleDayProvider.notifier).setDay(index + 1),
-                ),
-                const _FilterRowData(
-                  label: '年份',
-                  items: [
-                    '2026',
-                    '2025',
-                    '2024',
-                    '2023',
-                    '2022',
-                    '2021',
-                    '2020',
-                    '2019',
-                    '2018',
-                    '2017',
-                    '2016',
-                    '2015',
-                  ],
-                ),
-                const _FilterRowData(
-                  label: '季度',
-                  items: ['全年', '1月', '4月', '7月', '10月'],
-                  activeIndex: 2,
-                ),
-              ],
-              trailing: const _ScheduleMachineActions(),
-              expanded: true,
-              rowKeyPrefix: 'schedule-filter-row',
-            ),
-            const SizedBox(height: 22),
-            _SummaryLine(text: '$year年新番'),
-            const SizedBox(height: 22),
-            calendar.when(
-              data: (days) {
-                final subjects = subjectsForScheduleDay(
-                  days: days,
-                  weekday: selectedDay,
-                );
-                if (subjects.isEmpty) {
-                  return const _EmptyPanel(
-                    title: '这一天暂时没有放送条目',
-                    description: 'Bangumi 时间表当前没有返回该日期的动画条目。',
-                  );
-                }
-                return _AnimeGrid(
-                  items: subjectsToUiCards(subjects),
-                  onOpen: onOpen,
-                );
-              },
-              loading: () => const _HomeShimmerGrid(
-                key: ValueKey('home-schedule-shimmer-grid'),
-                itemCount: 12,
-              ),
-              error: (error, stackTrace) => _ErrorPanel(
-                title: 'Bangumi 时间表加载失败',
-                description: error.toString(),
-                onRetry: () => ref.invalidate(homeCalendarProvider),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  ConsumerState<_ScheduleWorkbench> createState() => _ScheduleWorkbenchState();
 }
 
-class _ScheduleMachineActions extends StatelessWidget {
-  const _ScheduleMachineActions();
-
+class _ScheduleWorkbenchState extends ConsumerState<_ScheduleWorkbench> {
   @override
   Widget build(BuildContext context) {
-    return const Row(
-      mainAxisSize: MainAxisSize.min,
+    final selectedDay = ref.watch(scheduleDayProvider);
+    final filtersOpen = ref.watch(scheduleFiltersOpenProvider);
+    final archive = ref.watch(scheduleArchiveProvider);
+    final schedule = ref.watch(homeScheduleProvider);
+    final years = rankingYears();
+
+    return Column(
+      key: const ValueKey('home-schedule-panel'),
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _IconActionButton(icon: Icons.shuffle_rounded, tooltip: '随机选择日期和季度'),
-        SizedBox(width: 12),
-        _OutlineActionButton(
-          icon: Icons.keyboard_arrow_up_rounded,
-          label: '新番时光机',
-          active: true,
+        _FilterWall(
+          label: '时间表筛选',
+          rows: [
+            _FilterRowData(
+              label: '日期',
+              items: homeWeekdayLabels,
+              activeIndex: selectedDay - 1,
+              onPick: (index) =>
+                  ref.read(scheduleDayProvider.notifier).setDay(index + 1),
+            ),
+            _FilterRowData(
+              label: '年份',
+              items: years.map((year) => '$year').toList(growable: false),
+              activeIndex: _safeActiveIndex(years.indexOf(archive.year)),
+              onPick: (index) => ref
+                  .read(scheduleArchiveProvider.notifier)
+                  .setYear(years[index]),
+            ),
+            _FilterRowData(
+              label: '季度',
+              items: scheduleSeasonOptions
+                  .map((season) => season.label)
+                  .toList(growable: false),
+              activeIndex: _safeActiveIndex(
+                scheduleSeasonOptions.indexWhere(
+                  (season) =>
+                      season.seasonStartMonth == archive.seasonStartMonth,
+                ),
+              ),
+              onPick: (index) => ref
+                  .read(scheduleArchiveProvider.notifier)
+                  .setSeasonStartMonth(
+                    scheduleSeasonOptions[index].seasonStartMonth,
+                  ),
+            ),
+          ],
+          trailing: _OutlineActionButton(
+            icon: filtersOpen
+                ? Icons.keyboard_arrow_up_rounded
+                : Icons.keyboard_arrow_down_rounded,
+            label: '新番时光机',
+            onTap: ref.read(scheduleFiltersOpenProvider.notifier).toggle,
+          ),
+          expanded: filtersOpen,
+          rowKeyPrefix: 'schedule-filter-row',
+        ),
+        const SizedBox(height: 22),
+        _SummaryLine(text: scheduleArchiveTitle(archive)),
+        const SizedBox(height: 22),
+        schedule.when(
+          data: (state) {
+            final subjects = subjectsForScheduleDay(
+              days: state.days,
+              weekday: selectedDay,
+            );
+            if (subjects.isEmpty) {
+              return _EmptyPanel(
+                title: '这一天暂时没有放送条目',
+                description:
+                    '当前基于 ${state.showingCurrentSchedule ? 'Bangumi 每日放送' : 'Bangumi 浏览条目'} 显示 ${scheduleArchiveTitle(state.archive)}。',
+              );
+            }
+            return _AnimeGrid(
+              items: subjectsToUiCards(subjects),
+              onOpen: widget.onOpen,
+            );
+          },
+          loading: () => const _HomeShimmerGrid(
+            key: ValueKey('home-schedule-shimmer-grid'),
+            itemCount: 12,
+          ),
+          error: (error, stackTrace) => _ErrorPanel(
+            title: 'Bangumi 时间表加载失败',
+            description: error.toString(),
+            onRetry: () {
+              ref.invalidate(homeScheduleProvider);
+              ref.invalidate(homeCalendarProvider);
+            },
+          ),
         ),
       ],
     );
   }
 }
 
-class _RankingWorkbench extends StatelessWidget {
+class _RankingWorkbench extends ConsumerWidget {
   const _RankingWorkbench({required this.onOpen});
 
   final ValueChanged<int> onOpen;
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final ranking = ref.watch(homeRankingProvider);
-        final sort = ref.watch(rankingSortProvider);
-        return Column(
-          key: const ValueKey('home-ranking-panel'),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _FilterWall(
-              label: '榜单筛选',
-              rows: [
-                _FilterRowData(
-                  label: '排序',
-                  items: const ['排名', '热度', '收藏', '日期', '名称'],
-                  activeIndex: _sortIndex(sort),
-                  onPick: (index) => ref
-                      .read(rankingSortProvider.notifier)
-                      .setSort(_sortForIndex(index)),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ranking = ref.watch(homeRankingProvider);
+    final filters = ref.watch(homeRankingFiltersProvider);
+    final moreOpen = ref.watch(rankingMoreOpenProvider);
+    final years = rankingYears();
+    final rankingController = ref.read(homeRankingFiltersProvider.notifier);
+
+    return Column(
+      key: const ValueKey('home-ranking-panel'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _FilterWall(
+          label: '榜单筛选',
+          rows: [
+            _FilterRowData(
+              label: '排序',
+              items: rankingSortOptions
+                  .map((item) => item.label)
+                  .toList(growable: false),
+              activeIndex: _safeActiveIndex(
+                rankingSortOptions.indexWhere(
+                  (item) => item.value == filters.sort,
                 ),
-                const _FilterRowData(
-                  label: '地区',
-                  items: ['全部', '日本', '国产', '欧美'],
-                ),
-                const _FilterRowData(
-                  label: '类型',
-                  items: [
-                    '全部',
-                    '科幻',
-                    '喜剧',
-                    '同人',
-                    '百合',
-                    '校园',
-                    '惊悚',
-                    '后宫',
-                    '机战',
-                    '悬疑',
-                    '恋爱',
-                    '奇幻',
-                    '推理',
-                    '运动',
-                    '耽美',
-                    '音乐',
-                    '战斗',
-                    '冒险',
-                    '亲子',
-                    '穿越',
-                    '玄幻',
-                    '乙女',
-                    '恐怖',
-                    '历史',
-                    '日常',
-                    '剧情',
-                    '武侠',
-                    '美食',
-                    '职场',
-                  ],
-                ),
-                const _FilterRowData(
-                  label: '来源',
-                  items: [
-                    '全部',
-                    '原创',
-                    '漫画改',
-                    '游戏改',
-                    '小说改',
-                    '动画改',
-                    '影视改',
-                    '轻小说改',
-                  ],
-                ),
-                const _FilterRowData(
-                  label: '分类',
-                  items: ['全部', 'TV', 'WEB', 'OVA', '剧场版', '动态漫画', '其他'],
-                ),
-                const _FilterRowData(
-                  label: '年份',
-                  items: [
-                    '年份',
-                    '2026',
-                    '2025',
-                    '2024',
-                    '2023',
-                    '2022',
-                    '2021',
-                    '2020',
-                    '2019',
-                    '2018',
-                    '2017',
-                    '2016',
-                    '2015',
-                  ],
-                ),
-                const _FilterRowData(
-                  label: '季度',
-                  items: ['季度', '1月', '4月', '7月', '10月'],
-                ),
-              ],
-              trailing: const _OutlineActionButton(
-                icon: Icons.keyboard_arrow_up_rounded,
-                label: '更多筛选',
-                active: true,
               ),
-              expanded: true,
-              rowKeyPrefix: 'ranking-filter-row',
+              onPick: (index) =>
+                  rankingController.setSort(rankingSortOptions[index].value),
             ),
-            const SizedBox(height: 22),
-            _SummaryLine(text: '${_sortLabel(sort)} · 全部动画'),
-            const SizedBox(height: 22),
-            ranking.when(
-              data: (response) => _AnimeGrid(
-                items: subjectsToUiCards(response.items),
-                onOpen: onOpen,
+            _rankingFilterRow(
+              label: '地区',
+              group: 'region',
+              filters: filters,
+              options: rankingRegionOptions,
+              controller: rankingController,
+            ),
+            _rankingFilterRow(
+              label: '类型',
+              group: 'type',
+              filters: filters,
+              options: rankingTypeOptions,
+              controller: rankingController,
+            ),
+            _rankingFilterRow(
+              label: '来源',
+              group: 'source',
+              filters: filters,
+              options: rankingSourceOptions,
+              controller: rankingController,
+            ),
+            _rankingFilterRow(
+              label: '分类',
+              group: 'category',
+              filters: filters,
+              options: rankingCategoryOptions,
+              controller: rankingController,
+            ),
+            _FilterRowData(
+              label: '年份',
+              items: ['年份', ...years.map((year) => '$year')],
+              activeIndex: filters.year == null
+                  ? 0
+                  : _safeActiveIndex(years.indexOf(filters.year!) + 1),
+              onPick: (index) => rankingController.setYear(
+                index == 0 ? null : years[index - 1],
               ),
-              loading: () => const _HomeShimmerGrid(
-                key: ValueKey('home-ranking-shimmer-grid'),
-                itemCount: 18,
+            ),
+            _FilterRowData(
+              label: '季度',
+              items: rankingSeasonOptions
+                  .map((season) => season.label)
+                  .toList(growable: false),
+              activeIndex: _safeActiveIndex(
+                rankingSeasonOptions.indexWhere(
+                  (season) => season.value == filters.season,
+                ),
               ),
-              error: (error, stackTrace) => _ErrorPanel(
-                title: 'Bangumi 榜单加载失败',
-                description: error.toString(),
-                onRetry: () => ref.invalidate(homeRankingProvider),
+              onPick: (index) => rankingController.setSeason(
+                rankingSeasonOptions[index].value,
               ),
             ),
           ],
-        );
-      },
+          trailing: _OutlineActionButton(
+            icon: moreOpen
+                ? Icons.keyboard_arrow_up_rounded
+                : Icons.keyboard_arrow_down_rounded,
+            label: '更多筛选',
+            onTap: ref.read(rankingMoreOpenProvider.notifier).toggle,
+          ),
+          expanded: moreOpen,
+          alwaysVisibleRows: 3,
+          rowKeyPrefix: 'ranking-filter-row',
+        ),
+        const SizedBox(height: 22),
+        _SummaryLine(
+          text: rankingResponseSummary(ranking.asData?.value.applied, filters),
+        ),
+        const SizedBox(height: 22),
+        ranking.when(
+          data: (state) => _RankingResults(
+            state: state,
+            onOpen: onOpen,
+            onLoadMore: ref.read(homeRankingProvider.notifier).loadMore,
+          ),
+          loading: () => const _HomeShimmerGrid(
+            key: ValueKey('home-ranking-shimmer-grid'),
+            itemCount: 18,
+          ),
+          error: (error, stackTrace) => _ErrorPanel(
+            title: 'Bangumi 榜单加载失败',
+            description: error.toString(),
+            onRetry: () => ref.invalidate(homeRankingProvider),
+          ),
+        ),
+      ],
     );
   }
+}
 
-  int _sortIndex(AnimeRankingSort sort) {
-    return switch (sort) {
-      AnimeRankingSort.rank => 0,
-      AnimeRankingSort.heat => 1,
-      AnimeRankingSort.collect => 2,
-      AnimeRankingSort.date => 3,
-      AnimeRankingSort.name => 4,
-    };
+_FilterRowData _rankingFilterRow({
+  required String label,
+  required String group,
+  required HomeRankingFilters filters,
+  required List<RankingFilterOption> options,
+  required HomeRankingFiltersController controller,
+}) {
+  return _FilterRowData(
+    label: label,
+    items: options.map((item) => item.label).toList(growable: false),
+    activeIndex: _safeActiveIndex(
+      options.indexWhere((item) => item.value == filters.valueFor(group)),
+    ),
+    onPick: (index) => controller.setFilter(group, options[index].value),
+  );
+}
+
+class _RankingResults extends StatelessWidget {
+  const _RankingResults({
+    required this.state,
+    required this.onOpen,
+    required this.onLoadMore,
+  });
+
+  final HomeRankingState state;
+  final ValueChanged<int> onOpen;
+  final VoidCallback onLoadMore;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.subjects.isEmpty) {
+      return const _EmptyPanel(
+        title: '暂无榜单条目',
+        description: 'Bangumi 返回空结果，调整筛选条件后再试。',
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _AnimeGrid(items: subjectsToUiCards(state.subjects), onOpen: onOpen),
+        if (state.appendError.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          _ErrorPanel(
+            title: '继续加载失败',
+            description: state.appendError,
+            onRetry: onLoadMore,
+          ),
+        ],
+        const SizedBox(height: 18),
+        Center(
+          child: state.loadingMore
+              ? const _LoadStatus(text: '正在继续加载...')
+              : state.hasNext
+              ? const _LoadStatus(text: '继续向下滚动自动加载')
+              : const _LoadStatus(text: '已经到底了'),
+        ),
+      ],
+    );
   }
+}
 
-  AnimeRankingSort _sortForIndex(int index) {
-    return switch (index) {
-      0 => AnimeRankingSort.rank,
-      2 => AnimeRankingSort.collect,
-      3 => AnimeRankingSort.date,
-      4 => AnimeRankingSort.name,
-      _ => AnimeRankingSort.heat,
-    };
+class _LoadStatus extends StatelessWidget {
+  const _LoadStatus({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    return SizedBox(
+      height: 38,
+      child: Center(
+        child: Text(
+          text,
+          style: type.meta.copyWith(
+            color: tokens.muted,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
   }
+}
 
-  String _sortLabel(AnimeRankingSort sort) {
-    return switch (sort) {
-      AnimeRankingSort.rank => '排名',
-      AnimeRankingSort.heat => '热度',
-      AnimeRankingSort.collect => '收藏',
-      AnimeRankingSort.date => '日期',
-      AnimeRankingSort.name => '名称',
-    };
+class _BackTopButton extends StatefulWidget {
+  const _BackTopButton({required this.visible, required this.onTap});
+
+  final bool visible;
+  final VoidCallback onTap;
+
+  @override
+  State<_BackTopButton> createState() => _BackTopButtonState();
+}
+
+class _BackTopButtonState extends State<_BackTopButton> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final motion = _homeMotion(context, YnekoThemeTokens.fastMotion);
+    final active = widget.visible && (_hovered || _pressed);
+    final background = active
+        ? tokens.primaryContainer
+        : tokens.surface.withValues(alpha: 0.88);
+    final border = active
+        ? Color.lerp(tokens.primary, Colors.transparent, 0.58)!
+        : tokens.outline.withValues(alpha: 0.45);
+    final iconColor = active ? tokens.primary : tokens.primaryStrong;
+
+    return Positioned(
+      right: 28,
+      bottom: 28,
+      child: IgnorePointer(
+        ignoring: !widget.visible,
+        child: MouseRegion(
+          cursor: widget.visible
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
+          onEnter: (_) {
+            if (widget.visible) setState(() => _hovered = true);
+          },
+          onExit: (_) {
+            if (_hovered || _pressed) {
+              setState(() {
+                _hovered = false;
+                _pressed = false;
+              });
+            }
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onTap,
+            onTapDown: widget.visible
+                ? (_) => setState(() => _pressed = true)
+                : null,
+            onTapUp: widget.visible
+                ? (_) => setState(() => _pressed = false)
+                : null,
+            onTapCancel: widget.visible
+                ? () => setState(() => _pressed = false)
+                : null,
+            child: AnimatedOpacity(
+              key: const ValueKey('home-back-top-opacity'),
+              duration: motion,
+              opacity: widget.visible ? 1 : 0,
+              child: AnimatedScale(
+                duration: motion,
+                curve: YnekoThemeTokens.springCurve,
+                scale: widget.visible ? (_pressed ? 0.94 : 1) : 0.92,
+                child: AnimatedSlide(
+                  duration: motion,
+                  curve: YnekoThemeTokens.springCurve,
+                  offset: widget.visible
+                      ? (_hovered ? const Offset(0, -0.055) : Offset.zero)
+                      : const Offset(0, 0.22),
+                  child: AnimatedContainer(
+                    key: const ValueKey('home-back-top-button'),
+                    duration: motion,
+                    curve: Curves.easeOut,
+                    width: 54,
+                    height: 54,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: background,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: border),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (active ? tokens.primary : Colors.black)
+                              .withValues(alpha: active ? 0.18 : 0.07),
+                          blurRadius: active ? 28 : 20,
+                          offset: Offset(0, active ? 14 : 8),
+                        ),
+                      ],
+                    ),
+                    child: Transform.translate(
+                      offset: Offset(0, active ? -2 : 0),
+                      child: SvgPicture.asset(
+                        YnekoAssets.backToTop,
+                        width: 30,
+                        height: 30,
+                        colorFilter: ColorFilter.mode(
+                          iconColor,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -443,10 +675,6 @@ class _AnimeGridState extends State<_AnimeGrid> {
       return;
     }
 
-    if (_coversReady) {
-      setState(() => _coversReady = false);
-    }
-
     _coverFallbackTimer = Timer(_coverPrecacheTimeout, () {
       _markCoversReady(generation);
     });
@@ -484,7 +712,6 @@ class _AnimeGridState extends State<_AnimeGrid> {
 
   int _columnsForWidth(double width) {
     if (width >= 1180) return 6;
-    if (width >= 980) return 5;
     if (width >= 760) return 4;
     if (width >= 560) return 3;
     return 2;
@@ -554,7 +781,6 @@ class _HomeShimmerGridState extends State<_HomeShimmerGrid>
 
   int _columnsForWidth(double width) {
     if (width >= 1180) return 6;
-    if (width >= 980) return 5;
     if (width >= 760) return 4;
     if (width >= 560) return 3;
     return 2;
@@ -655,6 +881,7 @@ class _FilterWall extends StatelessWidget {
     required this.rows,
     required this.trailing,
     this.expanded = true,
+    this.alwaysVisibleRows = 1,
     this.rowKeyPrefix = 'filter-row',
   });
 
@@ -662,6 +889,7 @@ class _FilterWall extends StatelessWidget {
   final List<_FilterRowData> rows;
   final Widget trailing;
   final bool expanded;
+  final int alwaysVisibleRows;
   final String rowKeyPrefix;
 
   @override
@@ -712,7 +940,7 @@ class _FilterWall extends StatelessWidget {
             for (var index = 1; index < rows.length; index++)
               _AnimatedFilterRow(
                 index: index,
-                expanded: expanded,
+                expanded: index < alwaysVisibleRows || expanded,
                 keyPrefix: rowKeyPrefix,
                 child: Padding(
                   padding: const EdgeInsets.only(top: 14),
@@ -838,10 +1066,10 @@ class _FilterOptionState extends State<_FilterOption> {
         duration: motion,
         offset: _hovered ? const Offset(0, -0.025) : Offset.zero,
         child: GestureDetector(
+          key: ValueKey('filter-option-${widget.label}'),
+          behavior: HitTestBehavior.opaque,
           onTap: widget.onTap,
-          child: AnimatedContainer(
-            key: ValueKey('filter-option-${widget.label}'),
-            duration: motion,
+          child: Container(
             constraints: const BoxConstraints(minHeight: 40),
             padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
@@ -866,74 +1094,16 @@ class _FilterOptionState extends State<_FilterOption> {
   }
 }
 
-class _IconActionButton extends StatefulWidget {
-  const _IconActionButton({required this.icon, required this.tooltip});
-
-  final IconData icon;
-  final String tooltip;
-
-  @override
-  State<_IconActionButton> createState() => _IconActionButtonState();
-}
-
-class _IconActionButtonState extends State<_IconActionButton> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = YnekoThemeTokens.of(context);
-    final motion = _homeMotion(context, YnekoThemeTokens.fastMotion);
-    return Tooltip(
-      message: widget.tooltip,
-      waitDuration: const Duration(milliseconds: 700),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: AnimatedSlide(
-          duration: motion,
-          offset: _hovered ? const Offset(0, -0.025) : Offset.zero,
-          child: AnimatedContainer(
-            key: const ValueKey('schedule-random-button'),
-            duration: motion,
-            width: 38,
-            height: 38,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: _hovered ? tokens.primaryContainer : tokens.surface,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: _hovered
-                    ? Color.lerp(tokens.primary, tokens.outline, 0.64)!
-                    : tokens.outline,
-              ),
-            ),
-            child: AnimatedRotation(
-              turns: _hovered ? 0.08 : 0,
-              duration: motion,
-              child: Icon(
-                widget.icon,
-                size: 18,
-                color: _hovered ? tokens.primary : tokens.muted,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _OutlineActionButton extends StatefulWidget {
   const _OutlineActionButton({
     required this.icon,
     required this.label,
-    this.active = false,
+    required this.onTap,
   });
 
   final IconData icon;
   final String label;
-  final bool active;
+  final VoidCallback onTap;
 
   @override
   State<_OutlineActionButton> createState() => _OutlineActionButtonState();
@@ -947,45 +1117,50 @@ class _OutlineActionButtonState extends State<_OutlineActionButton> {
     final tokens = YnekoThemeTokens.of(context);
     final type = YnekoTypography.of(context);
     final motion = _homeMotion(context, YnekoThemeTokens.fastMotion);
-    final active = widget.active || _hovered;
+    final active = _hovered;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedSlide(
-        duration: motion,
-        offset: _hovered ? const Offset(0, -0.025) : Offset.zero,
-        child: AnimatedContainer(
+      child: GestureDetector(
+        key: ValueKey('outline-action-${widget.label}'),
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: AnimatedSlide(
           duration: motion,
-          height: 38,
-          padding: const EdgeInsets.only(left: 14, right: 13),
-          decoration: BoxDecoration(
-            color: active ? tokens.primaryContainer : tokens.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: active
-                  ? Color.lerp(tokens.primary, tokens.outline, 0.64)!
-                  : tokens.outline,
+          offset: _hovered ? const Offset(0, -0.025) : Offset.zero,
+          child: AnimatedContainer(
+            duration: motion,
+            height: 38,
+            padding: const EdgeInsets.only(left: 14, right: 13),
+            decoration: BoxDecoration(
+              color: active ? tokens.primaryContainer : tokens.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: active
+                    ? Color.lerp(tokens.primary, tokens.outline, 0.64)!
+                    : tokens.outline,
+              ),
             ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                widget.label,
-                style: type.label.copyWith(
-                  color: active ? tokens.primary : tokens.muted,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.label,
+                  style: type.label.copyWith(
+                    color: active ? tokens.primary : tokens.muted,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                widget.icon,
-                size: 16,
-                color: active ? tokens.primary : tokens.muted,
-              ),
-            ],
+                const SizedBox(width: 6),
+                Icon(
+                  widget.icon,
+                  size: 16,
+                  color: active ? tokens.primary : tokens.muted,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1036,6 +1211,8 @@ class _FilterRowData {
   final int activeIndex;
   final ValueChanged<int>? onPick;
 }
+
+int _safeActiveIndex(int index) => index < 0 ? 0 : index;
 
 class _ErrorPanel extends StatelessWidget {
   const _ErrorPanel({

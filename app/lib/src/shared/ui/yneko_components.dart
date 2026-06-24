@@ -499,9 +499,7 @@ class _YnekoActionColors {
         );
       case YnekoActionButtonTone.outline:
         return _YnekoActionColors(
-          background: pressed
-              ? tokens.primaryContainer.withValues(alpha: 0.86)
-              : hovered
+          background: hovered || pressed
               ? tokens.primaryContainer
               : tokens.surface,
           border: hovered || pressed
@@ -511,9 +509,7 @@ class _YnekoActionColors {
         );
       case YnekoActionButtonTone.ghost:
         return _YnekoActionColors(
-          background: pressed
-              ? tokens.primaryContainer.withValues(alpha: 0.76)
-              : hovered
+          background: hovered || pressed
               ? tokens.primaryContainer.withValues(alpha: 0.52)
               : tokens.primaryContainer.withValues(alpha: 0),
           border: tokens.primaryContainer.withValues(alpha: 0),
@@ -531,9 +527,7 @@ class _YnekoActionColors {
         );
       case YnekoActionButtonTone.player:
         return _YnekoActionColors(
-          background: pressed
-              ? tokens.primaryContainer.withValues(alpha: 0.86)
-              : hovered
+          background: hovered || pressed
               ? tokens.primaryContainer
               : tokens.surfaceHigh.withValues(alpha: 0.76),
           border: Color.lerp(tokens.outline, Colors.transparent, 0.56)!,
@@ -541,9 +535,7 @@ class _YnekoActionColors {
         );
       case YnekoActionButtonTone.chrome:
         return _YnekoActionColors(
-          background: pressed
-              ? Color.lerp(tokens.surfaceHigh, tokens.ink, 0.04)!
-              : hovered
+          background: hovered || pressed
               ? tokens.surfaceHigh
               : tokens.surfaceHigh.withValues(alpha: 0),
           border: tokens.surfaceHigh.withValues(alpha: 0),
@@ -1125,8 +1117,7 @@ class _YnekoFilterChipState extends State<_YnekoFilterChip> {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {},
-          child: AnimatedContainer(
-            duration: motion,
+          child: Container(
             constraints: const BoxConstraints(minHeight: 40),
             padding: const EdgeInsets.symmetric(horizontal: 10),
             alignment: Alignment.center,

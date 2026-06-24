@@ -4,14 +4,19 @@
 
 - Home layout and main navigation entry composition.
 - Direct watch-page entry from anime cards.
-- Home-only Bangumi recommendation, calendar, ranking provider state.
+- Home-only Bangumi recommendation, calendar, ranking, ranking pagination,
+  ranking filter, schedule day, and schedule archive provider state.
 - Mapping Bangumi subject summaries into home poster view models.
+- Schedule archive browsing for non-current quarters through the documented
+  backend browse port.
 
 ## Public Contracts
 
 - Public Dart exports are limited to presentation/home_page.dart through index.dart.
 - Application providers call the documented `YnekoBackend` port; widgets consume
   providers only.
+- Ranking and schedule request planning stays inside the home application layer;
+  presentation widgets forward filter and load-more intent only.
 
 ## Public Index Export List
 
