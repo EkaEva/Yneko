@@ -4,6 +4,8 @@
 
 - App route state, top-level navigation, watch route composition, and app theme
   composition.
+- Topbar composition for shell tabs, global search input, and the floating
+  search-history popover anchored under the search field.
 
 ## Public Contracts
 

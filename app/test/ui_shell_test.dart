@@ -47,13 +47,14 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(_appWithBackend());
+    final backend = FakeYnekoBackend();
+    await tester.pumpWidget(_appWithBackend(backend: backend));
 
     await tester.tap(find.byType(TextField).first);
     await tester.pumpAndSettle();
 
     expect(find.byType(TextField), findsOneWidget);
-    expect(find.text('搜索番剧'), findsOneWidget);
+    expect(find.text('搜索动画'), findsOneWidget);
     final tabOpacity = tester.widget<AnimatedOpacity>(
       find.byType(AnimatedOpacity).first,
     );
@@ -248,6 +249,42 @@ void main() {
     final filterText = tester.widget<Text>(find.text('推理').first);
     expect(filterText.style?.fontFamily, YnekoThemeTokens.fontFamily);
     expect(filterText.style?.fontFamilyFallback, YnekoThemeTokens.fontFallback);
+  });
+
+  testWidgets('single top tabs align to home tab without underline', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(_appWithBackend());
+    await tester.pumpAndSettle();
+
+    final homeLeft = tester.getTopLeft(_topTabText(tester, '推荐')).dx;
+    final homeStyle = _topTabStyle(tester, '推荐').style;
+
+    await tester.tap(find.text('我的').last);
+    await tester.pumpAndSettle();
+    final mine = _topTabText(tester, '我的');
+    expect(tester.getTopLeft(mine).dx, closeTo(homeLeft, 0.01));
+    expect(_topTabStyle(tester, '我的').style.fontFamily, homeStyle.fontFamily);
+    expect(
+      _topTabStyle(tester, '我的').style.fontFamilyFallback,
+      homeStyle.fontFamilyFallback,
+    );
+    expect(find.byKey(const ValueKey('top-tab-underline-我的')), findsNothing);
+
+    await tester.tap(find.text('设置').last);
+    await tester.pumpAndSettle();
+    final settings = _topTabText(tester, '设置');
+    expect(tester.getTopLeft(settings).dx, closeTo(homeLeft, 0.01));
+    expect(find.byKey(const ValueKey('top-tab-underline-设置')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('settings-entry-外观')));
+    await tester.pumpAndSettle();
+    final detail = _topTabText(tester, '外观');
+    expect(tester.getTopLeft(detail).dx, closeTo(homeLeft, 0.01));
+    expect(find.byKey(const ValueKey('top-tab-underline-外观')), findsNothing);
   });
 
   testWidgets('settings renders root groups and navigates into detail panels', (
@@ -815,31 +852,203 @@ void main() {
     expect(find.text('星轨回响 第 1-3 话'), findsNothing);
   });
 
-  testWidgets('search route renders result page chrome and horizontal cards', (
+  testWidgets('search route renders real results and keeps top input text', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(_appWithBackend());
-    await tester.enterText(find.byType(TextField).first, '星轨');
+    final backend = FakeYnekoBackend();
+    await tester.pumpWidget(_appWithBackend(backend: backend));
+    await tester.enterText(
+      find.byKey(const ValueKey('top-search-field')),
+      '芙莉莲',
+    );
     await tester.pump();
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('search-result-page')), findsOneWidget);
-    expect(find.byKey(const ValueKey('search-back-button')), findsOneWidget);
+    expect(backend.searchRequests.single, (query: '芙莉莲', page: 1));
     expect(find.byKey(const ValueKey('search-heading')), findsOneWidget);
-    expect(find.byKey(const ValueKey('search-mode-toggle')), findsOneWidget);
+    expect(find.byKey(const ValueKey('search-back-button')), findsNothing);
+    expect(find.byKey(const ValueKey('search-page-input')), findsNothing);
+    expect(find.byKey(const ValueKey('search-mode-toggle')), findsNothing);
     expect(find.byKey(const ValueKey('search-grid')), findsOneWidget);
+    expect(
+      find.byKey(ValueKey('search-result-card-${FakeYnekoBackend.subject.id}')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('anime-poster-title-highlight')),
+      findsWidgets,
+    );
     expect(find.text('已经到底了'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('search-result-card-1001')));
+    await tester.tap(find.text('我的').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('首页').last);
+    await tester.pumpAndSettle();
+    final topSearch = tester.widget<TextField>(
+      find.byKey(const ValueKey('top-search-field')),
+    );
+    expect(topSearch.controller!.text, '芙莉莲');
+
+    ProviderScope.containerOf(
+      tester.element(find.byType(YnekoApp)),
+    ).read(shellRouteProvider.notifier).openSearch();
+    await tester.pumpAndSettle();
+    ProviderScope.containerOf(
+      tester.element(find.byType(YnekoApp)),
+    ).read(shellRouteProvider.notifier).openHome();
+    await tester.pumpAndSettle();
+    final clearedTopSearch = tester.widget<TextField>(
+      find.byKey(const ValueKey('top-search-field')),
+    );
+    expect(clearedTopSearch.controller!.text, isEmpty);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('top-search-field')),
+      '芙莉莲',
+    );
+    await tester.pump();
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('top-search-field')));
+    await tester.pumpAndSettle();
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(ValueKey('search-result-card-${FakeYnekoBackend.subject.id}')),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('watch-page')), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     expect(find.byKey(const ValueKey('rail-back-button')), findsNothing);
+  });
+
+  testWidgets('search history appears below top search and can be reused', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final backend = FakeYnekoBackend(initialSearchHistory: const ['既有历史']);
+    await tester.pumpWidget(_appWithBackend(backend: backend));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('top-search-field')),
+      '星轨',
+    );
+    await tester.pump();
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(backend.savedSearchHistory.last.first, '星轨');
+
+    await tester.tap(find.byKey(const ValueKey('top-search-field')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('search-history-popover')),
+      findsOneWidget,
+    );
+    final popover = find.byKey(const ValueKey('search-history-popover'));
+    expect(
+      find.descendant(of: popover, matching: find.text('星轨')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: popover, matching: find.text('既有历史')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.descendant(of: popover, matching: find.text('星轨')));
+    await tester.pumpAndSettle();
+    expect(backend.searchRequests.last, (query: '星轨', page: 1));
+
+    await tester.tap(find.byKey(const ValueKey('top-search-field')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('清空历史'));
+    await tester.pumpAndSettle();
+    expect(backend.savedSearchHistory.last, isEmpty);
+    expect(find.byKey(const ValueKey('search-history-popover')), findsNothing);
+  });
+
+  testWidgets('search history popover uses focused search target width', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1680, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _appWithBackend(
+        backend: FakeYnekoBackend(initialSearchHistory: const ['你好']),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('top-search-field')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final popoverSize = tester.getSize(
+      find.byKey(const ValueKey('search-history-popover')),
+    );
+    final searchContainerSize = tester.getSize(
+      find.byKey(const ValueKey('top-search-container')),
+    );
+    expect(popoverSize.width, greaterThanOrEqualTo(searchContainerSize.width));
+  });
+
+  testWidgets('search auto loads more results and dedupes subjects', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final firstPage = [
+      for (var index = 0; index < searchPageLimit; index++)
+        _searchSubject(8000 + index, '搜索条目$index'),
+    ];
+    final backend = FakeYnekoBackend(
+      searchPages: [
+        firstPage,
+        [firstPage.first, _searchSubject(9000, '追加条目')],
+      ],
+    );
+
+    await tester.pumpWidget(_appWithBackend(backend: backend));
+    await tester.enterText(
+      find.byKey(const ValueKey('top-search-field')),
+      '分页',
+    );
+    await tester.pump();
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    expect(backend.searchRequests, contains((query: '分页', page: 1)));
+    expect(
+      find.byKey(const ValueKey('search-result-card-8000')),
+      findsOneWidget,
+    );
+
+    await tester.drag(
+      find.byKey(const ValueKey('search-result-page')),
+      const Offset(0, -2800),
+    );
+    await tester.pumpAndSettle();
+
+    expect(backend.searchRequests, contains((query: '分页', page: 2)));
+    final container = ProviderScope.containerOf(
+      tester.element(find.byKey(const ValueKey('search-result-page'))),
+    );
+    expect(container.read(searchControllerProvider).subjects.length, 25);
+    expect(
+      find.byKey(const ValueKey('search-result-card-9000')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('theme toggle keeps sun halo attached to the clipped sun orb', (
@@ -1348,7 +1557,8 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(_appWithBackend());
+    final backend = FakeYnekoBackend();
+    await tester.pumpWidget(_appWithBackend(backend: backend));
     ProviderScope.containerOf(tester.element(find.byType(YnekoApp)))
         .read(shellRouteProvider.notifier)
         .openWatch(subjectId: FakeYnekoBackend.subject.id);
@@ -1426,8 +1636,11 @@ void main() {
       tester.element(find.byKey(const ValueKey('search-result-page'))),
     );
     expect(searchContainer.read(shellRouteProvider), isA<SearchRoute>());
-    expect(searchContainer.read(searchQueryProvider), '漫画改');
-    expect(searchContainer.read(searchTagModeProvider), isTrue);
+    expect(searchContainer.read(searchInputProvider), '漫画改');
+    expect(searchContainer.read(searchModeProvider), SearchMode.tag);
+    expect(searchContainer.read(searchControllerProvider).query, '漫画改');
+    expect(searchContainer.read(searchControllerProvider).mode, SearchMode.tag);
+    expect(backend.tagSearchRequests.single, (tag: '漫画改', page: 1));
 
     searchContainer
         .read(shellRouteProvider.notifier)
@@ -1989,6 +2202,45 @@ Future<void> _tapFilterOption(WidgetTester tester, String label) async {
   await tester.ensureVisible(option);
   await tester.tap(option.first);
   await tester.pumpAndSettle();
+}
+
+Finder _topTabText(WidgetTester tester, String label) {
+  final candidates = find.text(label);
+  for (final element in candidates.evaluate()) {
+    final textFinder = find.byWidget(element.widget);
+    final topTabStyle = find.ancestor(
+      of: textFinder,
+      matching: find.byType(AnimatedDefaultTextStyle),
+    );
+    final styles = tester.widgetList<AnimatedDefaultTextStyle>(topTabStyle);
+    if (styles.any((style) => style.style.fontSize == 16)) {
+      return textFinder;
+    }
+  }
+  throw TestFailure('No top tab text found for "$label".');
+}
+
+AnimatedDefaultTextStyle _topTabStyle(WidgetTester tester, String label) {
+  final styles = find.ancestor(
+    of: _topTabText(tester, label),
+    matching: find.byType(AnimatedDefaultTextStyle),
+  );
+  return tester
+      .widgetList<AnimatedDefaultTextStyle>(styles)
+      .firstWhere((style) => style.style.fontSize == 16);
+}
+
+AnimeSubject _searchSubject(int id, String title) {
+  return AnimeSubject(
+    id: id,
+    name: title,
+    nameCn: title,
+    coverUrl: 'https://example.test/$id.jpg',
+    airDate: '2026-01-01',
+    ratingScore: 7.0,
+    tags: const ['测试'],
+    totalEpisodes: 12,
+  );
 }
 
 class _FakeDirectoryPickerService implements DirectoryPickerService {

@@ -4,6 +4,19 @@
 
 - Search query state, Bangumi-first result presentation, and direct watch-page
   entry from result cards.
+- The shell top search field is the only search input. It preserves typed text
+  while routes change and submits into this feature's controller.
+- Search supports keyword mode and tag mode. Tag mode is selected by the search
+  top tab or by clicking a subject tag on the watch page; it calls
+  `YnekoBackend.searchTagSubjects(tag, page)` so tag searches use Bangumi tag
+  pages instead of keyword search fallback.
+- Search history is feature-local UI state backed by backend storage: entries
+  are de-duplicated, moved to the front on submit, shown in the floating panel
+  under the shell search field, clearable, and restored across restarts.
+- Keyword results paginate through `YnekoBackend.searchSubjects(query, page)`;
+  tag results paginate through `YnekoBackend.searchTagSubjects(tag, page)`.
+  Scroll-near-bottom loads more, appends by subject id, and keeps already loaded
+  cards stable.
 
 ## Public Contracts
 

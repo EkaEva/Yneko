@@ -18,6 +18,8 @@ abstract interface class YnekoBackend {
 
   Future<List<AnimeSubject>> searchSubjects(String query, int page);
 
+  Future<List<AnimeSubject>> searchTagSubjects(String tag, int page);
+
   Future<SubjectDetail> getSubjectDetail(int subjectId);
 
   Future<List<BangumiCalendarDay>> getCalendar();
@@ -117,6 +119,10 @@ abstract interface class YnekoBackend {
   });
 
   Future<void> clearWatchHistory();
+
+  Future<List<String>> listSearchHistory();
+
+  Future<List<String>> saveSearchHistory(List<String> history);
 }
 
 class FrbYnekoBackend implements YnekoBackend {
@@ -150,6 +156,13 @@ class FrbYnekoBackend implements YnekoBackend {
   Future<List<AnimeSubject>> searchSubjects(String query, int page) async {
     await _ensureInitialized();
     final subjects = await frb.searchSubjects(query: query, page: page);
+    return subjects.map(subjectFromFrb).toList(growable: false);
+  }
+
+  @override
+  Future<List<AnimeSubject>> searchTagSubjects(String tag, int page) async {
+    await _ensureInitialized();
+    final subjects = await frb.searchTagSubjects(tag: tag, page: page);
     return subjects.map(subjectFromFrb).toList(growable: false);
   }
 
@@ -451,5 +464,17 @@ class FrbYnekoBackend implements YnekoBackend {
   Future<void> clearWatchHistory() async {
     await _ensureInitialized();
     await frb.clearWatchHistory();
+  }
+
+  @override
+  Future<List<String>> listSearchHistory() async {
+    await _ensureInitialized();
+    return frb.listSearchHistory();
+  }
+
+  @override
+  Future<List<String>> saveSearchHistory(List<String> history) async {
+    await _ensureInitialized();
+    return frb.saveSearchHistory(history: history);
   }
 }

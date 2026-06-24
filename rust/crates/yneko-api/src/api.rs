@@ -332,6 +332,14 @@ pub async fn search_subjects(query: String, page: u32) -> Result<Vec<SubjectSumm
         .map_err(error_message)
 }
 
+pub async fn search_tag_subjects(tag: String, page: u32) -> Result<Vec<SubjectSummary>, String> {
+    yneko_metadata::BangumiClient::default()
+        .search_subjects_by_tag(&tag, page, 24)
+        .await
+        .map(|items| items.into_iter().map(Into::into).collect())
+        .map_err(error_message)
+}
+
 pub async fn get_subject_detail(subject_id: i64) -> Result<SubjectDetail, String> {
     let detail = yneko_metadata::BangumiClient::default()
         .get_subject_detail(subject_id)
@@ -397,6 +405,19 @@ pub async fn save_appearance_settings(
         .save_appearance_settings(settings.into())
         .await
         .map(Into::into)
+        .map_err(error_message)
+}
+
+pub async fn list_search_history() -> Result<Vec<String>, String> {
+    let storage = storage_service().await.map_err(error_message)?;
+    storage.list_search_history().await.map_err(error_message)
+}
+
+pub async fn save_search_history(history: Vec<String>) -> Result<Vec<String>, String> {
+    let storage = storage_service().await.map_err(error_message)?;
+    storage
+        .save_search_history(history)
+        .await
         .map_err(error_message)
 }
 

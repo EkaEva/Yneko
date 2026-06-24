@@ -53,7 +53,7 @@ Yneko 仍处于预览开发阶段。界面和基础闭环已经可运行，部�
 | --- | --- | --- |
 | 桌面 Shell | 已实现 | 自定义标题栏、侧边栏、顶部搜索、主题切换、窗口按钮 |
 | 首页 | 已实现 | 推荐、时间表、榜单入口，番剧卡片直接进入 Watch 页 |
-| 搜索 | 已实现 | Bangumi 搜索结果页、横向卡片、加载 / 错误 / 空状态 |
+| 搜索 | 已实现 | Bangumi 关键词 / 标签搜索、顶部历史浮层、自动分页、加载 / 错误 / 空状态 |
 | 我的 | UI 完善中 | 追番 / 历史 / 缓存壳，已移除假列表数据 |
 | 设置 | UI 完善中 | 根页面、二级设置页、规则管理、配色方案弹窗等已复刻 |
 | Watch 播放页 | 已实现基础壳 | 单窗口全屏工作台、左侧播放器、右侧剧集 / 系列 / 规则源 |
@@ -76,7 +76,10 @@ Yneko 仍处于预览开发阶段。界面和基础闭环已经可运行，部�
 
 - 首页包含推荐、时间表和榜单等桌面布局。
 - 番剧卡片点击后直接进入主窗口内的 `WatchRoute`，不再经过旧式番剧详情页。
-- 搜索页保留全局搜索入口，并渲染旧项目风格的横向结果卡片、返回按钮、结果数量、加载、错误和空状态。
+- 搜索使用顶部全局搜索框作为唯一输入，支持“动画”和“动画标签”两种模式。
+- 动画标签搜索会走 Bangumi 标签页结果，播放页简介标签点击后会直接进入标签搜索。
+- 搜索历史显示在顶部搜索框下方浮层，支持去重、清空和跨重启恢复。
+- 搜索结果自动向下分页加载，卡片标题会用主题色高亮匹配关键词。
 
 #### Watch 播放页
 
@@ -339,7 +342,7 @@ Yneko is still in preview development. The UI shell and the first source-to-play
 | --- | --- | --- |
 | Desktop shell | Implemented | Custom title bar, side rail, top search, theme toggle, window buttons |
 | Home | Implemented | Recommendation, calendar, ranking surfaces; cards open Watch directly |
-| Search | Implemented | Bangumi results, horizontal cards, loading / error / empty states |
+| Search | Implemented | Bangumi keyword / tag search, top history popover, auto pagination, loading / error / empty states |
 | Mine | UI in progress | Follow / history / cache shell, fake list data removed |
 | Settings | UI in progress | Root page, detail pages, source management, color-scheme dialog |
 | Watch page | Base implemented | Single-window playback workspace with player and right-side panels |
@@ -362,7 +365,10 @@ Yneko is still in preview development. The UI shell and the first source-to-play
 
 - Home tabs for recommendations, calendar, and rankings.
 - Anime cards navigate directly to the main-window Watch page.
-- Search results use the old-project horizontal-card layout with back button, count text, loading, error, and empty states.
+- Search uses the global top search field as the only input, with separate anime and anime-tag modes.
+- Anime-tag search uses Bangumi tag pages; clicking tags on the Watch page opens tag search directly.
+- Search history appears as a popover below the top search field and persists across restarts.
+- Search results auto-paginate while scrolling, and result titles highlight the matched keyword with the theme color.
 
 #### Watch Page
 

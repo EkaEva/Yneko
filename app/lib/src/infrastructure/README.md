@@ -8,8 +8,9 @@
 
 ## Public Contracts
 
-- `bridge/yneko_backend.dart` exposes the backend port for Bangumi search,
-  detail, calendar, browse, ranking, and playback resolution calls.
+- `bridge/yneko_backend.dart` exposes the backend port for Bangumi keyword/tag
+  search, search history storage, detail, calendar, browse, ranking, and
+  playback resolution calls.
 - `bridge/frb_mappers.dart` maps generated FRB DTOs into `shared/domain`
   models; feature code must continue to depend on `YnekoBackend`.
 - `platform/directory_picker` exposes a small directory picker port backed by

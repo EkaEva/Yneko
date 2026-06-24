@@ -16,9 +16,9 @@ mod cache;
 mod dto;
 
 use browser::{
-    anime_browser_url, anime_ranking_applied, browser_page_has_next, filter_ranking_items,
-    max_filtered_browser_scan_page, normalize_anime_ranking_request, parse_browser_trends,
-    requires_filtered_browser_pagination,
+    anime_browser_url, anime_ranking_applied, anime_tag_browser_url, browser_page_has_next,
+    filter_ranking_items, max_filtered_browser_scan_page, normalize_anime_ranking_request,
+    parse_browser_trends, requires_filtered_browser_pagination,
 };
 use cache::MetadataRequestCache;
 use dto::{
@@ -124,6 +124,19 @@ impl BangumiClient {
             .filter(|subject| subject.subject_type == 2)
             .map(Subject::into_subject)
             .collect())
+    }
+
+    pub async fn search_subjects_by_tag(
+        &self,
+        tag: &str,
+        page: u32,
+        limit: u16,
+    ) -> YnekoResult<Vec<SubjectSummary>> {
+        let tag = clean_query(tag)?;
+        let page = page.max(1);
+        let offset = page.saturating_sub(1).saturating_mul(u32::from(limit));
+        self.search_subjects_by_tag_sorted_limit_offset(&tag, "collects", limit, offset)
+            .await
     }
 
     pub async fn get_subject_detail(&self, subject_id: i64) -> YnekoResult<SubjectDetail> {
@@ -317,6 +330,47 @@ impl BangumiClient {
             } else {
                 break;
             }
+        }
+
+        subjects.truncate(usize::from(target_limit));
+        Ok(subjects)
+    }
+
+    async fn search_subjects_by_tag_sorted_limit_offset(
+        &self,
+        tag: &str,
+        sort: &str,
+        limit: u16,
+        initial_offset: u32,
+    ) -> YnekoResult<Vec<SubjectSummary>> {
+        let target_limit = limit.max(1);
+        let mut subjects = Vec::new();
+        let mut seen_count = 0usize;
+        let skip = initial_offset as usize;
+        let mut page = 1;
+        let mut seen_ids = std::collections::HashSet::new();
+
+        while subjects.len() < usize::from(target_limit) {
+            let url = anime_tag_browser_url(tag, sort, page)?;
+            let html = self.fetch_browser_html(url).await?;
+            let page_has_next = browser_page_has_next(&html);
+            let page_subjects = parse_browser_trends(&html, usize::MAX)?;
+
+            for subject in page_subjects {
+                if seen_count >= skip && seen_ids.insert(subject.id) {
+                    subjects.push(subject);
+                    if subjects.len() >= usize::from(target_limit) {
+                        break;
+                    }
+                }
+                seen_count = seen_count.saturating_add(1);
+            }
+
+            if !page_has_next {
+                break;
+            }
+
+            page = page.saturating_add(1);
         }
 
         subjects.truncate(usize::from(target_limit));
@@ -571,6 +625,16 @@ mod tests {
     #[test]
     fn default_client_uses_bangumi_api() {
         assert_eq!(BangumiClient::default().base_url(), "https://api.bgm.tv");
+    }
+
+    #[test]
+    fn builds_bangumi_tag_browser_url() {
+        let url =
+            browser::anime_tag_browser_url("奇幻", "collect", 2).expect("tag url should build");
+        assert_eq!(
+            url.as_str(),
+            "https://bgm.tv/anime/tag/%E5%A5%87%E5%B9%BB?sort=collects&page=2"
+        );
     }
 
     #[test]

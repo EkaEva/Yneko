@@ -66,7 +66,7 @@ class YnekoRustLib
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => -1389456164;
+  int get rustContentHash => 1368384963;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -129,6 +129,8 @@ abstract class YnekoRustLibApi extends BaseApi {
   Future<List<RuleRepositorySubscription>>
   crateApiListRuleRepositorySubscriptions();
 
+  Future<List<String>> crateApiListSearchHistory();
+
   Future<List<SourcePackageSummary>> crateApiListSourcePackages();
 
   Future<List<WatchHistoryItem>> crateApiListWatchHistory({int? limit});
@@ -180,6 +182,10 @@ abstract class YnekoRustLibApi extends BaseApi {
     required RuleRepositorySubscription subscription,
   });
 
+  Future<List<String>> crateApiSaveSearchHistory({
+    required List<String> history,
+  });
+
   Future<RuleSourceSearchResult> crateApiSearchRuleSource({
     required String ruleId,
     required int subjectId,
@@ -192,6 +198,11 @@ abstract class YnekoRustLibApi extends BaseApi {
 
   Future<List<SubjectSummary>> crateApiSearchSubjects({
     required String query,
+    required int page,
+  });
+
+  Future<List<SubjectSummary>> crateApiSearchTagSubjects({
+    required String tag,
     required int page,
   });
 
@@ -781,7 +792,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
       );
 
   @override
-  Future<List<SourcePackageSummary>> crateApiListSourcePackages() {
+  Future<List<String>> crateApiListSearchHistory() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -790,6 +801,33 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
             generalizedFrbRustBinding,
             serializer,
             funcId: 20,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiListSearchHistoryConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiListSearchHistoryConstMeta =>
+      const TaskConstMeta(debugName: "list_search_history", argNames: []);
+
+  @override
+  Future<List<SourcePackageSummary>> crateApiListSourcePackages() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 21,
             port: port_,
           );
         },
@@ -817,7 +855,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 22,
             port: port_,
           );
         },
@@ -850,7 +888,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 22,
+            funcId: 23,
             port: port_,
           );
         },
@@ -889,7 +927,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 23,
+            funcId: 24,
             port: port_,
           );
         },
@@ -928,7 +966,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 24,
+            funcId: 25,
             port: port_,
           );
         },
@@ -963,7 +1001,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 25,
+            funcId: 26,
             port: port_,
           );
         },
@@ -995,7 +1033,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 26,
+            funcId: 27,
             port: port_,
           );
         },
@@ -1030,7 +1068,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 27,
+            funcId: 28,
             port: port_,
           );
         },
@@ -1068,7 +1106,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 28,
+            funcId: 29,
             port: port_,
           );
         },
@@ -1101,7 +1139,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 29,
+            funcId: 30,
             port: port_,
           );
         },
@@ -1134,7 +1172,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 30,
+            funcId: 31,
             port: port_,
           );
         },
@@ -1156,6 +1194,38 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
       );
 
   @override
+  Future<List<String>> crateApiSaveSearchHistory({
+    required List<String> history,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_String(history, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 32,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiSaveSearchHistoryConstMeta,
+        argValues: [history],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiSaveSearchHistoryConstMeta => const TaskConstMeta(
+    debugName: "save_search_history",
+    argNames: ["history"],
+  );
+
+  @override
   Future<RuleSourceSearchResult> crateApiSearchRuleSource({
     required String ruleId,
     required int subjectId,
@@ -1169,7 +1239,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 31,
+            funcId: 33,
             port: port_,
           );
         },
@@ -1203,7 +1273,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 32,
+            funcId: 34,
             port: port_,
           );
         },
@@ -1237,7 +1307,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 33,
+            funcId: 35,
             port: port_,
           );
         },
@@ -1258,6 +1328,40 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
   );
 
   @override
+  Future<List<SubjectSummary>> crateApiSearchTagSubjects({
+    required String tag,
+    required int page,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(tag, serializer);
+          sse_encode_u_32(page, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 36,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_subject_summary,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiSearchTagSubjectsConstMeta,
+        argValues: [tag, page],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiSearchTagSubjectsConstMeta => const TaskConstMeta(
+    debugName: "search_tag_subjects",
+    argNames: ["tag", "page"],
+  );
+
+  @override
   Future<void> crateApiSetSourcePackageEnabled({
     required String id,
     required bool enabled,
@@ -1271,7 +1375,7 @@ class YnekoRustLibApiImpl extends YnekoRustLibApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 34,
+            funcId: 37,
             port: port_,
           );
         },

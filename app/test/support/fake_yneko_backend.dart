@@ -12,11 +12,16 @@ class FakeYnekoBackend implements YnekoBackend {
   FakeYnekoBackend({
     List<SourcePackageSummary>? sourcePackages,
     List<PlaybackContract>? playbackContracts,
+    List<List<AnimeSubject>>? searchPages,
+    List<List<AnimeSubject>>? tagSearchPages,
     List<List<AnimeSubject>>? rankingPages,
     List<AnimeSubject>? browseSubjectsResult,
     List<BangumiCalendarDay>? calendarDays,
     AppearanceSettings? appearanceSettings,
+    List<String>? initialSearchHistory,
     Duration sourceSearchDelay = Duration.zero,
+    this.searchErrorPage,
+    this.tagSearchErrorPage,
     this.rankingErrorPage,
     this.browseError,
   }) : _sourcePackages = List.of(sourcePackages ?? _defaultPackages),
@@ -31,10 +36,13 @@ class FakeYnekoBackend implements YnekoBackend {
          ),
        ],
        _playbackContracts = List.of(playbackContracts ?? _defaultPlayback),
+       _searchPages = searchPages,
+       _tagSearchPages = tagSearchPages,
        _rankingPages = rankingPages,
        _browseSubjectsResult = browseSubjectsResult,
        _calendarDays = calendarDays,
        _appearanceSettings = appearanceSettings ?? AppearanceSettings.defaults,
+       _searchHistory = List.of(initialSearchHistory ?? const []),
        _sourceSearchDelay = sourceSearchDelay;
 
   static const subject = AnimeSubject(
@@ -99,17 +107,25 @@ class FakeYnekoBackend implements YnekoBackend {
     defaultRuleRepositorySubscription,
   ];
   final List<PlaybackContract> _playbackContracts;
+  final List<List<AnimeSubject>>? _searchPages;
+  final List<List<AnimeSubject>>? _tagSearchPages;
   final List<List<AnimeSubject>>? _rankingPages;
   final List<AnimeSubject>? _browseSubjectsResult;
   final List<BangumiCalendarDay>? _calendarDays;
   final List<FavoriteItem> _favorites = [];
   final List<WatchHistoryItem> _history = [];
+  List<String> _searchHistory;
   AppearanceSettings _appearanceSettings;
   final Duration _sourceSearchDelay;
+  final int? searchErrorPage;
+  final int? tagSearchErrorPage;
   final int? rankingErrorPage;
   final String? browseError;
+  final List<({String query, int page})> searchRequests = [];
+  final List<({String tag, int page})> tagSearchRequests = [];
   final List<AnimeRankingRequest> rankingRequests = [];
   final List<BangumiBrowseRequest> browseRequests = [];
+  final List<List<String>> savedSearchHistory = [];
 
   @override
   Future<AppearanceSettings> getAppearanceSettings() async {
@@ -132,7 +148,24 @@ class FakeYnekoBackend implements YnekoBackend {
 
   @override
   Future<List<AnimeSubject>> searchSubjects(String query, int page) async {
-    return const [subject, secondSubject];
+    searchRequests.add((query: query, page: page));
+    if (searchErrorPage == page) {
+      throw StateError('search page $page failed');
+    }
+    final pages = _searchPages;
+    if (pages == null) return const [subject, secondSubject];
+    return pages[(page - 1).clamp(0, pages.length - 1)];
+  }
+
+  @override
+  Future<List<AnimeSubject>> searchTagSubjects(String tag, int page) async {
+    tagSearchRequests.add((tag: tag, page: page));
+    if (tagSearchErrorPage == page) {
+      throw StateError('tag search page $page failed');
+    }
+    final pages = _tagSearchPages;
+    if (pages == null) return const [subject, secondSubject];
+    return pages[(page - 1).clamp(0, pages.length - 1)];
   }
 
   @override
@@ -549,6 +582,21 @@ class FakeYnekoBackend implements YnekoBackend {
   @override
   Future<void> clearWatchHistory() async {
     _history.clear();
+  }
+
+  @override
+  Future<List<String>> listSearchHistory() async {
+    return List.unmodifiable(_searchHistory);
+  }
+
+  @override
+  Future<List<String>> saveSearchHistory(List<String> history) async {
+    _searchHistory = [
+      for (final item in history)
+        if (item.trim().isNotEmpty) item.trim(),
+    ].take(12).toList(growable: false);
+    savedSearchHistory.add(List.of(_searchHistory));
+    return List.unmodifiable(_searchHistory);
   }
 }
 

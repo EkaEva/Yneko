@@ -1547,8 +1547,11 @@ class _SummaryExpandedMeta extends ConsumerWidget {
                 _SummaryTagChip(
                   tag: tag,
                   onTap: () {
-                    ref.read(searchQueryProvider.notifier).set(tag);
-                    ref.read(searchTagModeProvider.notifier).set(true);
+                    ref.read(searchInputProvider.notifier).set(tag);
+                    ref.read(searchModeProvider.notifier).set(SearchMode.tag);
+                    ref
+                        .read(searchControllerProvider.notifier)
+                        .submit(query: tag, mode: SearchMode.tag);
                     ref.read(shellRouteProvider.notifier).openSearch();
                   },
                 ),

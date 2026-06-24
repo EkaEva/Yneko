@@ -16,6 +16,11 @@ Future<List<SubjectSummary>> searchSubjects({
 }) =>
     YnekoRustLib.instance.api.crateApiSearchSubjects(query: query, page: page);
 
+Future<List<SubjectSummary>> searchTagSubjects({
+  required String tag,
+  required int page,
+}) => YnekoRustLib.instance.api.crateApiSearchTagSubjects(tag: tag, page: page);
+
 Future<SubjectDetail> getSubjectDetail({required int subjectId}) =>
     YnekoRustLib.instance.api.crateApiGetSubjectDetail(subjectId: subjectId);
 
@@ -38,6 +43,12 @@ Future<AppearanceSettings> saveAppearanceSettings({
 }) => YnekoRustLib.instance.api.crateApiSaveAppearanceSettings(
   settings: settings,
 );
+
+Future<List<String>> listSearchHistory() =>
+    YnekoRustLib.instance.api.crateApiListSearchHistory();
+
+Future<List<String>> saveSearchHistory({required List<String> history}) =>
+    YnekoRustLib.instance.api.crateApiSaveSearchHistory(history: history);
 
 Future<List<PlaybackCandidate>> resolvePlayback({
   required int subjectId,

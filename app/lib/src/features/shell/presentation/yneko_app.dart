@@ -66,7 +66,6 @@ class YnekoShell extends ConsumerStatefulWidget {
 class _YnekoShellState extends ConsumerState<YnekoShell> {
   bool _searchFocused = false;
   int _homeTab = 0;
-  int _searchMode = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -91,13 +90,10 @@ class _YnekoShellState extends ConsumerState<YnekoShell> {
                     route: route,
                     searchFocused: _searchFocused,
                     homeTab: _homeTab,
-                    searchMode: _searchMode,
                     onSearchFocusChanged: (focused) =>
                         setState(() => _searchFocused = focused),
                     onHomeTabChanged: (index) =>
                         setState(() => _homeTab = index),
-                    onSearchModeChanged: (index) =>
-                        setState(() => _searchMode = index),
                   ),
                   Expanded(
                     child: AnimatedSwitcher(
@@ -439,24 +435,21 @@ class _TopBar extends ConsumerWidget {
     required this.route,
     required this.searchFocused,
     required this.homeTab,
-    required this.searchMode,
     required this.onSearchFocusChanged,
     required this.onHomeTabChanged,
-    required this.onSearchModeChanged,
   });
 
   final ShellRoute route;
   final bool searchFocused;
   final int homeTab;
-  final int searchMode;
   final ValueChanged<bool> onSearchFocusChanged;
   final ValueChanged<int> onHomeTabChanged;
-  final ValueChanged<int> onSearchModeChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = YnekoThemeTokens.of(context);
-    final type = YnekoTypography.of(context);
+    final searchMode = ref.watch(searchModeProvider);
+    final searchInput = ref.watch(searchInputProvider);
     final fastMotion = _motionDuration(context, YnekoThemeTokens.fastMotion);
     final mediumMotion = _motionDuration(
       context,
@@ -525,30 +518,59 @@ class _TopBar extends ConsumerWidget {
                             : route is SearchRoute
                             ? YnekoSegmentedTabs(
                                 tabs: const ['动画', '动画标签'],
-                                activeIndex: searchMode,
-                                onChanged: onSearchModeChanged,
+                                activeIndex: searchMode == SearchMode.tag
+                                    ? 1
+                                    : 0,
+                                onChanged: (index) {
+                                  final mode = index == 1
+                                      ? SearchMode.tag
+                                      : SearchMode.keyword;
+                                  ref
+                                      .read(searchModeProvider.notifier)
+                                      .set(mode);
+                                  if (ref
+                                      .read(searchControllerProvider)
+                                      .hasQuery) {
+                                    ref
+                                        .read(searchControllerProvider.notifier)
+                                        .submit(mode: mode);
+                                  }
+                                },
                               )
-                            : Text(
-                                _pageTitle(route, ref),
-                                style: type.topTab.copyWith(
-                                  color: tokens.primary,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                            : YnekoSegmentedTabs(
+                                tabs: [_pageTitle(route, ref)],
+                                activeIndex: 0,
+                                onChanged: (_) {},
+                                showUnderline: false,
                               ),
                       ),
                     ),
                   ),
                 ),
                 AnimatedContainer(
+                  key: const ValueKey('top-search-container'),
                   duration: mediumMotion,
                   curve: YnekoThemeTokens.springCurve,
                   transform: Matrix4.translationValues(searchTranslate, 0, 0),
                   width: searchWidth,
                   child: _TopSearch(
+                    value: searchInput,
+                    restOverlayWidth: searchRestWidth,
+                    focusedOverlayWidth: searchFocusedWidth,
+                    hintText: searchMode == SearchMode.tag ? '搜索标签' : '搜索动画',
                     onFocusChanged: onSearchFocusChanged,
+                    onChanged: (query) {
+                      ref.read(searchInputProvider.notifier).set(query);
+                      if (route is SearchRoute && query.trim().isEmpty) {
+                        ref
+                            .read(searchControllerProvider.notifier)
+                            .submit(query: '', mode: searchMode);
+                      }
+                    },
                     onSubmitted: (query) {
-                      ref.read(searchQueryProvider.notifier).set(query);
+                      ref
+                          .read(searchControllerProvider.notifier)
+                          .submit(query: query, mode: searchMode);
                       ref.read(shellRouteProvider.notifier).openSearch();
                     },
                   ),
@@ -608,22 +630,62 @@ class _TopBar extends ConsumerWidget {
   }
 }
 
-class _TopSearch extends StatefulWidget {
-  const _TopSearch({required this.onFocusChanged, required this.onSubmitted});
+class _TopSearch extends ConsumerStatefulWidget {
+  const _TopSearch({
+    required this.value,
+    required this.restOverlayWidth,
+    required this.focusedOverlayWidth,
+    required this.hintText,
+    required this.onFocusChanged,
+    required this.onChanged,
+    required this.onSubmitted,
+  });
 
+  final String value;
+  final double restOverlayWidth;
+  final double focusedOverlayWidth;
+  final String hintText;
   final ValueChanged<bool> onFocusChanged;
+  final ValueChanged<String> onChanged;
   final ValueChanged<String> onSubmitted;
 
   @override
-  State<_TopSearch> createState() => _TopSearchState();
+  ConsumerState<_TopSearch> createState() => _TopSearchState();
 }
 
-class _TopSearchState extends State<_TopSearch> {
+class _TopSearchState extends ConsumerState<_TopSearch> {
   bool _focused = false;
+  bool _historyHovered = false;
+  double _historyOverlayWidth = 360;
   final _controller = TextEditingController();
+  final _layerLink = LayerLink();
+  OverlayEntry? _historyOverlay;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.text = widget.value;
+  }
+
+  @override
+  void didUpdateWidget(covariant _TopSearch oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != _controller.text) {
+      _controller.value = TextEditingValue(
+        text: widget.value,
+        selection: TextSelection.collapsed(offset: widget.value.length),
+      );
+    }
+    if (widget.restOverlayWidth != oldWidget.restOverlayWidth ||
+        widget.focusedOverlayWidth != oldWidget.focusedOverlayWidth) {
+      _historyOverlayWidth = _targetOverlayWidth;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncHistoryOverlay());
+  }
 
   @override
   void dispose() {
+    _removeHistoryOverlay();
     _controller.dispose();
     super.dispose();
   }
@@ -633,71 +695,319 @@ class _TopSearchState extends State<_TopSearch> {
     final tokens = YnekoThemeTokens.of(context);
     final type = YnekoTypography.of(context);
     final motion = _motionDuration(context, YnekoThemeTokens.fastMotion);
-    return Focus(
-      onFocusChange: (focused) {
-        setState(() => _focused = focused);
-        widget.onFocusChanged(focused);
-      },
-      child: AnimatedContainer(
-        duration: motion,
-        height: 48,
-        decoration: BoxDecoration(
-          color: _focused ? tokens.surface : tokens.surfaceHigh,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: _focused ? tokens.primary : Colors.transparent,
-          ),
-          boxShadow: _focused
-              ? [
-                  BoxShadow(
-                    color: tokens.primary.withValues(alpha: 0.14),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ]
-              : null,
-        ),
-        child: TextField(
-          controller: _controller,
-          onSubmitted: widget.onSubmitted,
-          textAlignVertical: TextAlignVertical.center,
-          style: type.body.copyWith(color: tokens.ink, fontSize: 16),
-          decoration: InputDecoration(
-            hintText: '搜索番剧',
-            hintStyle: type.body.copyWith(color: tokens.muted, fontSize: 16),
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            filled: false,
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(vertical: 13),
-            prefixIcon: const SizedBox(width: 22),
-            prefixIconConstraints: const BoxConstraints.tightFor(
-              width: 22,
-              height: 46,
+    ref.listen(searchHistoryProvider, (_, _) => _syncHistoryOverlay());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncHistoryOverlay());
+
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Focus(
+        onFocusChange: (focused) {
+          setState(() => _focused = focused);
+          widget.onFocusChanged(focused);
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _syncHistoryOverlay(),
+          );
+        },
+        child: AnimatedContainer(
+          duration: motion,
+          height: 48,
+          decoration: BoxDecoration(
+            color: _focused ? tokens.surface : tokens.surfaceHigh,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _focused ? tokens.primary : Colors.transparent,
             ),
-            suffixIcon: SizedBox(
-              width: 48,
-              height: 46,
-              child: Center(
-                child: YnekoIconActionButton(
-                  tooltip: '搜索',
-                  onPressed: () => widget.onSubmitted(_controller.text),
-                  icon: Icon(Icons.search_rounded, color: tokens.ink, size: 23),
-                  tone: YnekoActionButtonTone.chrome,
-                  transparent: true,
-                  size: 38,
-                  iconSize: 23,
+            boxShadow: _focused
+                ? [
+                    BoxShadow(
+                      color: tokens.primary.withValues(alpha: 0.14),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : null,
+          ),
+          child: TextField(
+            key: const ValueKey('top-search-field'),
+            controller: _controller,
+            onChanged: widget.onChanged,
+            onSubmitted: widget.onSubmitted,
+            textAlignVertical: TextAlignVertical.center,
+            style: type.body.copyWith(color: tokens.ink, fontSize: 16),
+            decoration: InputDecoration(
+              hintText: widget.hintText,
+              hintStyle: type.body.copyWith(color: tokens.muted, fontSize: 16),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 13),
+              prefixIcon: const SizedBox(width: 22),
+              prefixIconConstraints: const BoxConstraints.tightFor(
+                width: 22,
+                height: 46,
+              ),
+              suffixIcon: SizedBox(
+                width: 48,
+                height: 46,
+                child: Center(
+                  child: YnekoIconActionButton(
+                    tooltip: '搜索',
+                    onPressed: () => widget.onSubmitted(_controller.text),
+                    icon: Icon(
+                      Icons.search_rounded,
+                      color: tokens.ink,
+                      size: 23,
+                    ),
+                    tone: YnekoActionButtonTone.chrome,
+                    transparent: true,
+                    size: 38,
+                    iconSize: 23,
+                  ),
                 ),
               ),
-            ),
-            suffixIconConstraints: const BoxConstraints.tightFor(
-              width: 48,
-              height: 46,
+              suffixIconConstraints: const BoxConstraints.tightFor(
+                width: 48,
+                height: 46,
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  void _submitHistory(String query) {
+    widget.onChanged(query);
+    widget.onSubmitted(query);
+    FocusScope.of(context).unfocus();
+    setState(() => _focused = false);
+    _historyHovered = false;
+    _removeHistoryOverlay();
+  }
+
+  void _syncHistoryOverlay() {
+    if (!mounted) return;
+    final history = ref.read(searchHistoryProvider);
+    final shouldShow = (_focused || _historyHovered) && history.isNotEmpty;
+    if (!shouldShow) {
+      _removeHistoryOverlay();
+      return;
+    }
+    final overlay = Overlay.maybeOf(context);
+    if (overlay == null) return;
+    _historyOverlayWidth = _targetOverlayWidth;
+    if (_historyOverlay == null) {
+      _historyOverlay = OverlayEntry(
+        builder: (_) => _TopSearchHistoryOverlay(
+          link: _layerLink,
+          history: ref.read(searchHistoryProvider),
+          width: _historyOverlayWidth,
+          onHoverChanged: (hovered) {
+            if (!mounted) return;
+            setState(() => _historyHovered = hovered);
+            _syncHistoryOverlay();
+          },
+          onPick: _submitHistory,
+          onRemove: (entry) =>
+              ref.read(searchHistoryProvider.notifier).remove(entry),
+          onClear: ref.read(searchHistoryProvider.notifier).clear,
+        ),
+      );
+      overlay.insert(_historyOverlay!);
+    } else {
+      _historyOverlay!.markNeedsBuild();
+    }
+  }
+
+  void _removeHistoryOverlay() {
+    _historyOverlay?.remove();
+    _historyOverlay = null;
+  }
+
+  double get _targetOverlayWidth =>
+      _focused ? widget.focusedOverlayWidth : widget.restOverlayWidth;
+}
+
+class _TopSearchHistoryOverlay extends StatelessWidget {
+  const _TopSearchHistoryOverlay({
+    required this.link,
+    required this.history,
+    required this.width,
+    required this.onHoverChanged,
+    required this.onPick,
+    required this.onRemove,
+    required this.onClear,
+  });
+
+  final LayerLink link;
+  final List<String> history;
+  final double width;
+  final ValueChanged<bool> onHoverChanged;
+  final ValueChanged<String> onPick;
+  final ValueChanged<String> onRemove;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final type = YnekoTypography.of(context);
+    return Positioned.fill(
+      child: IgnorePointer(
+        ignoring: history.isEmpty,
+        child: CompositedTransformFollower(
+          link: link,
+          targetAnchor: Alignment.bottomLeft,
+          followerAnchor: Alignment.topLeft,
+          offset: const Offset(0, 8),
+          showWhenUnlinked: false,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: MouseRegion(
+              onEnter: (_) => onHoverChanged(true),
+              onExit: (_) => onHoverChanged(false),
+              child: Material(
+                key: const ValueKey('search-history-popover'),
+                color: Colors.transparent,
+                child: Container(
+                  width: width,
+                  constraints: const BoxConstraints(maxHeight: 238),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                  decoration: BoxDecoration(
+                    color: tokens.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: tokens.outline.withValues(alpha: 0.5),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.11),
+                        blurRadius: 28,
+                        offset: const Offset(0, 14),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '搜索历史',
+                            style: type.label.copyWith(
+                              color: tokens.ink,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const Spacer(),
+                          YnekoIconActionButton(
+                            tooltip: '清空历史',
+                            onPressed: onClear,
+                            icon: Icon(
+                              Icons.delete_sweep_rounded,
+                              color: tokens.muted,
+                              size: 18,
+                            ),
+                            tone: YnekoActionButtonTone.chrome,
+                            transparent: true,
+                            size: 30,
+                            iconSize: 18,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final item in history)
+                                _TopSearchHistoryChip(
+                                  label: item,
+                                  onPick: () => onPick(item),
+                                  onRemove: () => onRemove(item),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TopSearchHistoryChip extends StatelessWidget {
+  const _TopSearchHistoryChip({
+    required this.label,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final String label;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return YnekoPressable(
+      onTap: onPick,
+      borderRadius: 999,
+      scaleOnPress: false,
+      builder: (context, hovered, pressed) {
+        final active = hovered || pressed;
+        return Container(
+          constraints: const BoxConstraints(minHeight: 32),
+          padding: const EdgeInsets.only(left: 12, right: 5),
+          decoration: BoxDecoration(
+            color: active ? tokens.primaryContainer : tokens.surfaceHigh,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: active
+                  ? tokens.primary.withValues(alpha: 0.42)
+                  : tokens.outline.withValues(alpha: 0.45),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: YnekoTypography.of(context).label.copyWith(
+                  color: active ? tokens.primaryStrong : tokens.muted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: 3),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onRemove,
+                child: Padding(
+                  padding: const EdgeInsets.all(5),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 15,
+                    color: active ? tokens.primary : tokens.muted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1375,6 +1685,9 @@ class ShellRouteController extends Notifier<ShellRoute> {
   ShellRoute build() => const HomeRoute();
 
   void openHome() {
+    if (state is SearchRoute) {
+      ref.read(searchControllerProvider.notifier).clear();
+    }
     state = const HomeRoute();
   }
 

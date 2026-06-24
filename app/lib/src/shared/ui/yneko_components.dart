@@ -922,11 +922,13 @@ class YnekoSegmentedTabs extends StatelessWidget {
     required this.tabs,
     required this.activeIndex,
     required this.onChanged,
+    this.showUnderline = true,
   });
 
   final List<String> tabs;
   final int activeIndex;
   final ValueChanged<int> onChanged;
+  final bool showUnderline;
 
   @override
   Widget build(BuildContext context) {
@@ -941,6 +943,7 @@ class YnekoSegmentedTabs extends StatelessWidget {
               label: tabs[index],
               active: index == activeIndex,
               onTap: () => onChanged(index),
+              showUnderline: showUnderline,
             ),
         ],
       ),
@@ -953,11 +956,13 @@ class _YnekoTabButton extends StatefulWidget {
     required this.label,
     required this.active,
     required this.onTap,
+    required this.showUnderline,
   });
 
   final String label;
   final bool active;
   final VoidCallback onTap;
+  final bool showUnderline;
 
   @override
   State<_YnekoTabButton> createState() => _YnekoTabButtonState();
@@ -1006,27 +1011,29 @@ class _YnekoTabButtonState extends State<_YnekoTabButton> {
                     ),
                   ),
                 ),
-                Positioned(
-                  left: 20,
-                  right: 20,
-                  bottom: 10,
-                  child: AnimatedScale(
-                    duration: motion,
-                    curve: Curves.easeOut,
-                    scale: widget.active ? 1 : 0.35,
-                    child: AnimatedOpacity(
+                if (widget.showUnderline)
+                  Positioned(
+                    left: 20,
+                    right: 20,
+                    bottom: 10,
+                    child: AnimatedScale(
                       duration: motion,
-                      opacity: widget.active ? 1 : 0,
-                      child: Container(
-                        height: 3,
-                        decoration: BoxDecoration(
-                          color: tokens.primary,
-                          borderRadius: BorderRadius.circular(999),
+                      curve: Curves.easeOut,
+                      scale: widget.active ? 1 : 0.35,
+                      child: AnimatedOpacity(
+                        duration: motion,
+                        opacity: widget.active ? 1 : 0,
+                        child: Container(
+                          key: ValueKey('top-tab-underline-${widget.label}'),
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: tokens.primary,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -1139,10 +1146,16 @@ class _YnekoFilterChipState extends State<_YnekoFilterChip> {
 }
 
 class AnimePosterCard extends StatefulWidget {
-  const AnimePosterCard({super.key, required this.item, required this.onTap});
+  const AnimePosterCard({
+    super.key,
+    required this.item,
+    required this.onTap,
+    this.titleHighlight,
+  });
 
   final UiAnimeCard item;
   final VoidCallback onTap;
+  final String? titleHighlight;
 
   @override
   State<AnimePosterCard> createState() => _AnimePosterCardState();
@@ -1230,12 +1243,10 @@ class _AnimePosterCardState extends State<AnimePosterCard> {
                 ),
               ),
               const SizedBox(height: 10),
-              Text(
-                widget.item.title,
-                overflow: TextOverflow.ellipsis,
-                style: type.cardTitle.copyWith(
-                  color: _hovered ? tokens.primary : tokens.ink,
-                ),
+              _AnimePosterTitle(
+                title: widget.item.title,
+                highlight: widget.titleHighlight,
+                hovered: _hovered,
               ),
               const SizedBox(height: 5),
               Text(
@@ -1250,6 +1261,60 @@ class _AnimePosterCardState extends State<AnimePosterCard> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AnimePosterTitle extends StatelessWidget {
+  const _AnimePosterTitle({
+    required this.title,
+    required this.highlight,
+    required this.hovered,
+  });
+
+  final String title;
+  final String? highlight;
+  final bool hovered;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final style = YnekoTypography.of(
+      context,
+    ).cardTitle.copyWith(color: hovered ? tokens.primary : tokens.ink);
+    final cleanHighlight = highlight?.trim();
+    if (cleanHighlight == null || cleanHighlight.isEmpty) {
+      return Text(title, overflow: TextOverflow.ellipsis, style: style);
+    }
+
+    final lowerTitle = title.toLowerCase();
+    final lowerHighlight = cleanHighlight.toLowerCase();
+    final spans = <TextSpan>[];
+    var cursor = 0;
+    while (cursor < title.length) {
+      final index = lowerTitle.indexOf(lowerHighlight, cursor);
+      if (index < 0) {
+        spans.add(TextSpan(text: title.substring(cursor)));
+        break;
+      }
+      if (index > cursor) {
+        spans.add(TextSpan(text: title.substring(cursor, index)));
+      }
+      final end = index + cleanHighlight.length;
+      spans.add(
+        TextSpan(
+          text: title.substring(index, end),
+          style: style.copyWith(color: tokens.primary),
+        ),
+      );
+      cursor = end;
+    }
+
+    return RichText(
+      key: const ValueKey('anime-poster-title-highlight'),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(style: style, children: spans),
     );
   }
 }

@@ -16,6 +16,7 @@ pub(super) const RANKING_MAX_LIMIT: u8 = 50;
 pub(super) const RANKING_MAX_PAGE: u32 = 20;
 const RANKING_MAX_BROWSER_PAGES: u32 = 8;
 const BANGUMI_ANIME_BROWSER_URL: &str = "https://bgm.tv/anime/browser";
+const BANGUMI_ANIME_TAG_URL: &str = "https://bgm.tv/anime/tag";
 
 pub(super) fn normalize_anime_ranking_request(
     mut request: AnimeRankingRequest,
@@ -108,6 +109,16 @@ pub(super) fn ranking_sort_browser_value(sort: AnimeRankingSort) -> &'static str
     }
 }
 
+pub(super) fn tag_sort_browser_value(sort: &str) -> &'static str {
+    match sort.trim().to_ascii_lowercase().as_str() {
+        "rank" => "rank",
+        "date" => "date",
+        "title" | "name" => "title",
+        "collect" | "collects" => "collects",
+        _ => "collects",
+    }
+}
+
 fn ranking_sort_query_value(sort: AnimeRankingSort) -> &'static str {
     match sort {
         AnimeRankingSort::Rank => "rank",
@@ -167,6 +178,23 @@ pub(super) fn anime_browser_url(request: &AnimeRankingRequest, page: u32) -> Yne
     {
         let mut pairs = url.query_pairs_mut();
         pairs.append_pair("sort", ranking_sort_browser_value(request.sort));
+        if page > 1 {
+            pairs.append_pair("page", &page.to_string());
+        }
+    }
+
+    Ok(url)
+}
+
+pub(super) fn anime_tag_browser_url(tag: &str, sort: &str, page: u32) -> YnekoResult<Url> {
+    let tag = url_path_segment(tag.trim());
+    let base = format!("{BANGUMI_ANIME_TAG_URL}/{tag}");
+    let mut url = Url::parse(&base)
+        .map_err(|error| metadata_error(format!("invalid Bangumi tag browser url: {error}")))?;
+
+    {
+        let mut pairs = url.query_pairs_mut();
+        pairs.append_pair("sort", tag_sort_browser_value(sort));
         if page > 1 {
             pairs.append_pair("page", &page.to_string());
         }

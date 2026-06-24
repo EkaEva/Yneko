@@ -101,8 +101,10 @@ pub const DEFAULT_RULE_REPOSITORY_SUBSCRIPTION_URL: &str =
     "https://github.com/Predidit/KazumiRules";
 pub const APPEARANCE_THEME_MODE_KEY: &str = "appearance.theme_mode";
 pub const APPEARANCE_COLOR_SCHEME_KEY: &str = "appearance.color_scheme";
+pub const SEARCH_HISTORY_KEY: &str = "search.history";
 pub const DEFAULT_APPEARANCE_THEME_MODE: &str = "light";
 pub const DEFAULT_APPEARANCE_COLOR_SCHEME: &str = "yneko";
+const SEARCH_HISTORY_LIMIT: usize = 12;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppearanceSettings {
@@ -203,6 +205,23 @@ impl StorageService {
             .await?;
         self.set_app_setting(APPEARANCE_COLOR_SCHEME_KEY, &normalized.color_scheme)
             .await?;
+        Ok(normalized)
+    }
+
+    pub async fn list_search_history(&self) -> YnekoResult<Vec<String>> {
+        let Some(raw) = self.get_app_setting(SEARCH_HISTORY_KEY).await? else {
+            return Ok(Vec::new());
+        };
+        let history = serde_json::from_str::<Vec<String>>(&raw)
+            .map(normalize_search_history)
+            .unwrap_or_default();
+        Ok(history)
+    }
+
+    pub async fn save_search_history(&self, history: Vec<String>) -> YnekoResult<Vec<String>> {
+        let normalized = normalize_search_history(history);
+        let raw = serde_json::to_string(&normalized).map_err(storage_error)?;
+        self.set_app_setting(SEARCH_HISTORY_KEY, &raw).await?;
         Ok(normalized)
     }
 
@@ -1232,6 +1251,22 @@ fn is_valid_color_scheme(value: &str) -> bool {
     )
 }
 
+fn normalize_search_history(history: Vec<String>) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    let mut normalized = Vec::new();
+    for item in history {
+        let clean = item.trim().to_owned();
+        if clean.is_empty() || !seen.insert(clean.clone()) {
+            continue;
+        }
+        normalized.push(clean);
+        if normalized.len() >= SEARCH_HISTORY_LIMIT {
+            break;
+        }
+    }
+    normalized
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1337,6 +1372,33 @@ mod tests {
             .expect("normalize settings");
         assert_eq!(normalized.theme_mode, "light");
         assert_eq!(normalized.color_scheme, "yneko");
+    }
+
+    #[tokio::test]
+    async fn search_history_round_trip_normalizes_entries() {
+        let storage = StorageService::open_memory().await.expect("storage");
+        assert!(
+            storage
+                .list_search_history()
+                .await
+                .expect("initial history")
+                .is_empty()
+        );
+
+        let saved = storage
+            .save_search_history(vec![
+                " 葬送 ".to_string(),
+                "".to_string(),
+                "mono".to_string(),
+                "葬送".to_string(),
+                "奇幻".to_string(),
+            ])
+            .await
+            .expect("save history");
+        assert_eq!(saved, ["葬送", "mono", "奇幻"]);
+
+        let loaded = storage.list_search_history().await.expect("loaded history");
+        assert_eq!(loaded, saved);
     }
 
     #[tokio::test]
