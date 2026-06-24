@@ -13,6 +13,7 @@ class FakeYnekoBackend implements YnekoBackend {
     List<SourcePackageSummary>? sourcePackages,
     List<PlaybackContract>? playbackContracts,
     AppearanceSettings? appearanceSettings,
+    Duration sourceSearchDelay = Duration.zero,
   }) : _sourcePackages = List.of(sourcePackages ?? _defaultPackages),
        _ruleGroups = [
          RuleGroupSummary(
@@ -25,7 +26,8 @@ class FakeYnekoBackend implements YnekoBackend {
          ),
        ],
        _playbackContracts = List.of(playbackContracts ?? _defaultPlayback),
-       _appearanceSettings = appearanceSettings ?? AppearanceSettings.defaults;
+       _appearanceSettings = appearanceSettings ?? AppearanceSettings.defaults,
+       _sourceSearchDelay = sourceSearchDelay;
 
   static const subject = AnimeSubject(
     id: 400602,
@@ -92,6 +94,7 @@ class FakeYnekoBackend implements YnekoBackend {
   final List<FavoriteItem> _favorites = [];
   final List<WatchHistoryItem> _history = [];
   AppearanceSettings _appearanceSettings;
+  final Duration _sourceSearchDelay;
 
   @override
   Future<AppearanceSettings> getAppearanceSettings() async {
@@ -349,6 +352,9 @@ class FakeYnekoBackend implements YnekoBackend {
     required int subjectId,
     required List<String> ruleIds,
   }) async {
+    if (_sourceSearchDelay > Duration.zero) {
+      await Future<void>.delayed(_sourceSearchDelay);
+    }
     final rules = ruleIds.isEmpty ? ['demo'] : ruleIds;
     return [
       for (final ruleId in rules)

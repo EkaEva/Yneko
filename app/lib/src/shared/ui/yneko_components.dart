@@ -1581,8 +1581,7 @@ class _YnekoRingLoaderPainter extends CustomPainter {
       final visible = (state.visibleLength / spec.circumference).clamp(0, 1);
       final sweep = visible * 2 * 3.141592653589793;
       final start =
-          -3.141592653589793 / 2 -
-          (state.dashOffset / spec.circumference) * 2 * 3.141592653589793;
+          -(state.dashOffset / spec.circumference) * 2 * 3.141592653589793;
       final rect = Rect.fromCircle(center: center, radius: radius);
       canvas.drawArc(rect, start, sweep, false, paint);
     }

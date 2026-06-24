@@ -10,6 +10,7 @@ import '../../../infrastructure/player/player_adapter.dart';
 import '../../../infrastructure/platform/window_chrome/index.dart';
 import '../../shell/index.dart';
 import '../../sources/index.dart';
+import '../../search/index.dart';
 import '../application/watch_providers.dart';
 import '../../../shared/assets/index.dart';
 import '../../../shared/domain/index.dart';
@@ -17,6 +18,8 @@ import '../../../shared/theme/index.dart';
 import '../../../shared/ui/index.dart';
 
 enum _WatchPanelTab { episodes, series, sources }
+
+const _episodeScrollbarSafePadding = 14.0;
 
 class WatchPage extends ConsumerStatefulWidget {
   const WatchPage({super.key, required this.subjectId, this.initialEpisodeId});
@@ -33,6 +36,7 @@ class _WatchPageState extends ConsumerState<WatchPage> {
   bool _gridEpisodes = false;
   bool _reverseEpisodes = false;
   int? _selectedEpisodeId;
+  int _episodeScrollRequest = 0;
 
   @override
   void didUpdateWidget(covariant WatchPage oldWidget) {
@@ -76,50 +80,61 @@ class _WatchPageState extends ConsumerState<WatchPage> {
       (item) => item.id == activeEpisode?.id,
     );
 
-    return Row(
-      children: [
-        Expanded(
-          child: _WatchPlaybackStage(
-            subject: detail.subject,
-            episode: activeEpisode,
-            episodes: episodes,
-            hasPreviousEpisode: activeIndex > 0,
-            hasNextEpisode:
-                activeIndex >= 0 && activeIndex < episodes.length - 1,
-            onBack: () => ref.read(shellRouteProvider.notifier).openHome(),
-            onPreviousEpisode: activeIndex > 0
-                ? () => _selectEpisode(episodes[activeIndex - 1])
-                : null,
-            onNextEpisode: activeIndex >= 0 && activeIndex < episodes.length - 1
-                ? () => _selectEpisode(episodes[activeIndex + 1])
-                : null,
-            onSelectEpisode: _selectEpisode,
-          ),
-        ),
-        SizedBox(
-          width: 448,
-          child: _WatchSidePanel(
-            detail: detail,
-            activeEpisode: activeEpisode,
-            episodes: displayedEpisodes,
-            activeEpisodeId: activeEpisode?.id,
-            tab: _tab,
-            gridEpisodes: _gridEpisodes,
-            reverseEpisodes: _reverseEpisodes,
-            playbackKey: activeEpisode == null
-                ? null
-                : WatchPlaybackKey(
-                    subjectId: detail.subject.id,
-                    episodeId: activeEpisode.id,
-                  ),
-            onTab: (tab) => setState(() => _tab = tab),
-            onToggleGrid: () => setState(() => _gridEpisodes = !_gridEpisodes),
-            onToggleReverse: () =>
-                setState(() => _reverseEpisodes = !_reverseEpisodes),
-            onEpisode: _selectEpisode,
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final sideWidth = (constraints.maxWidth * 0.30).clamp(360.0, 448.0);
+        return Row(
+          children: [
+            Expanded(
+              child: _WatchPlaybackStage(
+                subject: detail.subject,
+                episode: activeEpisode,
+                episodes: episodes,
+                hasPreviousEpisode: activeIndex > 0,
+                hasNextEpisode:
+                    activeIndex >= 0 && activeIndex < episodes.length - 1,
+                onBack: () => ref.read(shellRouteProvider.notifier).openHome(),
+                onPreviousEpisode: activeIndex > 0
+                    ? () => _selectEpisode(episodes[activeIndex - 1])
+                    : null,
+                onNextEpisode:
+                    activeIndex >= 0 && activeIndex < episodes.length - 1
+                    ? () => _selectEpisode(episodes[activeIndex + 1])
+                    : null,
+                onSelectEpisode: _selectEpisode,
+              ),
+            ),
+            SizedBox(
+              key: const ValueKey('watch-side-panel'),
+              width: sideWidth,
+              child: _WatchSidePanel(
+                detail: detail,
+                activeEpisode: activeEpisode,
+                episodes: displayedEpisodes,
+                activeEpisodeId: activeEpisode?.id,
+                tab: _tab,
+                gridEpisodes: _gridEpisodes,
+                reverseEpisodes: _reverseEpisodes,
+                episodeScrollRequest: _episodeScrollRequest,
+                playbackKey: activeEpisode == null
+                    ? null
+                    : WatchPlaybackKey(
+                        subjectId: detail.subject.id,
+                        episodeId: activeEpisode.id,
+                      ),
+                onTab: (tab) => setState(() => _tab = tab),
+                onToggleGrid: () =>
+                    setState(() => _gridEpisodes = !_gridEpisodes),
+                onToggleReverse: () => setState(() {
+                  _reverseEpisodes = !_reverseEpisodes;
+                  _episodeScrollRequest += 1;
+                }),
+                onEpisode: _selectEpisode,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -527,7 +542,7 @@ class _ControlBar extends StatelessWidget {
     final type = YnekoTypography.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 920;
+        final compact = constraints.maxWidth < 980;
         return DecoratedBox(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -1158,6 +1173,7 @@ class _WatchSidePanel extends StatelessWidget {
     required this.tab,
     required this.gridEpisodes,
     required this.reverseEpisodes,
+    required this.episodeScrollRequest,
     required this.playbackKey,
     required this.onTab,
     required this.onToggleGrid,
@@ -1172,6 +1188,7 @@ class _WatchSidePanel extends StatelessWidget {
   final _WatchPanelTab tab;
   final bool gridEpisodes;
   final bool reverseEpisodes;
+  final int episodeScrollRequest;
   final WatchPlaybackKey? playbackKey;
   final ValueChanged<_WatchPanelTab> onTab;
   final VoidCallback onToggleGrid;
@@ -1186,8 +1203,9 @@ class _WatchSidePanel extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            height: 72,
-            padding: const EdgeInsets.fromLTRB(28, 0, 24, 0),
+            key: const ValueKey('watch-side-header'),
+            height: YnekoThemeTokens.topbarHeight,
+            padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
             decoration: BoxDecoration(
               color: tokens.surface,
               border: Border(bottom: BorderSide(color: tokens.dividerFaint)),
@@ -1204,14 +1222,15 @@ class _WatchSidePanel extends StatelessWidget {
                   _TopPanelTab(label: '更多', active: false, onTap: () {}),
                   const Spacer(),
                   Container(
+                    key: const ValueKey('watch-top-action-divider'),
                     width: 1,
                     height: 20,
-                    margin: const EdgeInsets.only(right: 12),
                     decoration: BoxDecoration(
                       color: tokens.dividerSoft,
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
+                  const SizedBox(width: 12),
                   const YnekoWindowControls(),
                 ],
               ),
@@ -1229,6 +1248,7 @@ class _WatchSidePanel extends StatelessWidget {
                   activeEpisodeId: activeEpisodeId,
                   gridEpisodes: gridEpisodes,
                   reverseEpisodes: reverseEpisodes,
+                  episodeScrollRequest: episodeScrollRequest,
                   playbackKey: playbackKey,
                   onTab: onTab,
                   onToggleGrid: onToggleGrid,
@@ -1244,6 +1264,19 @@ class _WatchSidePanel extends StatelessWidget {
       ),
     );
   }
+}
+
+String _watchPanelTitle({
+  required _WatchPanelTab tab,
+  required List<AnimeEpisode> episodes,
+  required int? activeEpisodeId,
+}) {
+  return switch (tab) {
+    _WatchPanelTab.episodes =>
+      '选集 (${activeEpisodeId == null ? 0 : 1}/${episodes.length})',
+    _WatchPanelTab.series => '系列',
+    _WatchPanelTab.sources => '规则',
+  };
 }
 
 class _TopPanelTab extends StatelessWidget {
@@ -1262,7 +1295,7 @@ class _TopPanelTab extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        height: 72,
+        height: YnekoThemeTokens.topbarHeight,
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -1293,19 +1326,36 @@ class _TopPanelTab extends StatelessWidget {
   }
 }
 
-class _OverviewCard extends StatelessWidget {
+class _OverviewCard extends StatefulWidget {
   const _OverviewCard({required this.detail, required this.activeEpisode});
 
   final SubjectDetail detail;
   final AnimeEpisode? activeEpisode;
 
   @override
+  State<_OverviewCard> createState() => _OverviewCardState();
+}
+
+class _OverviewCardState extends State<_OverviewCard> {
+  bool _summaryExpanded = false;
+
+  @override
+  void didUpdateWidget(covariant _OverviewCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.detail.subject.id != widget.detail.subject.id ||
+        oldWidget.detail.subject.summary != widget.detail.subject.summary) {
+      _summaryExpanded = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
     final type = YnekoTypography.of(context);
+    final detail = widget.detail;
     final subject = detail.subject;
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: tokens.surface,
         border: Border.all(color: tokens.outline.withValues(alpha: 0.66)),
@@ -1343,9 +1393,9 @@ class _OverviewCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            activeEpisode == null
+            widget.activeEpisode == null
                 ? '连载中，等待剧集同步'
-                : '连载中，更新至第 ${activeEpisode!.sort} 话',
+                : '连载中，更新至第 ${widget.activeEpisode!.sort} 话',
             style: type.label.copyWith(
               color: const Color(0xFF5F6672),
               fontSize: 12,
@@ -1355,40 +1405,242 @@ class _OverviewCard extends StatelessWidget {
           const SizedBox(height: 12),
           Divider(color: tokens.dividerFaint, height: 1),
           const SizedBox(height: 12),
-          Text(
-            '简介',
-            style: type.controlTitle.copyWith(
-              color: Colors.black,
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 7,
-            children: [
-              _InlineMeta(label: watchSubjectAirDateLabel(subject)),
-              _InlineMeta(label: watchSubjectScoreLabel(subject)),
-              _InlineMeta(
-                label: watchSubjectEpisodeCountLabel(subject, detail.episodes),
-              ),
+          _ExpandableSummary(
+            expanded: _summaryExpanded,
+            onToggle: () =>
+                setState(() => _summaryExpanded = !_summaryExpanded),
+            subjectId: subject.id,
+            summary: _cleanDisplaySummary(subject.summary ?? 'Bangumi 暂无简介。'),
+            facts: [
+              watchSubjectAirDateLabel(subject),
+              watchSubjectScoreLabel(subject),
+              watchSubjectEpisodeCountLabel(subject, detail.episodes),
             ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            subject.summary ?? 'Bangumi 暂无简介。',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: type.body.copyWith(
-              color: const Color(0xFF536171),
-              fontSize: 14,
-              height: 1.55,
-              fontWeight: FontWeight.w500,
-            ),
+            tags: subject.tags,
           ),
         ],
       ),
+    );
+  }
+}
+
+String _cleanDisplaySummary(String summary) {
+  final normalized = summary.replaceAll(RegExp(r'\r\n?'), '\n').trim();
+  final parts = normalized.split(RegExp(r'\n?\s*[【\[]简介原文[】\]]\s*'));
+  final withoutOriginal = (parts.isNotEmpty ? parts.first : normalized).trim();
+  final segments = withoutOriginal
+      .split(RegExp(r'\n{2,}|(?<=[。！？.!?])\s*\n+'))
+      .map((item) => item.trim())
+      .where((item) => item.isNotEmpty)
+      .toList(growable: false);
+  final chineseSegments = segments.where(_looksLikeChineseSummary).toList();
+  if (chineseSegments.isNotEmpty) return chineseSegments.join('\n\n');
+  if (_looksLikeChineseSummary(withoutOriginal)) return withoutOriginal;
+  final cleaned = withoutOriginal.isEmpty ? normalized : withoutOriginal;
+  return cleaned.trim();
+}
+
+bool _looksLikeChineseSummary(String text) {
+  final cjkCount = RegExp(r'[\u4E00-\u9FFF]').allMatches(text).length;
+  if (cjkCount == 0) return false;
+  final kanaCount = RegExp(r'[\u3040-\u30FF]').allMatches(text).length;
+  return kanaCount == 0 || (cjkCount >= 20 && kanaCount <= 4);
+}
+
+class _ExpandableSummary extends StatelessWidget {
+  const _ExpandableSummary({
+    required this.expanded,
+    required this.onToggle,
+    required this.subjectId,
+    required this.summary,
+    required this.facts,
+    required this.tags,
+  });
+
+  final bool expanded;
+  final VoidCallback onToggle;
+  final int subjectId;
+  final String summary;
+  final List<String> facts;
+  final List<String> tags;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = YnekoTypography.of(context);
+    final hasExpandedMeta = expanded && (tags.isNotEmpty || subjectId > 0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '简介',
+          style: type.controlTitle.copyWith(
+            color: Colors.black,
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 7,
+                children: [for (final fact in facts) _InlineMeta(label: fact)],
+              ),
+            ),
+            const SizedBox(width: 8),
+            _SummaryToggle(expanded: expanded, onToggle: onToggle),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          summary,
+          key: const ValueKey('watch-summary-text'),
+          maxLines: expanded ? null : 2,
+          overflow: expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+          style: type.body.copyWith(
+            color: const Color(0xFF536171),
+            fontSize: 14,
+            height: 1.55,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        if (hasExpandedMeta) ...[
+          const SizedBox(height: 8),
+          _SummaryExpandedMeta(subjectId: subjectId, tags: tags),
+        ],
+      ],
+    );
+  }
+}
+
+class _SummaryExpandedMeta extends ConsumerWidget {
+  const _SummaryExpandedMeta({required this.subjectId, required this.tags});
+
+  final int subjectId;
+  final List<String> tags;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final visibleTags = tags.take(16).toList(growable: false);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (subjectId > 0)
+          Text(
+            'Bangumi #$subjectId',
+            style: YnekoTypography.of(context).meta.copyWith(
+              color: YnekoThemeTokens.of(context).primary,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        if (visibleTags.isNotEmpty) ...[
+          const SizedBox(height: 7),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final tag in visibleTags)
+                _SummaryTagChip(
+                  tag: tag,
+                  onTap: () {
+                    ref.read(searchQueryProvider.notifier).set(tag);
+                    ref.read(searchTagModeProvider.notifier).set(true);
+                    ref.read(shellRouteProvider.notifier).openSearch();
+                  },
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SummaryTagChip extends StatelessWidget {
+  const _SummaryTagChip({required this.tag, required this.onTap});
+
+  final String tag;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return IntrinsicWidth(
+      child: YnekoPressable(
+        onTap: onTap,
+        scaleOnPress: false,
+        builder: (context, hovered, pressed) {
+          final highlighted = hovered || pressed;
+          return AnimatedContainer(
+            duration: YnekoThemeTokens.fastMotion,
+            constraints: const BoxConstraints(minHeight: 28),
+            padding: const EdgeInsets.symmetric(horizontal: 9),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: highlighted ? tokens.primaryContainer : tokens.surfaceHigh,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              tag,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: YnekoTypography.of(context).label.copyWith(
+                color: highlighted ? tokens.primaryStrong : tokens.muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SummaryToggle extends StatelessWidget {
+  const _SummaryToggle({required this.expanded, required this.onToggle});
+
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return YnekoPressable(
+      onTap: onToggle,
+      scaleOnPress: false,
+      builder: (context, hovered, pressed) {
+        final color = hovered || pressed ? tokens.primary : tokens.muted;
+        return Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedDefaultTextStyle(
+                duration: YnekoThemeTokens.fastMotion,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+                child: Text(expanded ? '收起' : '展开'),
+              ),
+              const SizedBox(width: 2),
+              Icon(
+                expanded
+                    ? Icons.keyboard_arrow_up_rounded
+                    : Icons.keyboard_arrow_down_rounded,
+                size: 16,
+                color: color,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1827,6 +2079,7 @@ class _EpisodeSwitchCard extends StatelessWidget {
     required this.activeEpisodeId,
     required this.gridEpisodes,
     required this.reverseEpisodes,
+    required this.episodeScrollRequest,
     required this.playbackKey,
     required this.onTab,
     required this.onToggleGrid,
@@ -1839,6 +2092,7 @@ class _EpisodeSwitchCard extends StatelessWidget {
   final int? activeEpisodeId;
   final bool gridEpisodes;
   final bool reverseEpisodes;
+  final int episodeScrollRequest;
   final WatchPlaybackKey? playbackKey;
   final ValueChanged<_WatchPanelTab> onTab;
   final VoidCallback onToggleGrid;
@@ -1848,8 +2102,14 @@ class _EpisodeSwitchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
+    final title = _watchPanelTitle(
+      tab: tab,
+      episodes: episodes,
+      activeEpisodeId: activeEpisodeId,
+    );
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      key: const ValueKey('watch-switch-card'),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: tokens.surface,
         border: Border.all(color: tokens.outline.withValues(alpha: 0.66)),
@@ -1861,7 +2121,7 @@ class _EpisodeSwitchCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '选集 (${activeEpisodeId == null ? 0 : 1}/${episodes.length})',
+                  title,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.black,
@@ -1871,39 +2131,45 @@ class _EpisodeSwitchCard extends StatelessWidget {
                   ),
                 ),
               ),
-              _SmallIconButton(
-                key: const ValueKey('episode-reverse-toggle'),
-                tooltip: reverseEpisodes ? '正序' : '倒序',
-                icon: Icons.format_line_spacing_rounded,
-                onTap: onToggleReverse,
-                active: reverseEpisodes,
-              ),
-              const SizedBox(width: 8),
-              _SmallIconButton(
-                key: const ValueKey('episode-layout-toggle'),
-                tooltip: gridEpisodes ? '列表' : '网格',
-                icon: gridEpisodes
-                    ? Icons.view_list_rounded
-                    : Icons.grid_view_rounded,
-                onTap: onToggleGrid,
-                active: gridEpisodes,
-              ),
-              const SizedBox(width: 10),
+              if (tab == _WatchPanelTab.episodes) ...[
+                _EpisodeControlGroup(
+                  children: [
+                    _CompactIconButton(
+                      key: const ValueKey('episode-reverse-toggle'),
+                      tooltip: reverseEpisodes ? '正序' : '倒序',
+                      icon: reverseEpisodes
+                          ? Icons.arrow_downward_rounded
+                          : Icons.arrow_upward_rounded,
+                      onTap: onToggleReverse,
+                    ),
+                    _CompactIconButton(
+                      key: const ValueKey('episode-layout-toggle'),
+                      tooltip: gridEpisodes ? '列表' : '网格',
+                      icon: gridEpisodes
+                          ? Icons.view_list_rounded
+                          : Icons.grid_view_rounded,
+                      onTap: onToggleGrid,
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 10),
+              ],
               SizedBox(
-                width: 146,
+                width: 126,
                 child: _PanelTabs(tab: tab, onTab: onTab),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           SizedBox(
-            height: tab == _WatchPanelTab.episodes ? 330 : 282,
+            height: tab == _WatchPanelTab.episodes ? 294 : 282,
             child: switch (tab) {
               _WatchPanelTab.episodes => _EpisodesPanel(
                 episodes: episodes,
                 activeEpisodeId: activeEpisodeId,
                 grid: gridEpisodes,
                 reversed: reverseEpisodes,
+                scrollRequest: episodeScrollRequest,
                 onToggleGrid: onToggleGrid,
                 onToggleReverse: onToggleReverse,
                 onEpisode: onEpisode,
@@ -1926,7 +2192,7 @@ class _RecommendationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: tokens.surface,
         border: Border.all(color: tokens.outline.withValues(alpha: 0.66)),
@@ -1942,13 +2208,21 @@ class _RecommendationCard extends StatelessWidget {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                 ),
               ),
+              Text(
+                '喜欢这部动画的人也喜欢',
+                style: TextStyle(
+                  color: Color(0xFF536171),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ],
           ),
           SizedBox(height: 12),
           YnekoEmptyState(
             icon: Icons.auto_awesome_rounded,
-            title: '推荐暂未接入',
-            description: '后续会基于真实 Bangumi 关联与本地历史展示。',
+            title: '暂无推荐',
+            description: 'Bangumi 推荐模块暂时没有返回内容。',
           ),
         ],
       ),
@@ -1964,27 +2238,34 @@ class _PanelTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _PanelTabButton(
-          label: '剧集',
-          icon: Icons.playlist_play_rounded,
-          active: tab == _WatchPanelTab.episodes,
-          onTap: () => onTab(_WatchPanelTab.episodes),
-        ),
-        _PanelTabButton(
-          label: '系列',
-          icon: Icons.auto_stories_rounded,
-          active: tab == _WatchPanelTab.series,
-          onTap: () => onTab(_WatchPanelTab.series),
-        ),
-        _PanelTabButton(
-          label: '规则源',
-          icon: Icons.tune_rounded,
-          active: tab == _WatchPanelTab.sources,
-          onTap: () => onTab(_WatchPanelTab.sources),
-        ),
-      ],
+    return Container(
+      key: const ValueKey('watch-panel-tabs'),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Expanded(
+            child: _PanelTabButton(
+              label: '剧集',
+              active: tab == _WatchPanelTab.episodes,
+              onTap: () => onTab(_WatchPanelTab.episodes),
+            ),
+          ),
+          Expanded(
+            child: _PanelTabButton(
+              label: '系列',
+              active: tab == _WatchPanelTab.series,
+              onTap: () => onTab(_WatchPanelTab.series),
+            ),
+          ),
+          Expanded(
+            child: _PanelTabButton(
+              label: '规则',
+              active: tab == _WatchPanelTab.sources,
+              onTap: () => onTab(_WatchPanelTab.sources),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1992,47 +2273,106 @@ class _PanelTabs extends StatelessWidget {
 class _PanelTabButton extends StatelessWidget {
   const _PanelTabButton({
     required this.label,
-    required this.icon,
     required this.active,
     required this.onTap,
   });
 
   final String label;
-  final IconData icon;
   final bool active;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: YnekoActionButton(
-          label: label,
-          onPressed: onTap,
-          tone: active
-              ? YnekoActionButtonTone.primary
-              : YnekoActionButtonTone.outline,
-          height: 34,
-          minWidth: 0,
-          horizontalPadding: 8,
-          textStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w900,
-            height: 1,
+    final tokens = YnekoThemeTokens.of(context);
+    return YnekoPressable(
+      onTap: onTap,
+      scaleOnPress: false,
+      borderRadius: 0,
+      builder: (context, hovered, pressed) {
+        final highlighted = active || hovered || pressed;
+        return Container(
+          constraints: const BoxConstraints(minHeight: 30),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            style: TextStyle(
+              color: highlighted ? tokens.primary : tokens.muted,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              height: 1,
+            ),
           ),
-        ),
+        );
+      },
+    );
+  }
+}
+
+class _EpisodeControlGroup extends StatelessWidget {
+  const _EpisodeControlGroup({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('episode-control-group'),
+      child: Row(mainAxisSize: MainAxisSize.min, children: children),
+    );
+  }
+}
+
+class _CompactIconButton extends StatelessWidget {
+  const _CompactIconButton({
+    super.key,
+    required this.tooltip,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return Tooltip(
+      message: tooltip,
+      waitDuration: const Duration(milliseconds: 700),
+      child: YnekoPressable(
+        onTap: onTap,
+        scaleOnPress: false,
+        borderRadius: 0,
+        builder: (context, hovered, pressed) {
+          final highlighted = hovered || pressed;
+          return SizedBox(
+            width: 30,
+            height: 30,
+            child: Center(
+              child: Icon(
+                icon,
+                size: 15,
+                color: highlighted ? tokens.primary : tokens.muted,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-class _EpisodesPanel extends StatelessWidget {
+class _EpisodesPanel extends StatefulWidget {
   const _EpisodesPanel({
     required this.episodes,
     required this.activeEpisodeId,
     required this.grid,
     required this.reversed,
+    required this.scrollRequest,
     required this.onToggleGrid,
     required this.onToggleReverse,
     required this.onEpisode,
@@ -2043,10 +2383,83 @@ class _EpisodesPanel extends StatelessWidget {
   final int? activeEpisodeId;
   final bool grid;
   final bool reversed;
+  final int scrollRequest;
   final VoidCallback onToggleGrid;
   final VoidCallback onToggleReverse;
   final ValueChanged<AnimeEpisode> onEpisode;
   final bool embedded;
+
+  @override
+  State<_EpisodesPanel> createState() => _EpisodesPanelState();
+}
+
+class _EpisodesPanelState extends State<_EpisodesPanel> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.scrollRequest > 0) {
+      _scrollActiveEpisodeToTopAfterLayout();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _EpisodesPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final scrollRequested = oldWidget.scrollRequest != widget.scrollRequest;
+    if (scrollRequested) {
+      _scrollActiveEpisodeToTopAfterLayout();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollActiveEpisodeToTop() {
+    final activeEpisodeId = widget.activeEpisodeId;
+    if (activeEpisodeId == null || !_scrollController.hasClients) return;
+
+    final index = widget.episodes.indexWhere(
+      (item) => item.id == activeEpisodeId,
+    );
+    if (index < 0) return;
+
+    final targetOffset = widget.grid
+        ? _gridRowOffset(index, _scrollController.position.viewportDimension)
+        : index * 52.0;
+    final maxOffset = _scrollController.position.maxScrollExtent;
+    final clampedOffset = targetOffset.clamp(0.0, maxOffset);
+    _scrollController.jumpTo(clampedOffset);
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
+  void _scrollActiveEpisodeToTopAfterLayout([int attempts = 0]) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final ready =
+          _scrollController.hasClients &&
+          _scrollController.position.hasContentDimensions &&
+          _scrollController.position.maxScrollExtent > 0;
+      if (!ready && attempts < 8) {
+        _scrollActiveEpisodeToTopAfterLayout(attempts + 1);
+        return;
+      }
+      _scrollActiveEpisodeToTop();
+    });
+  }
+
+  double _gridRowOffset(int index, double viewportWidth) {
+    const maxCrossAxisExtent = 64.0;
+    const mainAxisExtent = 58.0;
+    const mainAxisSpacing = 8.0;
+    final columns = (viewportWidth / maxCrossAxisExtent).ceil().clamp(1, 1000);
+    final row = index ~/ columns;
+    return row * (mainAxisExtent + mainAxisSpacing);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2054,50 +2467,65 @@ class _EpisodesPanel extends StatelessWidget {
     final type = YnekoTypography.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final list = episodes.isEmpty
+        final bottomPadding = widget.grid
+            ? (constraints.maxHeight - 58.0).clamp(0.0, 1000.0)
+            : (constraints.maxHeight - 44.0).clamp(0.0, 1000.0);
+        final list = widget.episodes.isEmpty
             ? const YnekoEmptyState(
                 icon: Icons.live_tv_rounded,
                 title: '暂无剧集',
                 description: 'Bangumi 暂未返回可播放剧集。',
               )
-            : grid
+            : widget.grid
             ? GridView.builder(
                 key: const ValueKey('episode-grid-panel'),
+                controller: _scrollController,
+                primary: false,
+                padding: EdgeInsets.only(
+                  right: _episodeScrollbarSafePadding,
+                  bottom: bottomPadding,
+                ),
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                   maxCrossAxisExtent: 64,
                   mainAxisExtent: 58,
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,
                 ),
-                itemCount: episodes.length,
+                itemCount: widget.episodes.length,
                 itemBuilder: (context, index) {
-                  final episode = episodes[index];
+                  final episode = widget.episodes[index];
                   return _EpisodeTile(
                     episode: episode,
-                    active: episode.id == activeEpisodeId,
+                    active: episode.id == widget.activeEpisodeId,
                     grid: true,
-                    onTap: () => onEpisode(episode),
+                    onTap: () => widget.onEpisode(episode),
                   );
                 },
               )
             : ListView.builder(
                 key: const ValueKey('episode-list-panel'),
-                itemCount: episodes.length,
+                controller: _scrollController,
+                primary: false,
+                padding: EdgeInsets.only(
+                  right: _episodeScrollbarSafePadding,
+                  bottom: bottomPadding,
+                ),
+                itemCount: widget.episodes.length,
                 itemBuilder: (context, index) {
-                  final episode = episodes[index];
+                  final episode = widget.episodes[index];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: _EpisodeTile(
                       episode: episode,
-                      active: episode.id == activeEpisodeId,
+                      active: episode.id == widget.activeEpisodeId,
                       grid: false,
-                      onTap: () => onEpisode(episode),
+                      onTap: () => widget.onEpisode(episode),
                     ),
                   );
                 },
               );
 
-        if (embedded) return list;
+        if (widget.embedded) return list;
 
         return Container(
           padding: const EdgeInsets.all(14),
@@ -2113,26 +2541,26 @@ class _EpisodesPanel extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      '剧集  ${episodes.length} 集',
+                      '剧集  ${widget.episodes.length} 集',
                       style: type.controlTitle.copyWith(fontSize: 16),
                     ),
                   ),
                   _SmallIconButton(
                     key: const ValueKey('episode-reverse-toggle'),
-                    tooltip: reversed ? '正序' : '倒序',
-                    icon: Icons.swap_vert_rounded,
-                    onTap: onToggleReverse,
-                    active: reversed,
+                    tooltip: widget.reversed ? '正序' : '倒序',
+                    icon: widget.reversed
+                        ? Icons.arrow_downward_rounded
+                        : Icons.arrow_upward_rounded,
+                    onTap: widget.onToggleReverse,
                   ),
                   const SizedBox(width: 8),
                   _SmallIconButton(
                     key: const ValueKey('episode-layout-toggle'),
-                    tooltip: grid ? '列表' : '网格',
-                    icon: grid
+                    tooltip: widget.grid ? '列表' : '网格',
+                    icon: widget.grid
                         ? Icons.view_list_rounded
                         : Icons.grid_view_rounded,
-                    onTap: onToggleGrid,
-                    active: grid,
+                    onTap: widget.onToggleGrid,
                   ),
                 ],
               ),
@@ -2168,19 +2596,23 @@ class _EpisodeTile extends StatelessWidget {
     final type = YnekoTypography.of(context);
     return YnekoPressable(
       onTap: onTap,
+      scaleOnPress: false,
       builder: (context, hovered, pressed) {
         final highlighted = active || hovered || pressed;
-        return AnimatedContainer(
-          duration: YnekoThemeTokens.fastMotion,
+        return Container(
           decoration: BoxDecoration(
-            color: active
-                ? const Color(0xFFFFF0F6)
-                : highlighted
-                ? Color.lerp(tokens.primaryContainer, tokens.surface, 0.64)
+            color: highlighted
+                ? tokens.primaryContainer
                 : grid
                 ? tokens.surface
                 : Colors.transparent,
-            border: grid ? Border.all(color: tokens.outline) : null,
+            border: grid
+                ? Border.all(
+                    color: highlighted
+                        ? tokens.primary.withValues(alpha: 0.38)
+                        : tokens.outline,
+                  )
+                : null,
             borderRadius: BorderRadius.circular(8),
           ),
           constraints: BoxConstraints(minHeight: grid ? 58 : 44),
@@ -2190,7 +2622,7 @@ class _EpisodeTile extends StatelessWidget {
                   child: Text(
                     '${episode.sort}',
                     style: type.controlTitle.copyWith(
-                      color: active ? tokens.primaryStrong : tokens.ink,
+                      color: highlighted ? tokens.primaryStrong : tokens.ink,
                     ),
                   ),
                 )
@@ -2199,7 +2631,9 @@ class _EpisodeTile extends StatelessWidget {
                     Text(
                       '第${episode.sort}话',
                       style: type.controlTitle.copyWith(
-                        color: active ? const Color(0xFFFF5F99) : Colors.black,
+                        color: highlighted
+                            ? const Color(0xFFFF5F99)
+                            : Colors.black,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                       ),
@@ -2210,7 +2644,7 @@ class _EpisodeTile extends StatelessWidget {
                         episode.displayTitle,
                         overflow: TextOverflow.ellipsis,
                         style: type.meta.copyWith(
-                          color: active
+                          color: highlighted
                               ? const Color(0xFFFF5F99)
                               : const Color(0xFF1D2229),
                           fontSize: 13,
@@ -2262,25 +2696,6 @@ class _SourcesPanel extends ConsumerWidget {
       padding: const EdgeInsets.all(14),
       child: ListView(
         children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  '规则源',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
-                ),
-              ),
-              YnekoActionButton(
-                label: '搜索',
-                onPressed: () => playbackController?.searchSources(),
-                icon: const Icon(Icons.refresh_rounded, size: 16),
-                tone: YnekoActionButtonTone.outline,
-                height: 32,
-                minWidth: 70,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
           library.when(
             loading: () => const SizedBox(
               height: 80,
@@ -2293,42 +2708,21 @@ class _SourcesPanel extends ConsumerWidget {
             ),
             data: (state) => _RuleGroupSummaryCard(
               state: state,
-              onSearchGroup: (group) => playbackController?.searchSources(
-                ruleIds: state.enabledRuleIdsForGroup(group.id),
-              ),
+              playback: playback,
+              onSearchGroup: playbackController == null
+                  ? null
+                  : (group) => playbackController.searchSources(
+                      ruleIds: state.enabledRuleIdsForGroup(group.id),
+                    ),
             ),
           ),
-          const SizedBox(height: 12),
-          if (playback?.searching == true ||
-              playback?.binding == true ||
-              playback?.opening == true)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 18),
-              child: Center(child: YnekoRingLoader()),
-            )
-          else if (playback?.error != null)
-            YnekoEmptyState(
-              icon: Icons.error_outline_rounded,
-              title: '解析失败',
-              description: playback!.error!,
-            )
-          else if (playback == null)
-            const YnekoEmptyState(
-              icon: Icons.live_tv_rounded,
-              title: '暂无剧集',
-              description: '选择剧集后会显示播放候选。',
-            )
-          else if (playback.candidates.isEmpty)
-            const YnekoEmptyState(
-              icon: Icons.tune_rounded,
-              title: '没有可用播放源',
-              description: '启用规则组后可重新搜索当前番剧。',
-            )
-          else
+          if (playback != null && playback.candidates.isNotEmpty) ...[
+            const SizedBox(height: 12),
             _RuleSourceResultList(
               playback: playback,
               onCandidate: playbackController?.openCandidate,
             ),
+          ],
           if (playback != null &&
               (playback.bindingAttempts.isNotEmpty ||
                   playback.streamAttempts.isNotEmpty)) ...[
@@ -2349,44 +2743,150 @@ class _SourcesPanel extends ConsumerWidget {
 class _RuleGroupSummaryCard extends StatelessWidget {
   const _RuleGroupSummaryCard({
     required this.state,
+    required this.playback,
     required this.onSearchGroup,
   });
 
   final SourceLibraryState state;
-  final ValueChanged<RuleGroupSummary> onSearchGroup;
+  final WatchPlaybackState? playback;
+  final ValueChanged<RuleGroupSummary>? onSearchGroup;
 
   @override
   Widget build(BuildContext context) {
-    if (state.packages.isEmpty) {
-      return const YnekoEmptyState(
-        icon: Icons.tune_rounded,
-        title: '还没有规则源',
-        description: '请到设置或规则源页面导入声明式规则包。',
-      );
-    }
     final group = state.defaultGroup;
     final enabled = group.enabledRuleCount(state.packages);
+    final hasCandidates = playback?.candidates.isNotEmpty ?? false;
+    final isResolving =
+        playback?.searching == true ||
+        playback?.binding == true ||
+        playback?.opening == true;
+    final shouldShowPlaybackEmpty =
+        state.packages.isNotEmpty &&
+        !hasCandidates &&
+        !isResolving &&
+        playback?.error == null;
     return Column(
       children: [
         _SourceCurrentCard(
+          key: const ValueKey('source-current-group-card'),
           title: group.name,
           subtitle: '${group.ruleIds.length} 个规则源，$enabled 个可用',
-          onTap: () => onSearchGroup(group),
+          onTap: onSearchGroup == null ? null : () => onSearchGroup!(group),
         ),
-        const SizedBox(height: 8),
-        for (final item in state.groups)
-          _SourceGroupOption(
-            group: item,
-            enabledCount: item.enabledRuleCount(state.packages),
-            onTap: () => onSearchGroup(item),
+        if (state.visibleGroups.length > 1) ...[
+          const SizedBox(height: 8),
+          for (final item in state.visibleGroups.where(
+            (item) => item.id != group.id,
+          ))
+            _SourceGroupOption(
+              group: item,
+              enabledCount: item.enabledRuleCount(state.packages),
+              onTap: onSearchGroup == null ? null : () => onSearchGroup!(item),
+            ),
+        ],
+        if (isResolving) ...[
+          const SizedBox(height: 12),
+          const _SourcePanelLoadingState(),
+        ] else if (playback?.error != null) ...[
+          const SizedBox(height: 12),
+          YnekoEmptyState(
+            icon: Icons.error_outline_rounded,
+            title: '解析失败',
+            description: playback!.error!,
           ),
+        ] else if (state.packages.isEmpty) ...[
+          const SizedBox(height: 12),
+          const YnekoEmptyState(
+            icon: Icons.tune_rounded,
+            title: '还没有规则源',
+            description: '请到设置或规则源页面导入声明式规则包。',
+          ),
+        ] else if (shouldShowPlaybackEmpty) ...[
+          const SizedBox(height: 12),
+          const YnekoEmptyState(
+            icon: Icons.tune_rounded,
+            title: '没有可用播放源',
+            description: '启用规则组后可重新搜索当前番剧。',
+          ),
+        ],
       ],
+    );
+  }
+}
+
+class _SourcePanelLoadingState extends StatelessWidget {
+  const _SourcePanelLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('source-panel-loading-state'),
+      constraints: const BoxConstraints(minHeight: 126),
+      padding: const EdgeInsets.all(14),
+      alignment: Alignment.center,
+      child: const YnekoRingLoader(size: 54),
+    );
+  }
+}
+
+class _SourceGroupOption extends StatelessWidget {
+  const _SourceGroupOption({
+    required this.group,
+    required this.enabledCount,
+    required this.onTap,
+  });
+
+  final RuleGroupSummary group;
+  final int enabledCount;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return YnekoPressable(
+      onTap: onTap,
+      scaleOnPress: false,
+      builder: (context, hovered, pressed) {
+        final highlighted = hovered || pressed;
+        return AnimatedContainer(
+          duration: YnekoThemeTokens.fastMotion,
+          margin: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: highlighted
+                ? Color.lerp(tokens.primaryContainer, tokens.surface, 0.20)
+                : tokens.surface,
+            border: Border.all(
+              color: highlighted
+                  ? Color.lerp(tokens.outline, tokens.primary, 0.38)!
+                  : tokens.outline.withValues(alpha: 0.58),
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  group.name,
+                  overflow: TextOverflow.ellipsis,
+                  style: YnekoTypography.of(context).label.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: highlighted ? tokens.primaryStrong : tokens.ink,
+                  ),
+                ),
+              ),
+              Text('$enabledCount 可用', style: YnekoTypography.of(context).meta),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
 class _SourceCurrentCard extends StatelessWidget {
   const _SourceCurrentCard({
+    super.key,
     required this.title,
     required this.subtitle,
     required this.onTap,
@@ -2394,13 +2894,14 @@ class _SourceCurrentCard extends StatelessWidget {
 
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
     return YnekoPressable(
       onTap: onTap,
+      scaleOnPress: false,
       builder: (context, hovered, pressed) {
         final highlighted = hovered || pressed;
         return AnimatedContainer(
@@ -2408,7 +2909,7 @@ class _SourceCurrentCard extends StatelessWidget {
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: highlighted
-                ? tokens.primaryContainer
+                ? Color.lerp(tokens.primaryContainer, tokens.surface, 0.12)
                 : Color.lerp(tokens.primaryContainer, tokens.surface, 0.45),
             border: Border.all(
               color: tokens.primary.withValues(
@@ -2425,7 +2926,9 @@ class _SourceCurrentCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: YnekoTypography.of(context).controlTitle,
+                      style: YnekoTypography.of(context).controlTitle.copyWith(
+                        color: highlighted ? tokens.primaryStrong : null,
+                      ),
                     ),
                     const SizedBox(height: 3),
                     Text(subtitle, style: YnekoTypography.of(context).meta),
@@ -2433,58 +2936,6 @@ class _SourceCurrentCard extends StatelessWidget {
                 ),
               ),
               Icon(Icons.search_rounded, size: 18, color: tokens.primary),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _SourceGroupOption extends StatelessWidget {
-  const _SourceGroupOption({
-    required this.group,
-    required this.enabledCount,
-    required this.onTap,
-  });
-
-  final RuleGroupSummary group;
-  final int enabledCount;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = YnekoThemeTokens.of(context);
-    return YnekoPressable(
-      onTap: onTap,
-      builder: (context, hovered, pressed) {
-        final highlighted = hovered || pressed;
-        return AnimatedContainer(
-          duration: YnekoThemeTokens.fastMotion,
-          margin: const EdgeInsets.only(bottom: 6),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: highlighted ? tokens.primaryContainer : tokens.surface,
-            border: Border.all(
-              color: highlighted
-                  ? Color.lerp(tokens.outline, tokens.primary, 0.38)!
-                  : tokens.outline.withValues(alpha: 0.58),
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  group.name,
-                  overflow: TextOverflow.ellipsis,
-                  style: YnekoTypography.of(context).label.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: tokens.ink,
-                  ),
-                ),
-              ),
-              Text('$enabledCount 可用', style: YnekoTypography.of(context).meta),
             ],
           ),
         );
@@ -2730,13 +3181,11 @@ class _SmallIconButton extends StatelessWidget {
     required this.tooltip,
     required this.icon,
     required this.onTap,
-    this.active = false,
   });
 
   final String tooltip;
   final IconData icon;
   final VoidCallback onTap;
-  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -2744,9 +3193,7 @@ class _SmallIconButton extends StatelessWidget {
       tooltip: tooltip,
       icon: Icon(icon, size: 15),
       onPressed: onTap,
-      tone: active
-          ? YnekoActionButtonTone.ghost
-          : YnekoActionButtonTone.outline,
+      tone: YnekoActionButtonTone.outline,
       size: 30,
       iconSize: 15,
     );

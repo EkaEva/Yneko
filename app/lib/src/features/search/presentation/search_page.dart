@@ -8,19 +8,13 @@ import '../../../shared/mock/index.dart';
 import '../../../shared/theme/index.dart';
 import '../../../shared/ui/index.dart';
 
-class SearchPage extends ConsumerStatefulWidget {
+class SearchPage extends ConsumerWidget {
   const SearchPage({super.key});
 
   @override
-  ConsumerState<SearchPage> createState() => _SearchPageState();
-}
-
-class _SearchPageState extends ConsumerState<SearchPage> {
-  bool _tagMode = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final query = ref.watch(searchQueryProvider);
+    final tagMode = ref.watch(searchTagModeProvider);
     final results = ref.watch(searchResultsProvider);
     final cleanQuery = query.trim();
     final isIncomplete = cleanQuery.isNotEmpty;
@@ -45,7 +39,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       children: [
         _SearchHead(
           keyword: cleanQuery,
-          tagMode: _tagMode,
+          tagMode: tagMode,
           onBack: () => ref.read(shellRouteProvider.notifier).openHome(),
         ),
         const SizedBox(height: 14),
@@ -63,8 +57,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             ),
             const Spacer(),
             _SearchModeToggle(
-              tagMode: _tagMode,
-              onChanged: (value) => setState(() => _tagMode = value),
+              tagMode: tagMode,
+              onChanged: (value) =>
+                  ref.read(searchTagModeProvider.notifier).set(value),
             ),
           ],
         ),
@@ -75,7 +70,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               child: TextField(
                 key: const ValueKey('search-page-input'),
                 decoration: InputDecoration(
-                  hintText: _tagMode ? '输入标签开始搜索' : '输入关键词开始搜索',
+                  hintText: tagMode ? '输入标签开始搜索' : '输入关键词开始搜索',
                   prefixIcon: const Icon(Icons.search_rounded),
                 ),
                 onChanged: (value) =>
@@ -114,7 +109,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           error: (error, stackTrace) => YnekoPanel(
             child: YnekoEmptyState(
               icon: Icons.bolt_rounded,
-              title: _tagMode ? 'Bangumi 标签页加载失败' : 'Bangumi 搜索失败',
+              title: tagMode ? 'Bangumi 标签页加载失败' : 'Bangumi 搜索失败',
               description: error.toString(),
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:yneko/src/features/search/index.dart';
 import 'package:yneko/src/features/shell/index.dart';
 import 'package:yneko/src/features/watch/application/watch_providers.dart';
 import 'package:yneko/src/infrastructure/bridge/yneko_backend.dart';
@@ -980,13 +981,430 @@ void main() {
     );
     expect(find.text('剧集'), findsOneWidget);
     expect(find.text('系列'), findsOneWidget);
-    expect(find.text('规则源'), findsOneWidget);
+    expect(find.text('规则'), findsOneWidget);
     expect(find.byKey(const ValueKey('episode-list-panel')), findsOneWidget);
 
     final route = ProviderScope.containerOf(
       tester.element(find.byKey(const ValueKey('watch-page'))),
     ).read(shellRouteProvider);
     expect(route, isA<WatchRoute>());
+  });
+
+  testWidgets('watch right panel matches compact original layout', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(_appWithBackend());
+    ProviderScope.containerOf(tester.element(find.byType(YnekoApp)))
+        .read(shellRouteProvider.notifier)
+        .openWatch(subjectId: FakeYnekoBackend.subject.id);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSize(find.byKey(const ValueKey('watch-side-panel'))).width,
+      384,
+    );
+    expect(
+      tester.getSize(find.byKey(const ValueKey('watch-top-action-divider'))),
+      const Size(1, 20),
+    );
+    for (final tooltip in ['最小化', '最大化', '关闭']) {
+      expect(
+        tester.getSize(find.byKey(ValueKey('window-button-$tooltip'))),
+        const Size(44, 38),
+      );
+    }
+
+    final summary = tester.widget<Text>(
+      find.byKey(const ValueKey('watch-summary-text')),
+    );
+    expect(summary.maxLines, 2);
+    expect(summary.overflow, TextOverflow.ellipsis);
+    expect(find.text('展开'), findsOneWidget);
+    final summaryToggleDefault = tester.widget<AnimatedDefaultTextStyle>(
+      find
+          .ancestor(
+            of: find.text('展开'),
+            matching: find.byType(AnimatedDefaultTextStyle),
+          )
+          .first,
+    );
+    expect(summaryToggleDefault.style.color, YnekoThemeTokens.light.muted);
+    final summaryMouse = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+    );
+    await summaryMouse.addPointer();
+    await summaryMouse.moveTo(tester.getCenter(find.text('展开')));
+    await tester.pump();
+    final summaryToggleHovered = tester.widget<AnimatedDefaultTextStyle>(
+      find
+          .ancestor(
+            of: find.text('展开'),
+            matching: find.byType(AnimatedDefaultTextStyle),
+          )
+          .first,
+    );
+    expect(summaryToggleHovered.style.color, YnekoThemeTokens.light.primary);
+    await summaryMouse.removePointer();
+    await tester.tap(find.text('展开'));
+    await tester.pumpAndSettle();
+    expect(find.text('收起'), findsOneWidget);
+    final expandedSummary = tester.widget<Text>(
+      find.byKey(const ValueKey('watch-summary-text')),
+    );
+    expect(expandedSummary.maxLines, isNull);
+    expect(expandedSummary.overflow, TextOverflow.visible);
+    final bangumiId = tester.widget<Text>(find.text('Bangumi #400602'));
+    expect(bangumiId.style?.color, YnekoThemeTokens.light.primary);
+    expect(find.text('漫画改'), findsOneWidget);
+    expect(find.text('奇幻'), findsOneWidget);
+    expect(
+      tester.getSize(find.text('漫画改')).width,
+      lessThan(
+        tester.getSize(find.byKey(const ValueKey('watch-side-panel'))).width /
+            2,
+      ),
+    );
+
+    await tester.tap(find.text('漫画改'));
+    await tester.pumpAndSettle();
+    final searchContainer = ProviderScope.containerOf(
+      tester.element(find.byKey(const ValueKey('search-result-page'))),
+    );
+    expect(searchContainer.read(shellRouteProvider), isA<SearchRoute>());
+    expect(searchContainer.read(searchQueryProvider), '漫画改');
+    expect(searchContainer.read(searchTagModeProvider), isTrue);
+
+    searchContainer
+        .read(shellRouteProvider.notifier)
+        .openWatch(subjectId: FakeYnekoBackend.subject.id);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('episode-control-group')), findsOneWidget);
+    expect(find.byKey(const ValueKey('watch-panel-tabs')), findsOneWidget);
+    final episodeControlGroup = tester.widget<Container>(
+      find.byKey(const ValueKey('episode-control-group')),
+    );
+    expect(episodeControlGroup.decoration, isNull);
+    final panelTabs = tester.widget<Container>(
+      find.byKey(const ValueKey('watch-panel-tabs')),
+    );
+    expect(panelTabs.decoration, isNull);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('episode-reverse-toggle'))),
+      const Size(30, 30),
+    );
+    expect(
+      tester.getSize(find.byKey(const ValueKey('episode-layout-toggle'))),
+      const Size(30, 30),
+    );
+    final episodeList = tester.widget<ListView>(
+      find.byKey(const ValueKey('episode-list-panel')),
+    );
+    expect((episodeList.padding! as EdgeInsets).right, 14);
+    var reverseIcon = tester.widget<Icon>(
+      find.descendant(
+        of: find.byKey(const ValueKey('episode-reverse-toggle')),
+        matching: find.byIcon(Icons.arrow_upward_rounded),
+      ),
+    );
+    expect(reverseIcon.color, YnekoThemeTokens.light.muted);
+    var layoutIcon = tester.widget<Icon>(
+      find.descendant(
+        of: find.byKey(const ValueKey('episode-layout-toggle')),
+        matching: find.byIcon(Icons.grid_view_rounded),
+      ),
+    );
+    expect(layoutIcon.color, YnekoThemeTokens.light.muted);
+    final layoutMouse = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+    );
+    await layoutMouse.addPointer();
+    await layoutMouse.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('episode-layout-toggle'))),
+    );
+    await tester.pump();
+    final hoveredLayoutFrame = tester.widget<SizedBox>(
+      find
+          .descendant(
+            of: find.byKey(const ValueKey('episode-layout-toggle')),
+            matching: find.byType(SizedBox),
+          )
+          .first,
+    );
+    expect(hoveredLayoutFrame.width, 30);
+    expect(hoveredLayoutFrame.height, 30);
+    final hoveredLayoutIcon = tester.widget<Icon>(
+      find.descendant(
+        of: find.byKey(const ValueKey('episode-layout-toggle')),
+        matching: find.byIcon(Icons.grid_view_rounded),
+      ),
+    );
+    expect(hoveredLayoutIcon.color, YnekoThemeTokens.light.primary);
+    await layoutMouse.removePointer();
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('episode-layout-toggle')));
+    await tester.pumpAndSettle();
+    final episodeGrid = tester.widget<GridView>(
+      find.byKey(const ValueKey('episode-grid-panel')),
+    );
+    expect((episodeGrid.padding! as EdgeInsets).right, 14);
+    layoutIcon = tester.widget<Icon>(
+      find.descendant(
+        of: find.byKey(const ValueKey('episode-layout-toggle')),
+        matching: find.byIcon(Icons.view_list_rounded),
+      ),
+    );
+    expect(layoutIcon.color, YnekoThemeTokens.light.muted);
+
+    await tester.tap(find.byKey(const ValueKey('episode-reverse-toggle')));
+    await tester.pumpAndSettle();
+    reverseIcon = tester.widget<Icon>(
+      find.descendant(
+        of: find.byKey(const ValueKey('episode-reverse-toggle')),
+        matching: find.byIcon(Icons.arrow_downward_rounded),
+      ),
+    );
+    expect(reverseIcon.color, YnekoThemeTokens.light.muted);
+
+    await tester.tap(find.text('规则'));
+    await tester.pumpAndSettle();
+    final activeRuleTabFrame = tester.widget<Container>(
+      find
+          .ancestor(
+            of: find.descendant(
+              of: find.byKey(const ValueKey('watch-panel-tabs')),
+              matching: find.text('规则'),
+            ),
+            matching: find.byType(Container),
+          )
+          .first,
+    );
+    expect(activeRuleTabFrame.decoration, isNull);
+    final activeRuleTab = tester.widget<Text>(
+      find.descendant(
+        of: find.byKey(const ValueKey('watch-panel-tabs')),
+        matching: find.text('规则'),
+      ),
+    );
+    expect(activeRuleTab.style?.color, YnekoThemeTokens.light.primary);
+    expect(find.text('喜欢这部动画的人也喜欢'), findsOneWidget);
+    expect(find.text('暂无推荐'), findsOneWidget);
+    expect(find.text('Bangumi 推荐模块暂时没有返回内容。'), findsOneWidget);
+
+    expect(find.text('规则'), findsWidgets);
+    expect(find.textContaining('选集 ('), findsNothing);
+    expect(find.byKey(const ValueKey('episode-control-group')), findsNothing);
+    expect(find.byKey(const ValueKey('episode-reverse-toggle')), findsNothing);
+    expect(find.byKey(const ValueKey('episode-layout-toggle')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('source-current-group-card')),
+      findsOneWidget,
+    );
+    expect(find.text('默认规则组'), findsWidgets);
+
+    await tester.binding.setSurfaceSize(const Size(1800, 900));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getSize(find.byKey(const ValueKey('watch-side-panel'))).width,
+      448,
+    );
+  });
+
+  testWidgets('watch source panel keeps single empty state without packages', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _appWithBackend(
+        backend: FakeYnekoBackend(
+          sourcePackages: const [],
+          playbackContracts: const [],
+        ),
+      ),
+    );
+    ProviderScope.containerOf(tester.element(find.byType(YnekoApp)))
+        .read(shellRouteProvider.notifier)
+        .openWatch(subjectId: FakeYnekoBackend.subject.id);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('规则'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('source-current-group-card')),
+      findsOneWidget,
+    );
+    expect(find.text('默认规则组'), findsWidgets);
+    expect(find.text('还没有规则源'), findsOneWidget);
+    expect(find.text('没有可用播放源'), findsNothing);
+  });
+
+  testWidgets('watch summary prefers Chinese text in mixed summaries', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ynekoBackendProvider.overrideWithValue(
+            _SummaryBackend(summary: 'スーパーで働く女性店員の話。\n\n在超市后门吸烟的两人的故事。'),
+          ),
+          directoryPickerProvider.overrideWithValue(
+            const _FakeDirectoryPickerService('E:\\Yneko\\Picked'),
+          ),
+          watchPlayerAdapterFactoryProvider.overrideWithValue(
+            (_) => FakePlayerAdapter(),
+          ),
+        ],
+        child: const YnekoApp(),
+      ),
+    );
+    ProviderScope.containerOf(tester.element(find.byType(YnekoApp)))
+        .read(shellRouteProvider.notifier)
+        .openWatch(subjectId: FakeYnekoBackend.subject.id);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('在超市后门吸烟的两人的故事'), findsOneWidget);
+    expect(find.textContaining('スーパーで働く'), findsNothing);
+  });
+
+  testWidgets('watch summary keeps Japanese when no Chinese summary exists', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ynekoBackendProvider.overrideWithValue(
+            _SummaryBackend(summary: 'スーパーで働く女性店員の話。'),
+          ),
+          directoryPickerProvider.overrideWithValue(
+            const _FakeDirectoryPickerService('E:\\Yneko\\Picked'),
+          ),
+          watchPlayerAdapterFactoryProvider.overrideWithValue(
+            (_) => FakePlayerAdapter(),
+          ),
+        ],
+        child: const YnekoApp(),
+      ),
+    );
+    ProviderScope.containerOf(tester.element(find.byType(YnekoApp)))
+        .read(shellRouteProvider.notifier)
+        .openWatch(subjectId: FakeYnekoBackend.subject.id);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('スーパーで働く女性店員の話'), findsOneWidget);
+    expect(find.text('Bangumi 暂无中文简介。'), findsNothing);
+  });
+
+  testWidgets('watch source loading replaces source empty state', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _appWithBackend(
+        backend: FakeYnekoBackend(
+          sourcePackages: const [],
+          sourceSearchDelay: const Duration(milliseconds: 400),
+        ),
+      ),
+    );
+    ProviderScope.containerOf(tester.element(find.byType(YnekoApp)))
+        .read(shellRouteProvider.notifier)
+        .openWatch(subjectId: FakeYnekoBackend.subject.id);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('规则'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('source-current-group-card')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('source-current-group-card')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+
+    expect(
+      find.byKey(const ValueKey('source-panel-loading-state')),
+      findsOneWidget,
+    );
+    final loadingState = tester.widget<Container>(
+      find.byKey(const ValueKey('source-panel-loading-state')),
+    );
+    expect(loadingState.decoration, isNull);
+    expect(find.text('还没有规则源'), findsNothing);
+    expect(find.text('没有可用播放源'), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('watch episode hover switches directly to theme color', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(_appWithBackend());
+    ProviderScope.containerOf(tester.element(find.byType(YnekoApp)))
+        .read(shellRouteProvider.notifier)
+        .openWatch(subjectId: FakeYnekoBackend.subject.id);
+    await tester.pumpAndSettle();
+
+    final episodeTile = find.text('第1话');
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer();
+    await mouse.moveTo(tester.getCenter(episodeTile));
+    await tester.pump();
+
+    final hoveredTile = find
+        .ancestor(of: episodeTile, matching: find.byType(Container))
+        .first;
+    final decoration =
+        tester.widget<Container>(hoveredTile).decoration! as BoxDecoration;
+    expect(decoration.color, YnekoThemeTokens.light.primaryContainer);
+
+    await mouse.removePointer();
+  });
+
+  testWidgets('watch reverse keeps selected episode aligned to list top', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _appWithBackend(backend: _EpisodeListBackend(episodeCount: 12)),
+    );
+    ProviderScope.containerOf(tester.element(find.byType(YnekoApp)))
+        .read(shellRouteProvider.notifier)
+        .openWatch(subjectId: FakeYnekoBackend.subject.id);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('第3话'));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('episode-reverse-toggle')));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump();
+    }
+
+    final list = tester.widget<ListView>(
+      find.byKey(const ValueKey('episode-list-panel')),
+    );
+    expect(list.controller?.offset, 9 * 52);
   });
 
   testWidgets(
@@ -1007,7 +1425,7 @@ void main() {
       );
       expect(find.text('剧集'), findsOneWidget);
       expect(find.text('系列'), findsOneWidget);
-      expect(find.text('规则源'), findsOneWidget);
+      expect(find.text('规则'), findsOneWidget);
       expect(find.byKey(const ValueKey('episode-list-panel')), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('episode-layout-toggle')));
@@ -1087,7 +1505,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('追番'), findsWidgets);
 
-      await tester.tap(find.text('规则源'));
+      await tester.tap(find.text('规则'));
       await tester.pumpAndSettle();
       expect(find.text('默认规则组'), findsWidgets);
       expect(find.text('Demo'), findsWidgets);
@@ -1220,4 +1638,60 @@ class _FakeDirectoryPickerService implements DirectoryPickerService {
 
   @override
   Future<String?> pickDirectory({String? initialDirectory}) async => path;
+}
+
+class _SummaryBackend extends FakeYnekoBackend {
+  _SummaryBackend({required this.summary});
+
+  final String summary;
+
+  @override
+  Future<SubjectDetail> getSubjectDetail(int subjectId) async {
+    final detail = await super.getSubjectDetail(subjectId);
+    return SubjectDetail(
+      subject: AnimeSubject(
+        id: detail.subject.id,
+        name: detail.subject.name,
+        nameCn: detail.subject.nameCn,
+        aliases: detail.subject.aliases,
+        coverUrl: detail.subject.coverUrl,
+        summary: summary,
+        airDate: detail.subject.airDate,
+        ratingScore: detail.subject.ratingScore,
+        ratingRank: detail.subject.ratingRank,
+        tags: detail.subject.tags,
+        totalEpisodes: detail.subject.totalEpisodes,
+      ),
+      isFavorite: detail.isFavorite,
+      episodes: detail.episodes,
+      progress: detail.progress,
+    );
+  }
+}
+
+class _EpisodeListBackend extends FakeYnekoBackend {
+  _EpisodeListBackend({required this.episodeCount});
+
+  final int episodeCount;
+
+  @override
+  Future<SubjectDetail> getSubjectDetail(int subjectId) async {
+    final detail = await super.getSubjectDetail(subjectId);
+    return SubjectDetail(
+      subject: detail.subject,
+      isFavorite: detail.isFavorite,
+      episodes: [
+        for (var index = 1; index <= episodeCount; index++)
+          AnimeEpisode(
+            id: detail.subject.id * 100 + index,
+            subjectId: detail.subject.id,
+            sort: index,
+            title: 'Episode $index',
+            titleCn: '第 $index 集',
+            airDate: '2023-09-${index.toString().padLeft(2, '0')}',
+          ),
+      ],
+      progress: detail.progress,
+    );
+  }
 }

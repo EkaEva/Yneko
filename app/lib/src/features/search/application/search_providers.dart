@@ -16,6 +16,19 @@ final searchQueryProvider = NotifierProvider<SearchQuery, String>(
   SearchQuery.new,
 );
 
+class SearchTagMode extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool value) {
+    state = value;
+  }
+}
+
+final searchTagModeProvider = NotifierProvider<SearchTagMode, bool>(
+  SearchTagMode.new,
+);
+
 final searchResultsProvider = FutureProvider<List<AnimeSubject>>((ref) async {
   final query = ref.watch(searchQueryProvider).trim();
   if (query.isEmpty) return const [];
