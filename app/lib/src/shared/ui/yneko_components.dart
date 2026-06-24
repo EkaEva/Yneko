@@ -1164,80 +1164,40 @@ class _AnimePosterCardState extends State<AnimePosterCard> {
   Widget build(BuildContext context) {
     final tokens = YnekoThemeTokens.of(context);
     final type = YnekoTypography.of(context);
-    final motion = _motionDuration(context, YnekoThemeTokens.mediumMotion);
+    final liftMotion = _motionDuration(
+      context,
+      const Duration(milliseconds: 220),
+    );
+    final coverMotion = _motionDuration(
+      context,
+      const Duration(milliseconds: 500),
+    );
+    final coverScale = _hovered ? 1.035 : 1.0;
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: AnimatedSlide(
-          duration: motion,
-          curve: YnekoThemeTokens.springCurve,
-          offset: _hovered ? const Offset(0, -0.014) : Offset.zero,
+        child: AnimatedContainer(
+          key: const ValueKey('anime-poster-card-lift'),
+          duration: liftMotion,
+          curve: Curves.ease,
+          transform: Matrix4.translationValues(0, _hovered ? -3 : 0, 0),
+          transformAlignment: Alignment.center,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AspectRatio(
                 aspectRatio: 3 / 4,
-                child: AnimatedContainer(
-                  duration: motion,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        widget.item.coverColor,
-                        Color.lerp(
-                          widget.item.coverColor,
-                          tokens.surfaceHigh,
-                          0.34,
-                        )!,
-                      ],
-                    ),
-                  ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      if (widget.item.coverUrl != null)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            widget.item.coverUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const SizedBox.shrink(),
-                          ),
-                        ),
-                      if (widget.item.coverUrl != null)
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withValues(alpha: 0.5),
-                              ],
-                            ),
-                          ),
-                        ),
-                      Positioned(
-                        left: 14,
-                        right: 14,
-                        bottom: 16,
-                        child: Visibility(
-                          visible: widget.item.coverUrl == null,
-                          child: Text(
-                            widget.item.title.characters.first,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.78),
-                              fontSize: 54,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
+                      _AnimePosterCover(
+                        item: widget.item,
+                        scale: coverScale,
+                        duration: coverMotion,
                       ),
                       Positioned(
                         right: 8,
@@ -1296,6 +1256,118 @@ class _AnimePosterCardState extends State<AnimePosterCard> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnimePosterCover extends StatelessWidget {
+  const _AnimePosterCover({
+    required this.item,
+    required this.scale,
+    required this.duration,
+  });
+
+  final UiAnimeCard item;
+  final double scale;
+  final Duration duration;
+
+  @override
+  Widget build(BuildContext context) {
+    final coverUrl = item.coverUrl;
+    if (coverUrl == null) {
+      return _PosterFallbackCover(item: item);
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        AnimatedScale(
+          key: const ValueKey('anime-poster-cover-scale'),
+          scale: scale,
+          duration: duration,
+          curve: Curves.ease,
+          child: Image.network(
+            coverUrl,
+            fit: BoxFit.cover,
+            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+              if (wasSynchronouslyLoaded || frame != null) return child;
+              return const _PosterImageLoadingCover();
+            },
+            errorBuilder: (context, error, stackTrace) =>
+                const _PosterImageLoadingCover(),
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.transparent, Colors.black.withValues(alpha: 0.5)],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PosterImageLoadingCover extends StatelessWidget {
+  const _PosterImageLoadingCover();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final base = Color.lerp(tokens.surface, tokens.surfaceHigh, 0.56)!;
+    final gloss = Color.lerp(tokens.surfaceHigh, Colors.white, 0.28)!;
+    return DecoratedBox(
+      key: const ValueKey('anime-poster-cover-loading'),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          stops: const [0, 0.46, 0.58, 1],
+          colors: [base, base, gloss, base],
+        ),
+      ),
+    );
+  }
+}
+
+class _PosterFallbackCover extends StatelessWidget {
+  const _PosterFallbackCover({required this.item});
+
+  final UiAnimeCard item;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    return DecoratedBox(
+      key: const ValueKey('anime-poster-cover-fallback'),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            item.coverColor,
+            Color.lerp(item.coverColor, tokens.surfaceHigh, 0.34)!,
+          ],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
+        child: Align(
+          alignment: Alignment.bottomLeft,
+          child: Text(
+            key: const ValueKey('anime-poster-cover-fallback-title'),
+            item.title.characters.first,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.78),
+              fontSize: 54,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
       ),

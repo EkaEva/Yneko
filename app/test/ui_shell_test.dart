@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -960,6 +962,130 @@ void main() {
     expect(find.text('更多筛选'), findsOneWidget);
   });
 
+  testWidgets('home recommendation loading uses metallic shimmer cards', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final backend = _PendingHomeBackend();
+    await tester.pumpWidget(_appWithBackend(backend: backend));
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('home-shimmer-grid')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('home-shimmer-grid-view')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('home-shimmer-card')), findsWidgets);
+    expect(find.byKey(const ValueKey('home-shimmer-block')), findsWidgets);
+    expect(find.text('正在同步 Bangumi 推荐'), findsNothing);
+
+    backend.complete();
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('home-cover-precache-shimmer-grid')),
+      findsOneWidget,
+    );
+    expect(find.text('葬送的芙莉莲'), findsNothing);
+  });
+
+  testWidgets('home poster hover lifts card and zooms cover content', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(_appWithBackend());
+    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pumpAndSettle();
+
+    final cardText = find.text('葬送的芙莉莲').first;
+    final card = find
+        .ancestor(
+          of: cardText,
+          matching: find.byKey(const ValueKey('anime-poster-card-lift')),
+        )
+        .first;
+    Matrix4 transformOf(Finder finder) =>
+        tester.widget<AnimatedContainer>(finder).transform ??
+        Matrix4.identity();
+    expect(transformOf(card).getTranslation().y, 0);
+
+    final scale = find
+        .ancestor(of: cardText, matching: find.byType(Column))
+        .first;
+    expect(
+      find.descendant(
+        of: scale,
+        matching: find.byKey(const ValueKey('anime-poster-cover-scale')),
+      ),
+      findsOneWidget,
+    );
+    final coverScaleFinder = find.descendant(
+      of: scale,
+      matching: find.byKey(const ValueKey('anime-poster-cover-scale')),
+    );
+    expect(tester.widget<AnimatedScale>(coverScaleFinder).scale, 1);
+
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer();
+    await mouse.moveTo(tester.getCenter(cardText));
+    await tester.pump();
+
+    expect(transformOf(card).getTranslation().y, -3);
+    expect(tester.widget<AnimatedScale>(coverScaleFinder).scale, 1.035);
+
+    await mouse.removePointer();
+  });
+
+  testWidgets('home poster fallback only appears when cover url is missing', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(_appWithBackend());
+    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pumpAndSettle();
+
+    final coveredCard = find
+        .ancestor(of: find.text('葬送的芙莉莲').first, matching: find.byType(Column))
+        .first;
+    expect(
+      find.descendant(
+        of: coveredCard,
+        matching: find.byKey(const ValueKey('anime-poster-cover-loading')),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: coveredCard,
+        matching: find.byKey(
+          const ValueKey('anime-poster-cover-fallback-title'),
+        ),
+      ),
+      findsNothing,
+    );
+
+    final fallbackCard = find
+        .ancestor(of: find.text('mono女孩').first, matching: find.byType(Column))
+        .first;
+    expect(
+      find.descendant(
+        of: fallbackCard,
+        matching: find.byKey(const ValueKey('anime-poster-cover-fallback')),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: fallbackCard, matching: find.text('m')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('home poster card click opens full-window watch route', (
     tester,
   ) async {
@@ -1693,5 +1819,21 @@ class _EpisodeListBackend extends FakeYnekoBackend {
       ],
       progress: detail.progress,
     );
+  }
+}
+
+class _PendingHomeBackend extends FakeYnekoBackend {
+  final Completer<void> _completer = Completer<void>();
+
+  void complete() {
+    if (!_completer.isCompleted) _completer.complete();
+  }
+
+  @override
+  Future<AnimeRankingResponse> getAnimeRanking(
+    AnimeRankingRequest request,
+  ) async {
+    await _completer.future;
+    return super.getAnimeRanking(request);
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -56,8 +58,10 @@ class _RecommendWorkbench extends StatelessWidget {
             items: subjectsToUiCards(subjects),
             onOpen: onOpen,
           ),
-          loading: () =>
-              const YnekoLoadingState(title: '正在同步 Bangumi 推荐', minHeight: 520),
+          loading: () => const _HomeShimmerGrid(
+            key: ValueKey('home-shimmer-grid'),
+            itemCount: 18,
+          ),
           error: (error, stackTrace) => _ErrorPanel(
             title: 'Bangumi 推荐加载失败',
             description: error.toString(),
@@ -144,7 +148,10 @@ class _ScheduleWorkbench extends StatelessWidget {
                   onOpen: onOpen,
                 );
               },
-              loading: () => const YnekoLoadingState(title: '正在同步 Bangumi 时间表'),
+              loading: () => const _HomeShimmerGrid(
+                key: ValueKey('home-schedule-shimmer-grid'),
+                itemCount: 12,
+              ),
               error: (error, stackTrace) => _ErrorPanel(
                 title: 'Bangumi 时间表加载失败',
                 description: error.toString(),
@@ -298,7 +305,10 @@ class _RankingWorkbench extends StatelessWidget {
                 items: subjectsToUiCards(response.items),
                 onOpen: onOpen,
               ),
-              loading: () => const YnekoLoadingState(title: '正在同步 Bangumi 榜单'),
+              loading: () => const _HomeShimmerGrid(
+                key: ValueKey('home-ranking-shimmer-grid'),
+                itemCount: 18,
+              ),
               error: (error, stackTrace) => _ErrorPanel(
                 title: 'Bangumi 榜单加载失败',
                 description: error.toString(),
@@ -342,14 +352,47 @@ class _RankingWorkbench extends StatelessWidget {
   }
 }
 
-class _AnimeGrid extends StatelessWidget {
+const _coverPrecacheTimeout = Duration(milliseconds: 1500);
+
+class _AnimeGrid extends StatefulWidget {
   const _AnimeGrid({super.key, required this.items, required this.onOpen});
 
   final List<UiAnimeCard> items;
   final ValueChanged<int> onOpen;
 
   @override
+  State<_AnimeGrid> createState() => _AnimeGridState();
+}
+
+class _AnimeGridState extends State<_AnimeGrid> {
+  String? _coverSignature;
+  var _coverGeneration = 0;
+  var _coversReady = false;
+  Timer? _coverFallbackTimer;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ensureCoverPrecache();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnimeGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_signatureFor(widget.items) != _signatureFor(oldWidget.items)) {
+      _ensureCoverPrecache();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (!_coversReady) {
+      return _HomeShimmerGrid(
+        key: const ValueKey('home-cover-precache-shimmer-grid'),
+        itemCount: widget.items.length,
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = _columnsForWidth(constraints.maxWidth);
@@ -362,10 +405,147 @@ class _AnimeGrid extends StatelessWidget {
             mainAxisSpacing: 28,
             childAspectRatio: 0.585,
           ),
-          itemCount: items.length,
+          itemCount: widget.items.length,
           itemBuilder: (context, index) {
-            final item = items[index];
-            return AnimePosterCard(item: item, onTap: () => onOpen(item.id));
+            final item = widget.items[index];
+            return AnimePosterCard(
+              item: item,
+              onTap: () => widget.onOpen(item.id),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _coverFallbackTimer?.cancel();
+    super.dispose();
+  }
+
+  void _ensureCoverPrecache() {
+    final signature = _signatureFor(widget.items);
+    if (signature == _coverSignature) return;
+
+    _coverFallbackTimer?.cancel();
+    _coverSignature = signature;
+    final generation = ++_coverGeneration;
+    final urls = widget.items
+        .map((item) => item.coverUrl)
+        .whereType<String>()
+        .where((url) => url.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+
+    if (urls.isEmpty) {
+      _coversReady = true;
+      return;
+    }
+
+    if (_coversReady) {
+      setState(() => _coversReady = false);
+    }
+
+    _coverFallbackTimer = Timer(_coverPrecacheTimeout, () {
+      _markCoversReady(generation);
+    });
+
+    _precacheAllCovers(urls).then((allLoaded) {
+      if (!allLoaded) return;
+      if (!mounted || generation != _coverGeneration) return;
+      _coverFallbackTimer?.cancel();
+      _markCoversReady(generation);
+    });
+  }
+
+  Future<bool> _precacheAllCovers(List<String> urls) async {
+    final results = await Future.wait<bool>(
+      urls.map((url) async {
+        try {
+          await precacheImage(NetworkImage(url), context, onError: (_, _) {});
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }),
+    );
+    return results.every((loaded) => loaded);
+  }
+
+  void _markCoversReady(int generation) {
+    if (!mounted || generation != _coverGeneration || _coversReady) return;
+    setState(() => _coversReady = true);
+  }
+
+  String _signatureFor(List<UiAnimeCard> items) {
+    return items.map((item) => '${item.id}:${item.coverUrl ?? ''}').join('|');
+  }
+
+  int _columnsForWidth(double width) {
+    if (width >= 1180) return 6;
+    if (width >= 980) return 5;
+    if (width >= 760) return 4;
+    if (width >= 560) return 3;
+    return 2;
+  }
+}
+
+class _HomeShimmerGrid extends StatefulWidget {
+  const _HomeShimmerGrid({super.key, required this.itemCount});
+
+  final int itemCount;
+
+  @override
+  State<_HomeShimmerGrid> createState() => _HomeShimmerGridState();
+}
+
+class _HomeShimmerGridState extends State<_HomeShimmerGrid>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = _columnsForWidth(constraints.maxWidth);
+        return GridView.builder(
+          key: const ValueKey('home-shimmer-grid-view'),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: 24,
+            mainAxisSpacing: 28,
+            childAspectRatio: 0.585,
+          ),
+          itemCount: widget.itemCount,
+          itemBuilder: (context, index) {
+            return AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return _HomeShimmerCard(
+                  progress: reduceMotion ? 0.58 : _controller.value,
+                  phase: index * 0.045,
+                );
+              },
+            );
           },
         );
       },
@@ -378,6 +558,94 @@ class _AnimeGrid extends StatelessWidget {
     if (width >= 760) return 4;
     if (width >= 560) return 3;
     return 2;
+  }
+}
+
+class _HomeShimmerCard extends StatelessWidget {
+  const _HomeShimmerCard({required this.progress, required this.phase});
+
+  final double progress;
+  final double phase;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const ValueKey('home-shimmer-card'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AspectRatio(
+          aspectRatio: 3 / 4,
+          child: _ShimmerBlock(
+            progress: progress,
+            phase: phase,
+            borderRadius: 8,
+          ),
+        ),
+        const SizedBox(height: 10),
+        FractionallySizedBox(
+          widthFactor: 0.94,
+          child: SizedBox(
+            height: 22,
+            child: _ShimmerBlock(
+              progress: progress,
+              phase: phase + 0.08,
+              borderRadius: 6,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        FractionallySizedBox(
+          widthFactor: 0.52,
+          child: SizedBox(
+            height: 20,
+            child: _ShimmerBlock(
+              progress: progress,
+              phase: phase + 0.14,
+              borderRadius: 6,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ShimmerBlock extends StatelessWidget {
+  const _ShimmerBlock({
+    required this.progress,
+    required this.phase,
+    required this.borderRadius,
+  });
+
+  final double progress;
+  final double phase;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = YnekoThemeTokens.of(context);
+    final sweep = ((progress + phase) % 1.0) * 2.4 - 0.72;
+    final base = Color.lerp(tokens.surfaceHigh, tokens.surface, 0.30)!;
+    final mid = Color.lerp(tokens.surfaceHigh, Colors.white, 0.44)!;
+    final gloss = Color.lerp(tokens.primaryContainer, Colors.white, 0.72)!;
+    return DecoratedBox(
+      key: const ValueKey('home-shimmer-block'),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          stops: [
+            (sweep - 0.34).clamp(0.0, 1.0),
+            (sweep - 0.08).clamp(0.0, 1.0),
+            sweep.clamp(0.0, 1.0),
+            (sweep + 0.16).clamp(0.0, 1.0),
+            (sweep + 0.42).clamp(0.0, 1.0),
+          ],
+          colors: [base, mid, gloss, mid, base],
+        ),
+      ),
+    );
   }
 }
 
