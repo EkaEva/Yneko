@@ -222,7 +222,7 @@ fn anime_browser_filter_values(request: &AnimeRankingRequest) -> Vec<String> {
         .iter()
         .filter(|(group, _)| !priority.contains(&group.as_str()))
         .collect::<Vec<_>>();
-    extra.sort_by(|(left, _), (right, _)| left.cmp(right));
+    extra.sort_by_key(|(group, _)| *group);
     values.extend(extra.into_iter().map(|(_, value)| value.clone()));
     values
 }
